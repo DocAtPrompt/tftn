@@ -76,7 +76,7 @@ fn liste_aus_buendel() {
     assert_eq!(liste.len(), 2, "{liste:?}");
     let t = &liste[0];
     assert_eq!(t.name, "tftn-fachartikel");
-    assert_eq!(t.version.to_string(), "0.2.0");
+    assert_eq!(t.version.to_string(), "0.3.0");
     assert_eq!(t.titel, "Fachartikel");
     assert_eq!(t.beschreibung.as_deref(), Some("Fachartikel (TFTN)"));
     assert!(
@@ -98,7 +98,7 @@ fn eigener_typ_hat_vorrang() {
     kopieren(&typen().join("tftn-fachartikel"), &t);
     ersetzen(
         &t.join("typst.toml"),
-        r#"version = "0.2.0""#,
+        r#"version = "0.3.0""#,
         r#"version = "0.1.5""#,
     );
     ersetzen(
@@ -113,7 +113,7 @@ fn eigener_typ_hat_vorrang() {
     assert_eq!(liste[0].herkunft, Herkunft::Eigen);
     assert_eq!(
         warnungen,
-        ["tftn-fachartikel im eigenen Ordner überdeckt tftn-fachartikel 0.2.0 aus TFTN"]
+        ["tftn-fachartikel im eigenen Ordner überdeckt tftn-fachartikel 0.3.0 aus TFTN"]
     );
 }
 
@@ -136,11 +136,11 @@ fn finden_in_mit_version() {
     kopieren(&typen().join("tftn-kern"), &k);
     ersetzen(
         &k.join("typst.toml"),
-        r#"version = "0.1.0""#,
         r#"version = "0.2.0""#,
+        r#"version = "0.3.0""#,
     );
     let q = quellen(&eigen, &buendel);
-    let p = finden_in(&q, "tftn-kern", Some("0.1.0")).unwrap();
+    let p = finden_in(&q, "tftn-kern", Some("0.2.0")).unwrap();
     assert!(p.ordner.starts_with(&buendel), "{}", p.ordner.display());
     let p = finden_in(&q, "tftn-kern", None).unwrap();
     assert!(p.ordner.starts_with(&eigen));
@@ -155,13 +155,13 @@ fn anlegen_aus_eigenem_typ() {
     let a = projekt_anlegen_aus(&quellen(&eigen, &buendel), "mein-typ", &ziel, Some(0)).unwrap();
     assert_eq!(
         a.projekt.konfig.typ.as_deref(),
-        Some("@local/mein-typ:0.2.0")
+        Some("@local/mein-typ:0.3.0")
     );
     assert!(
-        ziel.join("packages/local/tftn-kern/0.1.0/lib.typ")
+        ziel.join("packages/local/tftn-kern/0.2.0/lib.typ")
             .is_file()
     );
-    assert!(ziel.join("packages/local/mein-typ/0.2.0/lib.typ").is_file());
+    assert!(ziel.join("packages/local/mein-typ/0.3.0/lib.typ").is_file());
 }
 
 #[test]
@@ -230,18 +230,18 @@ fn ordnername_weicht_ab() {
     kopieren(&typen().join("tftn-fachartikel"), &t);
     ersetzen(
         &t.join("typst.toml"),
-        r#"version = "0.2.0""#,
         r#"version = "0.3.0""#,
+        r#"version = "0.4.0""#,
     );
     let q = quellen(&eigen, &buendel);
     let (liste, _) = verfuegbar(&q);
-    assert_eq!(liste[0].version.to_string(), "0.3.0");
+    assert_eq!(liste[0].version.to_string(), "0.4.0");
     let p = finden_in(&q, "tftn-fachartikel", None).unwrap();
-    assert_eq!(p.toml.package.version, "0.3.0");
+    assert_eq!(p.toml.package.version, "0.4.0");
     assert!(p.ordner.starts_with(&eigen));
     let a = projekt_anlegen_aus(&q, "tftn-fachartikel", &o.join("p"), Some(0)).unwrap();
     assert_eq!(
         a.projekt.konfig.typ.as_deref(),
-        Some("@local/tftn-fachartikel:0.3.0")
+        Some("@local/tftn-fachartikel:0.4.0")
     );
 }

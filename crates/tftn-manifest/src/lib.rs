@@ -56,6 +56,9 @@ pub struct Manifest {
     /// Was man für diesen Typ mitbringen oder ausfüllen muss, in einfachen Worten.
     #[serde(default)]
     pub braucht: Vec<String>,
+    /// Vorlage je Sprache (`en = "vorlage-en"`), relativ zum Paket; sonst gilt `[template]`.
+    #[serde(default)]
+    pub vorlagen: std::collections::BTreeMap<String, String>,
     #[serde(default)]
     pub baustein: Vec<Baustein>,
     pub literatur: Option<LiteraturManifest>,

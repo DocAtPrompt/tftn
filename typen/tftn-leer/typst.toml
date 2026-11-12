@@ -16,6 +16,7 @@ schema-version = 1
 titel = "Leeres Dokument"
 achse = "publikation"
 sprache = { lang = "de", region = "AT" }
+vorlagen = { en = "vorlage-en" }
 schriften = [
   "../tftn-fachartikel/schriften/LibertinusSerif-Regular.otf",
   "../tftn-fachartikel/schriften/LibertinusSerif-Italic.otf",

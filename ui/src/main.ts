@@ -40,7 +40,7 @@ import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
 import { EinstellDialog, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
-import { t } from "./sprache";
+import { t, texteUebersetzen } from "./sprache";
 import { type Fach, type HierJs, type MarkupAktion, Seitenleiste } from "./seitenleiste";
 import { DokumentFach } from "./dokumentfach";
 import { FormelFach, type FormelBildJs, type FormelStandJs, type PaletteJs } from "./formelfach";
@@ -424,7 +424,7 @@ function modusAn(pos: number): Promise<Modus | null> {
 /** Bausteine neu laden (Paket geholt oder entfernt, Beschreibung geändert); die Kürzel hängen daran. */
 async function katalogNeu() {
   try {
-    katalog = await invoke<EintragJs[]>("katalog");
+    katalog = await invoke<EintragJs[]>("katalog").then(texteUebersetzen);
     if (einstellungen) einstellungenSetzen(einstellungen);
   } catch (fehler) {
     hinweis(t("Bausteine nicht geladen: {fehler}", { fehler: String(fehler) }));
@@ -689,7 +689,7 @@ function tabelleAktion(hrev: number, aufruf: number, aktion: object) {
 }
 
 function hierAbfragen(pos: number): Promise<HierJs | null> {
-  return abfragen((r) => invoke<HierJs | null>("hier", { rev: r, pos }));
+  return abfragen((r) => invoke<HierJs | null>("hier", { rev: r, pos }).then(texteUebersetzen));
 }
 
 // --- Kontextmenü D in der Vorschau (PLAN-M2 AP6) ----------------------------------------------
@@ -740,7 +740,7 @@ function markenEreignis(e: MarkenEreignis) {
 function markenLaden() {
   const [von, bis] = sichtbar();
   void abfragen(async (r) => {
-    const liste = await invoke<MarkeJs[]>("marken", { rev: r, von, bis });
+    const liste = await invoke<MarkeJs[]>("marken", { rev: r, von, bis }).then(texteUebersetzen);
     if (markenSichtbar && r === rev) view.dispatch({ effects: setzeMarken.of(liste) });
   });
 }
@@ -1229,11 +1229,11 @@ async function start() {
   );
   document.getElementById("baustein-knopf")!.addEventListener("click", () => void bausteinPaletteOeffnen());
   const dokumentFach = new DokumentFach({
-    laden: () => invoke<FormularJs>("formular"),
-    setzen: (stand, pfad, wert) => invoke<FormularJs>("formular_setzen", { stand, pfad, wert }),
-    eintrag: (stand, pfad, aktion) => invoke<FormularJs>("formular_eintrag", { stand, pfad, aktion }),
-    rueckgaengig: (stand) => invoke<FormularJs>("formular_rueckgaengig", { stand }),
-    wiederholen: (stand) => invoke<FormularJs>("formular_wiederholen", { stand }),
+    laden: () => invoke<FormularJs>("formular").then(texteUebersetzen),
+    setzen: (stand, pfad, wert) => invoke<FormularJs>("formular_setzen", { stand, pfad, wert }).then(texteUebersetzen),
+    eintrag: (stand, pfad, aktion) => invoke<FormularJs>("formular_eintrag", { stand, pfad, aktion }).then(texteUebersetzen),
+    rueckgaengig: (stand) => invoke<FormularJs>("formular_rueckgaengig", { stand }).then(texteUebersetzen),
+    wiederholen: (stand) => invoke<FormularJs>("formular_wiederholen", { stand }).then(texteUebersetzen),
     projekt: () => invoke<ProjektJs>("projekt_info"),
     profile: () => invoke<ProfilJs[]>("export_profile"),
     exportieren: async (profil, abnehmen) => {
@@ -1249,7 +1249,7 @@ async function start() {
     uebernehmen: typUebernehmen,
   });
   neuDialog = new NeuDialog({
-    typen: () => invoke<TypenJs>("typen_liste"),
+    typen: () => invoke<TypenJs>("typen_liste").then(texteUebersetzen),
     vorschaubild: (name) => invoke<string>("typ_vorschaubild", { name }),
     ordnerWaehlen: () => invoke<string | null>("ordner_waehlen_dialog", { aufforderung: t("Ordner für das neue Projekt wählen") }),
     ordnerdialog: PLATTFORM === "mac",
@@ -1295,9 +1295,9 @@ async function start() {
   document.getElementById("fassungen-knopf")!.addEventListener("click", () => void fassungen.zeigen());
   await listen<string>("dokument-geaendert", (e) => dokumentFach.aussen(e.payload));
   paketFach = new PaketFach({
-    stand: () => invoke<PaketeStandJs>("pakete_stand"),
+    stand: () => invoke<PaketeStandJs>("pakete_stand").then(texteUebersetzen),
     indexHolen: () => invoke<{ pakete: number; uebersprungen: number }>("pakete_index_holen"),
-    suchen: (anfrage) => invoke<Treffer[]>("pakete_suchen", { anfrage }),
+    suchen: (anfrage) => invoke<Treffer[]>("pakete_suchen", { anfrage }).then(texteUebersetzen),
     readme: (spec) => invoke<string | null>("paket_readme", { spec }),
     hinzufuegen: paketHinzufuegen,
     entfernen: paketEntfernen,
@@ -1507,7 +1507,7 @@ async function start() {
   document.getElementById("datei")!.textContent = entwurf ? t("Ohne Namen") : `${g.ordner} / ${g.datei}`;
   rev = g.rev;
   try {
-    katalog = await invoke<EintragJs[]>("katalog");
+    katalog = await invoke<EintragJs[]>("katalog").then(texteUebersetzen);
   } catch (fehler) {
     hinweis(t("Bausteine nicht geladen: {fehler}", { fehler: String(fehler) }));
   }

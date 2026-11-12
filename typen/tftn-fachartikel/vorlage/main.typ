@@ -1,4 +1,4 @@
-#import "@local/tftn-fachartikel:0.2.0": *
+#import "@local/tftn-fachartikel:0.3.0": *
 
 #show: fachartikel.with(
   daten: toml("dokument.toml"),

@@ -50,24 +50,24 @@ fn angelegtes_projekt_baut_ohne_meldungen_und_wiederholbar() {
             .unwrap()
             .lines()
             .nth(2),
-        Some("typ = \"@local/tftn-fachartikel:0.2.0\"")
+        Some("typ = \"@local/tftn-fachartikel:0.3.0\"")
     );
     assert!(
         projekt
             .wurzel
-            .join("packages/local/tftn-kern/0.1.0/lib.typ")
+            .join("packages/local/tftn-kern/0.2.0/lib.typ")
             .exists()
     );
     assert!(
         !projekt
             .wurzel
-            .join("packages/local/tftn-fachartikel/0.2.0/vorlage")
+            .join("packages/local/tftn-fachartikel/0.3.0/vorlage")
             .exists()
     );
     assert!(
         !projekt
             .wurzel
-            .join("packages/local/tftn-fachartikel/0.2.0/schriften")
+            .join("packages/local/tftn-fachartikel/0.3.0/schriften")
             .exists()
     );
 }
@@ -88,7 +88,7 @@ fn trennstellen(projekt: &Projekt, ausnahmen: &str) -> Vec<String> {
     std::fs::write(
         projekt.wurzel.join("main.typ"),
         format!(
-            "#import \"@local/tftn-kern:0.1.0\": trennungen\n\
+            "#import \"@local/tftn-kern:0.2.0\": trennungen\n\
              #set page(width: 5cm, height: auto, margin: 3mm)\n\
              #set text(lang: \"de\", font: \"Libertinus Serif\")\n\
              #set par(justify: true)\n\

@@ -333,7 +333,7 @@ fn importieren(
     let entwurf = entwurf_ordner(&app)?;
     // Vorher hat die Oberfläche einen Entwurf mit Text benennen lassen; ein leerer wird ersetzt.
     let _ = std::fs::remove_dir_all(&entwurf);
-    let ziel = typen::entwurf_sichern(&quellen, &entwurf)?;
+    let ziel = typen::entwurf_sichern_in(&quellen, &entwurf, Some(&tftn_sprachen::kennung()))?;
     let u = import::umwandeln(&pandoc, &datei, &ziel)?;
     let main = ziel.join("main.typ");
     let vorlage = std::fs::read_to_string(&main).map_err(|e| e.to_string())?;
@@ -382,7 +382,11 @@ fn startordner(app: &tauri::AppHandle, waehlen: bool) -> Result<PathBuf, String>
     }
     if !waehlen {
         let (quellen, _) = typquellen(app)?;
-        return typen::entwurf_sichern(&quellen, &entwurf_ordner(app)?);
+        return typen::entwurf_sichern_in(
+            &quellen,
+            &entwurf_ordner(app)?,
+            Some(&tftn_sprachen::kennung()),
+        );
     }
     match ordner_waehlen(&tr!("TFTN-Projektordner wählen (mit tftn.toml)")) {
         Some(p) if p.join("tftn.toml").is_file() => Ok(p),
@@ -834,7 +838,11 @@ fn typ_vorschaubild(
     if let Some(url) = zustand.vorschaubilder.lock().unwrap().get(&schluessel) {
         return Ok(url.clone());
     }
-    let url = typen::png_url(&typen::vorschaubild(&quellen, &name)?);
+    let url = typen::png_url(&typen::vorschaubild(
+        &quellen,
+        &name,
+        Some(&tftn_sprachen::kennung()),
+    )?);
     zustand
         .vorschaubilder
         .lock()
@@ -860,7 +868,14 @@ fn projekt_anlegen(
     schriften: bool,
 ) -> Result<String, String> {
     let (quellen, _) = typquellen(&app)?;
-    let ziel = typen::anlegen(&quellen, &typ, Path::new(&eltern), &name, schriften)?;
+    let ziel = typen::anlegen(
+        &quellen,
+        &typ,
+        Path::new(&eltern),
+        &name,
+        schriften,
+        Some(&tftn_sprachen::kennung()),
+    )?;
     *zustand.naechstes.lock().unwrap() = Some(ziel.clone());
     Ok(ziel.display().to_string())
 }
@@ -869,7 +884,11 @@ fn projekt_anlegen(
 #[tauri::command(async)]
 fn neues_dokument(app: tauri::AppHandle, zustand: State<'_, Zustand>) -> Result<(), String> {
     let (quellen, _) = typquellen(&app)?;
-    let ziel = typen::entwurf_sichern(&quellen, &entwurf_ordner(&app)?)?;
+    let ziel = typen::entwurf_sichern_in(
+        &quellen,
+        &entwurf_ordner(&app)?,
+        Some(&tftn_sprachen::kennung()),
+    )?;
     *zustand.naechstes.lock().unwrap() = Some(ziel);
     Ok(())
 }

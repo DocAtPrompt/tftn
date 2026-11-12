@@ -1,4 +1,4 @@
-//! Fachartikel 0.2.0 (PLAN-M2 AP7 Task 4 und 5): Literatur aus dokument.toml, Feldmarken in der
+//! Fachartikel ab 0.2.0 (PLAN-M2 AP7 Task 4 und 5): Literatur aus dokument.toml, Feldmarken in der
 //! Titelei und der Klick darauf in der Vorschau.
 
 use std::path::{Path, PathBuf};
@@ -45,11 +45,11 @@ fn dokument_aendern(projekt: &Projekt, alt: &str, neu: &str) {
 }
 
 #[test]
-fn neu_aus_0_2_kompiliert() {
+fn neu_aus_0_3_kompiliert() {
     let projekt = neues_projekt("ap7-neu");
     assert_eq!(
         projekt.konfig.typ.as_deref(),
-        Some("@local/tftn-fachartikel:0.2.0")
+        Some("@local/tftn-fachartikel:0.3.0")
     );
     let t = text(&projekt);
     assert!(t.contains("Literatur"), "{t}");

@@ -10,8 +10,8 @@ check) does a request go out, and only to a fixed address.
 Your text stays plain Typst. Every document can be compiled without TFTN using the typst CLI and
 yields the same PDF.
 
-The interface is available in English and German. The document types that ship with TFTN (such as
-the journal article) are currently German-language templates.
+The interface is available in English and German. The document types that ship with TFTN (the
+blank document and the journal article) come in both languages too.
 
 ## Contents
 
@@ -42,6 +42,11 @@ anything.
 **A new document:** TFTN starts with an empty draft. Just start writing; Cmd/Ctrl+S gives it a
 name and saves it in your Documents folder. “Template …” instead creates a document of a document
 type, for example a journal article with front matter and bibliography.
+
+**Language of a new document:** new documents and the empty draft use the interface language –
+with an English interface you get an English template (hyphenation, spell checking, and labels such
+as “Abstract”, “Keywords” and “References”). In a journal article you can switch later: “Document”
+tab → “Language”.
 
 **What is a project?** A folder with `tftn.toml`, the main file (usually `main.typ`), and for
 templates also `dokument.toml` (front matter), the bibliography file, the fonts (`fonts/`) and the
@@ -236,7 +241,7 @@ The `tftn` program (built from source) works without the window:
 
 | Command | Effect |
 |---|---|
-| `tftn neu --typ tftn-fachartikel <folder>` | create a project from a document type |
+| `tftn neu --typ tftn-fachartikel <folder> [--sprache en]` | create a project from a document type (`--sprache en`: English template) |
 | `tftn check <folder>` | check, report errors and missing packages |
 | `tftn build <folder> [-o target]` | PDF via the typst CLI (into `_renders/`) |
 | `tftn build <folder> --png [--ppi 144]` | page images instead of a PDF |

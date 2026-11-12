@@ -291,7 +291,96 @@ pub fn bestand(wurzel: &Path) -> Bestand {
             .extend(t.offen.iter().map(|z| format!("{}:{z}", rel(&p))));
         eintragen(rel(&p), t.texte);
     }
+    // Mitgelieferte Dokumenttypen und Paketbeschreibungen: die Oberfläche zeigt ihre Texte an.
+    let mut daten = Vec::new();
+    if let Ok(e) = std::fs::read_dir(wurzel.join("typen")) {
+        let mut typen: Vec<PathBuf> = e.flatten().map(|e| e.path()).collect();
+        typen.sort();
+        for t in typen {
+            daten.push(t.join("typst.toml"));
+            dateien(&t.join("tftn"), ".json", &mut daten);
+        }
+    }
+    dateien(&wurzel.join("pakete"), ".toml", &mut daten);
+    for p in daten {
+        let Ok(text) = std::fs::read_to_string(&p) else {
+            continue;
+        };
+        let texte = if p.extension().is_some_and(|e| e == "json") {
+            aus_schema(&text)
+        } else {
+            aus_manifest(&text)
+        };
+        eintragen(rel(&p), texte);
+    }
     b
+}
+
+/// Sichtbare Texte eines Manifests (`typst.toml` eines Typs, Paketbeschreibung in `pakete/`):
+/// `titel`, `gruppe`, `hilfe`, `braucht`, `beschriftungen` in jeder Tiefe und
+/// `[package] description`.
+pub fn aus_manifest(text: &str) -> Vec<String> {
+    fn gang(wert: &toml::Value, aus: &mut Vec<String>) {
+        match wert {
+            toml::Value::Table(t) => {
+                for (k, v) in t {
+                    match (k.as_str(), v) {
+                        ("titel" | "gruppe" | "hilfe", toml::Value::String(s)) => {
+                            aus.push(s.clone())
+                        }
+                        ("braucht" | "beschriftungen", toml::Value::Array(a)) => {
+                            aus.extend(a.iter().filter_map(|x| x.as_str().map(String::from)))
+                        }
+                        _ => gang(v, aus),
+                    }
+                }
+            }
+            toml::Value::Array(a) => a.iter().for_each(|x| gang(x, aus)),
+            _ => {}
+        }
+    }
+    let Ok(wert) = toml::from_str::<toml::Table>(text) else {
+        return Vec::new();
+    };
+    let mut aus = Vec::new();
+    if let Some(d) = wert
+        .get("package")
+        .and_then(|p| p.get("description"))
+        .and_then(|d| d.as_str())
+    {
+        aus.push(d.to_string());
+    }
+    gang(&toml::Value::Table(wert), &mut aus);
+    aus.retain(|s| !s.trim().is_empty());
+    aus
+}
+
+/// Sichtbare Texte eines Formular-Schemas: `title`, `description` und `x-tftn-gruppe` in jeder Tiefe.
+pub fn aus_schema(text: &str) -> Vec<String> {
+    fn gang(wert: &serde_json::Value, aus: &mut Vec<String>) {
+        match wert {
+            serde_json::Value::Object(o) => {
+                for (k, v) in o {
+                    match (k.as_str(), v) {
+                        (
+                            "title" | "description" | "x-tftn-gruppe",
+                            serde_json::Value::String(s),
+                        ) => aus.push(s.clone()),
+                        _ => gang(v, aus),
+                    }
+                }
+            }
+            serde_json::Value::Array(a) => a.iter().for_each(|x| gang(x, aus)),
+            _ => {}
+        }
+    }
+    let Ok(wert) = serde_json::from_str::<serde_json::Value>(text) else {
+        return Vec::new();
+    };
+    let mut aus = Vec::new();
+    gang(&wert, &mut aus);
+    aus.retain(|s| !s.trim().is_empty());
+    aus
 }
 
 /// TOML-Zeichenkette in Anführungszeichen.

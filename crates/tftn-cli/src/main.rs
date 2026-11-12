@@ -10,7 +10,8 @@ const HILFE: &str = "\
 tftn – Typst for the Noobs
 
 Aufruf:
-  tftn neu --typ TYP ORDNER [--typen PFAD]       Projekt aus einem Dokumenttyp anlegen
+  tftn neu --typ TYP ORDNER [--typen PFAD] [--sprache en]
+                                                 Projekt aus einem Dokumenttyp anlegen
   tftn build [ORDNER] [-o ZIEL] [-- SCHALTER…]   PDF über die typst-CLI erzeugen
   tftn build [ORDNER] --png [--ppi N] [-o ZIEL]  Seitenbilder statt PDF (Standard 144 ppi)
   tftn export [ORDNER] --profil ID [--abnehmen]  Export-Profil des Dokumenttyps (ohne ID: Liste)
@@ -23,6 +24,7 @@ Aufruf:
 
 TYP ist ein Paket aus typen/, z. B. tftn-fachartikel (Ordner aus --typen, TFTN_TYPEN
 oder dem TFTN-Quellordner).
+--sprache en legt die englische Vorlage an, wenn der Typ eine hat (sonst die deutsche).
 --abnehmen setzt den Zeitstempel in tftn.toml auf jetzt und legt das Ergebnis mit
 Gegenprobe-Notiz unter export/ ab; sonst landet es unter _renders/.
 ORDNER ist der Projektordner mit tftn.toml (Standard: aktueller Ordner).
@@ -39,6 +41,8 @@ struct Aufruf {
     zusatz: Vec<String>,
     typ: Option<String>,
     typen: Option<PathBuf>,
+    /// `--sprache`: Vorlage in dieser Sprache, wenn der Typ eine hat (`tftn neu`).
+    sprache: Option<String>,
     profil: Option<String>,
     abnehmen: bool,
     /// `--png`: Seitenbilder mit dieser Auflösung (PLAN-M1 4.3).
@@ -55,6 +59,7 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
     let mut zusatz = Vec::new();
     let mut typ = None;
     let mut typen = None;
+    let mut sprache = None;
     let mut profil = None;
     let mut abnehmen = false;
     let mut png = false;
@@ -64,6 +69,7 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
         match a.as_str() {
             "-o" => ziel = Some(it.next().ok_or("-o braucht ein Ziel")?),
             "--typ" => typ = Some(it.next().ok_or("--typ braucht einen Namen")?),
+            "--sprache" => sprache = Some(it.next().ok_or("--sprache braucht eine Kennung")?),
             "--profil" => profil = Some(it.next().ok_or("--profil braucht eine ID")?),
             "--abnehmen" => abnehmen = true,
             "--png" => png = true,
@@ -100,6 +106,7 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
         zusatz,
         typ,
         typen,
+        sprache,
         profil,
         abnehmen,
         png: png.then(|| ppi.unwrap_or(144.0)),
@@ -148,11 +155,12 @@ fn typen_ordner(aufruf: &Aufruf) -> PathBuf {
 fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {
     if aufruf.befehl == "neu" {
         let typ = aufruf.typ.as_deref().ok_or("neu braucht --typ")?;
-        let anlage = tftn_manifest::anlegen::projekt_anlegen(
+        let anlage = tftn_manifest::anlegen::projekt_anlegen_sprache(
             &typen_ordner(&aufruf),
             typ,
             &aufruf.ordner,
             None,
+            aufruf.sprache.as_deref(),
         )
         .map_err(|e| e.to_string())?;
         println!("angelegt: {}", anlage.projekt.wurzel.display());

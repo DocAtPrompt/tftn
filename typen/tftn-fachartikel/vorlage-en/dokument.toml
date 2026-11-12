@@ -1,0 +1,14 @@
+titel = "Title of the article"
+sprache = "en"
+datum = 2026-01-15
+abstract = "A short abstract with *emphasis*."
+schlagworte = ["First keyword", "Second keyword"]
+
+[[autoren]]
+name = "First Last"
+institution = ["Institution"]
+korrespondierend = true
+
+[literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"

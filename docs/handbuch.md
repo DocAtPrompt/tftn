@@ -40,6 +40,11 @@ ausdrücklich erwünscht.
 ihm einen Namen und legt es im Ordner „Dokumente“ ab. „Vorlage …“ legt stattdessen ein Dokument eines
 Dokumenttyps an, etwa einen Fachartikel mit Titelei und Literaturverzeichnis.
 
+**Sprache eines neuen Dokuments:** Neue Dokumente und der leere Entwurf folgen der Sprache der
+Oberfläche – mit englischer Oberfläche entsteht eine englische Vorlage (Silbentrennung,
+Rechtschreibung und Beschriftungen wie „Abstract“, „Keywords“ und „References“). Beim Fachartikel
+lässt sich das später umstellen: Fach „Dokument“ → „Sprache“.
+
 **Was ist ein Projekt?** Ein Ordner mit `tftn.toml`, der Hauptdatei (meist `main.typ`), bei
 Vorlagen dazu `dokument.toml` (Titelei), der Literaturdatei, den Schriften (`fonts/`) und den
 benutzten Paketen (`packages/`). Alles, was das Dokument braucht, liegt im Ordner – er lässt sich
@@ -233,7 +238,7 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 
 | Befehl | Wirkung |
 |---|---|
-| `tftn neu --typ tftn-fachartikel <ordner>` | Projekt aus einem Dokumenttyp anlegen |
+| `tftn neu --typ tftn-fachartikel <ordner> [--sprache en]` | Projekt aus einem Dokumenttyp anlegen (`--sprache en`: englische Vorlage) |
 | `tftn check <ordner>` | prüfen, Fehler und fehlende Pakete melden |
 | `tftn build <ordner> [-o ziel]` | PDF über die typst-CLI (nach `_renders/`) |
 | `tftn build <ordner> --png [--ppi 144]` | Seitenbilder statt PDF |

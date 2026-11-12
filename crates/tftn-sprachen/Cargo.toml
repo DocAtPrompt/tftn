@@ -10,3 +10,4 @@ license.workspace = true
 
 [dependencies]
 toml.workspace = true
+serde_json.workspace = true

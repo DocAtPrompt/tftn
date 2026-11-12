@@ -41,11 +41,22 @@ pub fn projekt_anlegen(
     ziel: &Path,
     zeitstempel: Option<i64>,
 ) -> Result<Anlage, ManifestFehler> {
+    projekt_anlegen_sprache(typen, typ, ziel, zeitstempel, None)
+}
+
+/// Wie `projekt_anlegen`, mit der Vorlage für `sprache` (`en`, `en-GB` …), wenn der Typ eine hat.
+pub fn projekt_anlegen_sprache(
+    typen: &Path,
+    typ: &str,
+    ziel: &Path,
+    zeitstempel: Option<i64>,
+    sprache: Option<&str>,
+) -> Result<Anlage, ManifestFehler> {
     let quelle = Typquelle {
         ordner: typen.to_path_buf(),
         herkunft: Herkunft::Tftn,
     };
-    projekt_anlegen_aus(&[quelle], typ, ziel, zeitstempel)
+    projekt_anlegen_aus_sprache(&[quelle], typ, ziel, zeitstempel, sprache)
 }
 
 /// Wie `projekt_anlegen`, mit mehreren Quellen in Vorrang-Reihenfolge (PLAN-M2 AP8). Scheitert das
@@ -57,6 +68,36 @@ pub fn projekt_anlegen_aus(
     ziel: &Path,
     zeitstempel: Option<i64>,
 ) -> Result<Anlage, ManifestFehler> {
+    projekt_anlegen_aus_sprache(quellen, typ, ziel, zeitstempel, None)
+}
+
+/// Ordner der Vorlage für `sprache`: erst die ganze Kennung (`en-GB`), dann die Sprache allein
+/// (`en`); ohne Treffer der aus `[template]`.
+pub fn vorlage_fuer<'a>(
+    manifest: &'a crate::Manifest,
+    standard: &'a str,
+    sprache: Option<&str>,
+) -> &'a str {
+    let Some(s) = sprache.map(str::trim).filter(|s| !s.is_empty()) else {
+        return standard;
+    };
+    let kurz = s.split(['-', '_']).next().unwrap_or(s);
+    manifest
+        .vorlagen
+        .get(s)
+        .or_else(|| manifest.vorlagen.get(kurz))
+        .map(String::as_str)
+        .unwrap_or(standard)
+}
+
+/// `projekt_anlegen_aus` mit der Vorlage für `sprache`.
+pub fn projekt_anlegen_aus_sprache(
+    quellen: &[Typquelle],
+    typ: &str,
+    ziel: &Path,
+    zeitstempel: Option<i64>,
+    sprache: Option<&str>,
+) -> Result<Anlage, ManifestFehler> {
     let (name, version) = spec_lesen(typ);
     let paket = finden_in(quellen, name, version)?;
     if ziel.exists() && std::fs::read_dir(ziel).map_err(io(ziel))?.next().is_some() {
@@ -66,7 +107,7 @@ pub fn projekt_anlegen_aus(
         )));
     }
     let war_da = ziel.exists();
-    let ergebnis = anlegen_innen(quellen, &paket, ziel, zeitstempel);
+    let ergebnis = anlegen_innen(quellen, &paket, ziel, zeitstempel, sprache);
     if ergebnis.is_err() {
         if war_da {
             if let Ok(eintraege) = std::fs::read_dir(ziel) {
@@ -91,6 +132,7 @@ fn anlegen_innen(
     paket: &Typpaket,
     ziel: &Path,
     zeitstempel: Option<i64>,
+    sprache: Option<&str>,
 ) -> Result<Anlage, ManifestFehler> {
     let manifest = paket.manifest()?;
     let vorlage = paket.toml.template.as_ref().ok_or_else(|| {
@@ -103,7 +145,9 @@ fn anlegen_innen(
     std::fs::create_dir_all(ziel).map_err(io(ziel))?;
 
     // Vorlage
-    let vorlage_ordner = paket.ordner.join(&vorlage.path);
+    let vorlage_ordner = paket
+        .ordner
+        .join(vorlage_fuer(manifest, &vorlage.path, sprache));
     kopieren(&vorlage_ordner, ziel, &BTreeSet::new())?;
 
     schriften_kopieren(&paket.ordner, &manifest.schriften, ziel)?;
@@ -137,9 +181,23 @@ fn anlegen_innen(
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| "dokument".into());
-    schreiben(
-        &ziel.join("README.md"),
-        &format!(
+    let zeile = gegenprobe_zeile(&projekt, &format!("_renders/{stamm}.pdf"), &[]);
+    let englisch = sprache.is_some_and(|s| s.trim().to_lowercase().starts_with("en"));
+    let readme = if englisch {
+        format!(
+            "# {titel}\n\nCreated with TFTN as “{typname}” ({spec}).\n\n\
+             ## Build without TFTN (cross-check)\n\n\
+             With typst {TYPST_VERSION}, this line in the project folder produces the same PDF as TFTN:\n\n\
+             ```bash\nmkdir -p _renders\n{zeile}\n```\n\n\
+             ## Origin\n\n\
+             - `packages/local/`: document type and its dependencies, copied from TFTN `typen/`.\n\
+             - `fonts/`: freely licensed fonts, licenses in `fonts/LIZENZEN.txt`.\n",
+            titel = tftn_sprachen::uebersetzen(&manifest.titel),
+            typname = tftn_sprachen::uebersetzen(&manifest.titel),
+            spec = paket.spec(),
+        )
+    } else {
+        format!(
             "# {titel}\n\nAngelegt mit TFTN als „{typname}“ ({spec}).\n\n\
              ## Ohne TFTN bauen (Gegenprobe)\n\n\
              Mit typst {TYPST_VERSION} ergibt diese Zeile im Projektordner dasselbe PDF wie TFTN:\n\n\
@@ -150,9 +208,9 @@ fn anlegen_innen(
             titel = manifest.titel,
             typname = manifest.titel,
             spec = paket.spec(),
-            zeile = gegenprobe_zeile(&projekt, &format!("_renders/{stamm}.pdf"), &[]),
-        ),
-    )?;
+        )
+    };
+    schreiben(&ziel.join("README.md"), &readme)?;
 
     Ok(Anlage {
         projekt,
@@ -185,6 +243,7 @@ pub(crate) fn vendoren(
         }
         if let Some(m) = &p.toml.tool.tftn {
             aus.extend(m.schriften.iter().map(PathBuf::from));
+            aus.extend(m.vorlagen.values().map(PathBuf::from));
         }
         let ablage = ziel
             .join("packages/local")

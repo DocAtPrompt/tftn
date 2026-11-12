@@ -548,7 +548,7 @@ mod tests {
         assert!(projekt_js(&neu, &FormularSitzung::neu(&neu), &buendel()).literatur_im_formular);
         assert!(
             info.aktualisierung.is_some(),
-            "Testartikel 0.1.0: 0.2.0 verfügbar"
+            "Testartikel 0.1.0: 0.3.0 verfügbar"
         );
     }
 

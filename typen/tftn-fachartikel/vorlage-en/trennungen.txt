@@ -1,0 +1,3 @@
+# Hyphenation exceptions: one word per line, allowed break points marked with -.
+# The word is then only broken at these points.
+data-base

@@ -25,7 +25,7 @@ pub use schnipsel::{Eingesetzt, Feld, Schnipsel, SchnipselFehler, Teil};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Herkunft {
     Typst,
-    /// `spec` wie `@local/tftn-fachartikel:0.2.0`
+    /// `spec` wie `@local/tftn-fachartikel:0.3.0`
     Dokumenttyp {
         spec: String,
     },

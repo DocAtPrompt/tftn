@@ -52,7 +52,7 @@ fn fachartikel_hat_typst_und_hinweis() {
     assert!(k.finden("typst/tabelle").is_some());
     let h = k.finden("tftn-fachartikel/hinweis").unwrap();
     assert!(
-        matches!(&h.herkunft, Herkunft::Dokumenttyp { spec } if spec == "@local/tftn-fachartikel:0.2.0")
+        matches!(&h.herkunft, Herkunft::Dokumenttyp { spec } if spec == "@local/tftn-fachartikel:0.3.0")
     );
     let widgets = k.widgets();
     assert!(widgets.iter().any(|w| w.parameter.funktion == "hinweis"
@@ -96,7 +96,7 @@ fn kaputter_baustein_faellt_weg_mit_warnung() {
     let projekt = neues_projekt("katalog-kaputt");
     let toml = projekt
         .pakete()
-        .join("local/tftn-fachartikel/0.2.0/typst.toml");
+        .join("local/tftn-fachartikel/0.3.0/typst.toml");
     let mut text = std::fs::read_to_string(&toml).unwrap();
     text.push_str("\n[[tool.tftn.baustein]]\nid = \"kaputt\"\nfunktion = \"hinweis\"\ntitel = \"K\"\neinfuegen = \"#hinweis[${feld:X\"\n");
     std::fs::write(&toml, text).unwrap();
@@ -162,7 +162,7 @@ fn doppelte_id_im_manifest_wird_gemeldet_erster_bleibt() {
     let projekt = neues_projekt("katalog-doppelt");
     let toml = projekt
         .pakete()
-        .join("local/tftn-fachartikel/0.2.0/typst.toml");
+        .join("local/tftn-fachartikel/0.3.0/typst.toml");
     let mut text = std::fs::read_to_string(&toml).unwrap();
     text.push_str("\n[[tool.tftn.baustein]]\nid = \"hinweis\"\nfunktion = \"hinweis\"\ntitel = \"Zweiter\"\neinfuegen = \"#hinweis[]\"\n");
     std::fs::write(&toml, text).unwrap();

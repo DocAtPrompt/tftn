@@ -55,7 +55,7 @@ fn lesen(p: &Projekt, datei: &str) -> String {
 fn neuere_version_erkannt() {
     let alt = testartikel("neuer");
     let n = neuere_version(&alt, &buendel()).unwrap();
-    assert_eq!(n.version.to_string(), "0.2.0");
+    assert_eq!(n.version.to_string(), "0.3.0");
     let o = ordner("neuer-neu");
     let neu = projekt_anlegen(
         &wurzel().join("typen"),
@@ -66,7 +66,7 @@ fn neuere_version_erkannt() {
     .unwrap()
     .projekt;
     assert!(neuere_version(&neu, &buendel()).is_none());
-    // Eigener Fachartikel 0.1.5 hat Vorrang: für 0.1.0 ist er neuer, für 0.2.0 nicht.
+    // Eigener Fachartikel 0.1.5 hat Vorrang: für 0.1.0 ist er neuer, für 0.3.0 nicht.
     let eigen = o.join("eigen");
     kopieren(
         &wurzel().join("typen/tftn-fachartikel"),
@@ -76,7 +76,7 @@ fn neuere_version_erkannt() {
     let t = std::fs::read_to_string(&toml).unwrap();
     std::fs::write(
         &toml,
-        t.replace(r#"version = "0.2.0""#, r#"version = "0.1.5""#),
+        t.replace(r#"version = "0.3.0""#, r#"version = "0.1.5""#),
     )
     .unwrap();
     let mit_eigen = [
@@ -100,10 +100,10 @@ fn aktualisieren_vendort_und_stellt_um() {
     let neu = neuere_version(&p, &buendel()).unwrap();
     let a = typ_aktualisieren(&p, &neu, &buendel()).unwrap();
     assert_eq!(a.alt, "@local/tftn-fachartikel:0.1.0");
-    assert_eq!(a.neu, "@local/tftn-fachartikel:0.2.0");
+    assert_eq!(a.neu, "@local/tftn-fachartikel:0.3.0");
     assert!(
         p.wurzel
-            .join("packages/local/tftn-fachartikel/0.2.0/lib.typ")
+            .join("packages/local/tftn-fachartikel/0.3.0/lib.typ")
             .is_file()
     );
     assert!(
@@ -113,7 +113,7 @@ fn aktualisieren_vendort_und_stellt_um() {
     );
     assert_eq!(
         lesen(&p, "tftn.toml"),
-        tftn_vorher.replace("tftn-fachartikel:0.1.0", "tftn-fachartikel:0.2.0")
+        tftn_vorher.replace("tftn-fachartikel:0.1.0", "tftn-fachartikel:0.3.0")
     );
     assert_eq!(a.stellen.len(), 1, "{:?}", a.stellen);
     let s = &a.stellen[0];
@@ -128,7 +128,7 @@ fn probe_uebersetzt() {
     let neu = neuere_version(&p, &buendel()).unwrap();
     let a = typ_aktualisieren(&p, &neu, &buendel()).unwrap();
     stellen_umschreiben(&p.wurzel, &a, |_| true).unwrap();
-    assert!(lesen(&p, "main.typ").contains("@local/tftn-fachartikel:0.2.0"));
+    assert!(lesen(&p, "main.typ").contains("@local/tftn-fachartikel:0.3.0"));
     let p = Projekt::oeffnen(&p.wurzel).unwrap();
     let e = kompilieren(&ProjektWorld::neu(&p).unwrap());
     let fehler: Vec<_> = e.meldungen.iter().filter(|m| m.fehler).collect();
@@ -157,7 +157,7 @@ fn importstellen_varianten() {
     dateien.sort();
     assert_eq!(dateien, ["kapitel/a.typ", "main.typ"]);
     stellen_umschreiben(&p.wurzel, &a, |d| d != "main.typ").unwrap();
-    assert!(lesen(&p, "kapitel/a.typ").contains("tftn-fachartikel:0.2.0"));
+    assert!(lesen(&p, "kapitel/a.typ").contains("tftn-fachartikel:0.3.0"));
     assert_eq!(lesen(&p, "main.typ"), main, "main.typ ausgenommen");
 
     // Ohne Import: keine Stelle, kein Fehler.

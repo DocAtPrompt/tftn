@@ -172,18 +172,54 @@ pub fn typen_js(quellen: &[Typquelle], eigener_ordner: &Path, vorgabe: Option<&P
 const LEER: &str = "tftn-leer";
 
 /// Der Entwurf: das Dokument ohne Namen. Fehlt er, entsteht er neu, sonst bleibt sein Text.
+#[cfg(test)]
 pub fn entwurf_sichern(quellen: &[Typquelle], ordner: &Path) -> Result<PathBuf, String> {
+    entwurf_sichern_in(quellen, ordner, None)
+}
+
+/// Wie `entwurf_sichern`, in der Sprache `sprache` (die der Oberfläche). Ein noch unberührter
+/// Entwurf in einer anderen Sprache entsteht neu.
+pub fn entwurf_sichern_in(
+    quellen: &[Typquelle],
+    ordner: &Path,
+    sprache: Option<&str>,
+) -> Result<PathBuf, String> {
+    let jetzt = std::fs::read_to_string(ordner.join("main.typ")).ok();
+    let jetzt = jetzt.as_deref().map(str::trim);
     // Ein noch leerer Entwurf der ersten Fassung hat keine Kopf- und Fußzeilen: neu anlegen.
-    let veraltet = std::fs::read_to_string(ordner.join("main.typ"))
-        .is_ok_and(|t| t.trim() == "#set text(lang: \"de\", region: \"AT\")");
-    if veraltet || !ordner.join("tftn.toml").is_file() {
+    let veraltet = jetzt == Some("#set text(lang: \"de\", region: \"AT\")");
+    let andere_sprache = jetzt.is_some_and(|j| {
+        let (gewuenscht, andere) = leer_vorlagen(quellen, sprache);
+        gewuenscht.as_deref().is_some_and(|g| g.trim() != j) && andere.iter().any(|a| a.trim() == j)
+    });
+    if veraltet || andere_sprache || !ordner.join("tftn.toml").is_file() {
         let _ = std::fs::remove_dir_all(ordner);
-        tftn_manifest::anlegen::projekt_anlegen_aus(quellen, LEER, ordner, None)
+        tftn_manifest::anlegen::projekt_anlegen_aus_sprache(quellen, LEER, ordner, None, sprache)
             .map_err(|e| e.to_string())?;
         // Schriften erst beim Speichern auf Wunsch; bis dahin die der App.
         let _ = std::fs::remove_dir_all(ordner.join("fonts"));
     }
     Ok(ordner.to_path_buf())
+}
+
+/// `main.typ` des leeren Dokuments für `sprache` und die der übrigen Sprachen.
+fn leer_vorlagen(quellen: &[Typquelle], sprache: Option<&str>) -> (Option<String>, Vec<String>) {
+    let Ok(paket) = tftn_manifest::typen::finden_in(quellen, LEER, None) else {
+        return (None, Vec::new());
+    };
+    let (Ok(m), Some(v)) = (paket.manifest(), paket.toml.template.as_ref()) else {
+        return (None, Vec::new());
+    };
+    let gewaehlt = tftn_manifest::anlegen::vorlage_fuer(m, &v.path, sprache);
+    let lesen = |o: &str| std::fs::read_to_string(paket.ordner.join(o).join(&v.entrypoint)).ok();
+    let mut alle: Vec<&str> = vec![v.path.as_str()];
+    alle.extend(m.vorlagen.values().map(String::as_str));
+    let andere = alle
+        .into_iter()
+        .filter(|o| *o != gewaehlt)
+        .filter_map(lesen)
+        .collect();
+    (lesen(gewaehlt), andere)
 }
 
 /// Die Schriftordner aller Dokumenttypen: der Vorrat für Dokumente ohne eingebundene Schriften.
@@ -276,13 +312,15 @@ pub fn anlegen(
     eltern: &Path,
     name: &str,
     schriften: bool,
+    sprache: Option<&str>,
 ) -> Result<PathBuf, String> {
     name_pruefen(name)?;
     std::fs::create_dir_all(eltern).map_err(|e| format!("{}: {e}", eltern.display()))?;
     let ziel = eltern.join(name.trim());
-    let wurzel = tftn_manifest::anlegen::projekt_anlegen_aus(quellen, typ, &ziel, None)
-        .map(|a| a.projekt.wurzel)
-        .map_err(|e| e.to_string())?;
+    let wurzel =
+        tftn_manifest::anlegen::projekt_anlegen_aus_sprache(quellen, typ, &ziel, None, sprache)
+            .map(|a| a.projekt.wurzel)
+            .map_err(|e| e.to_string())?;
     // Zuerst alle weg, dann auf Wunsch nur die benutzten.
     let _ = std::fs::remove_dir_all(wurzel.join("fonts"));
     if schriften {
@@ -292,7 +330,11 @@ pub fn anlegen(
 }
 
 /// Seite 1 des Typs als PNG (40 ppi): anlegen im Temp-Ordner, übersetzen, rastern, aufräumen.
-pub fn vorschaubild(quellen: &[Typquelle], name: &str) -> Result<Vec<u8>, String> {
+pub fn vorschaubild(
+    quellen: &[Typquelle],
+    name: &str,
+    sprache: Option<&str>,
+) -> Result<Vec<u8>, String> {
     static ZAEHLER: AtomicU64 = AtomicU64::new(0);
     let tmp = std::env::temp_dir().join(format!(
         "tftn-vorschau-{}-{}",
@@ -300,8 +342,14 @@ pub fn vorschaubild(quellen: &[Typquelle], name: &str) -> Result<Vec<u8>, String
         ZAEHLER.fetch_add(1, Ordering::Relaxed)
     ));
     let ergebnis = (|| {
-        let a = tftn_manifest::anlegen::projekt_anlegen_aus(quellen, name, &tmp, Some(0))
-            .map_err(|e| e.to_string())?;
+        let a = tftn_manifest::anlegen::projekt_anlegen_aus_sprache(
+            quellen,
+            name,
+            &tmp,
+            Some(0),
+            sprache,
+        )
+        .map_err(|e| e.to_string())?;
         let world = ProjektWorld::neu(&a.projekt).map_err(|e| e.to_string())?;
         let doc = kompilieren(&world)
             .dokument
@@ -516,6 +564,27 @@ mod tests {
         let _ = std::fs::remove_dir_all(&o);
         std::fs::create_dir_all(&o).unwrap();
         o
+    }
+
+    #[test]
+    fn entwurf_folgt_der_sprache_solange_unberuehrt() {
+        let o = ordner("entwurf-sprache");
+        let q = quellen(&typen(), &o);
+        let ziel = o.join("entwurf");
+        let haupt = |e: &Path| std::fs::read_to_string(e.join("main.typ")).unwrap();
+        let e = entwurf_sichern_in(&q, &ziel, Some("de")).unwrap();
+        assert!(haupt(&e).contains("lang: \"de\""), "{}", haupt(&e));
+        let e = entwurf_sichern_in(&q, &ziel, Some("en")).unwrap();
+        assert!(haupt(&e).contains("lang: \"en\""), "{}", haupt(&e));
+        // Gleiche Sprache: bleibt, wie er ist.
+        std::fs::write(e.join("notiz.txt"), "x").unwrap();
+        let e = entwurf_sichern_in(&q, &ziel, Some("en")).unwrap();
+        assert!(e.join("notiz.txt").is_file());
+        // Mit Text bleibt er auch in einer anderen Sprache.
+        std::fs::write(e.join("main.typ"), format!("{}Hello\n", haupt(&e))).unwrap();
+        let e = entwurf_sichern_in(&q, &ziel, Some("de")).unwrap();
+        assert!(haupt(&e).ends_with("Hello\n"), "{}", haupt(&e));
+        let _ = std::fs::remove_dir_all(&o);
     }
 
     #[test]
@@ -756,7 +825,7 @@ mod tests {
     fn vorschaubild_ist_png() {
         let vorher = tempreste();
         let q = quellen(&typen(), &ordner("bild"));
-        let png = vorschaubild(&q, "tftn-fachartikel").unwrap();
+        let png = vorschaubild(&q, "tftn-fachartikel", None).unwrap();
         assert!(png.starts_with(b"\x89PNG"));
         assert_eq!(tempreste(), vorher, "Temp-Ordner nicht aufgeräumt");
     }
@@ -775,19 +844,29 @@ mod tests {
     fn anlegen_kern() {
         let o = ordner("anlegen");
         let q = quellen(&typen(), &o);
-        let p = anlegen(&q, "tftn-fachartikel", &o, "Probe", true).unwrap();
+        let p = anlegen(&q, "tftn-fachartikel", &o, "Probe", true, None).unwrap();
         assert_eq!(p, o.join("Probe").canonicalize().unwrap());
         assert!(o.join("Probe/tftn.toml").is_file());
         let main = std::fs::read_to_string(o.join("Probe/main.typ")).unwrap();
-        let e = anlegen(&q, "tftn-fachartikel", &o, "Probe", true).unwrap_err();
+        let e = anlegen(&q, "tftn-fachartikel", &o, "Probe", true, None).unwrap_err();
         assert!(e.contains("nicht leer"), "{e}");
         assert_eq!(
             std::fs::read_to_string(o.join("Probe/main.typ")).unwrap(),
             main
         );
         // Ein fehlender Zielordner wird angelegt.
-        assert!(anlegen(&q, "tftn-fachartikel", &o.join("gibtsnicht"), "X", true).is_ok());
-        assert!(anlegen(&q, "tftn-fachartikel", &o, "a/b", true).is_err());
+        assert!(
+            anlegen(
+                &q,
+                "tftn-fachartikel",
+                &o.join("gibtsnicht"),
+                "X",
+                true,
+                None
+            )
+            .is_ok()
+        );
+        assert!(anlegen(&q, "tftn-fachartikel", &o, "a/b", true, None).is_err());
         let _ = std::fs::remove_dir_all(&o);
     }
 
@@ -798,7 +877,7 @@ mod tests {
         assert_eq!(js.typen.len(), 2);
         assert_eq!(js.typen[0].name, "tftn-fachartikel");
         assert_eq!(js.typen[1].name, "tftn-leer");
-        assert_eq!(js.typen[0].version, "0.2.0");
+        assert_eq!(js.typen[0].version, "0.3.0");
         let v = serde_json::to_value(&js).unwrap();
         assert_eq!(v["typen"][0]["herkunft"], "tftn");
         assert!(v.get("eigener_ordner").is_some() && v.get("vorgabe_ordner").is_some());
@@ -828,7 +907,7 @@ mod tests {
         let v = vergleichen_in(&p, &quellen(&typen(), &o), &o).unwrap();
         assert!(v.fehler.is_empty(), "{:?}", v.fehler);
         assert_eq!(v.alt, "@local/tftn-fachartikel:0.1.0");
-        assert!(v.neu.ends_with("0.2.0"), "{}", v.neu);
+        assert!(v.neu.ends_with("0.3.0"), "{}", v.neu);
         assert_eq!(v.stellen, ["main.typ"]);
         assert_eq!(probereste(&o), 0, "Probekopie nicht entfernt");
         for b in &v.bilder {
@@ -855,7 +934,7 @@ mod tests {
         );
         assert_eq!(patch.text, a.neu);
         let tftn = std::fs::read_to_string(p.wurzel.join("tftn.toml")).unwrap();
-        assert!(tftn.contains("tftn-fachartikel:0.2.0"), "{tftn}");
+        assert!(tftn.contains("tftn-fachartikel:0.3.0"), "{tftn}");
         assert_eq!(
             std::fs::read_to_string(p.wurzel.join("main.typ")).unwrap(),
             main
@@ -889,7 +968,7 @@ mod tests {
         std::fs::write(o.join("tftn.toml"), "tftn = 2\n").unwrap();
         assert!(wechsel_pruefen(&o).is_err(), "kaputte tftn.toml");
         let q = quellen(&typen(), &o.join("leer"));
-        let p = anlegen(&q, "tftn-fachartikel", &o, "Gut", true).unwrap();
+        let p = anlegen(&q, "tftn-fachartikel", &o, "Gut", true, None).unwrap();
         assert_eq!(wechsel_pruefen(&o.join("Gut")).unwrap(), p);
         let _ = std::fs::remove_dir_all(&o);
     }
@@ -904,7 +983,7 @@ mod tests {
         let t = std::fs::read_to_string(&toml).unwrap();
         std::fs::write(
             &toml,
-            t.replace(r#"version = "0.2.0""#, r#"version = "0.3.0""#),
+            t.replace(r#"version = "0.3.0""#, r#"version = "0.4.0""#),
         )
         .unwrap();
         let lib = std::fs::read_to_string(eigen.join("lib.typ")).unwrap();
@@ -934,7 +1013,7 @@ mod tests {
     fn projekt_meldet_neuere_version() {
         let (p, o) = testartikel("neujs");
         let n = neue_version_js(&p, &quellen(&typen(), &o)).unwrap();
-        assert_eq!(n.version, "0.2.0");
+        assert_eq!(n.version, "0.3.0");
         assert_eq!(n.herkunft, Herkunft::Tftn);
         let _ = std::fs::remove_dir_all(&o);
     }

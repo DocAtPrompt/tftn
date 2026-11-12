@@ -20,8 +20,8 @@ left, see the finished page on the right as you type. Built with Rust, Tauri 2 a
   with a fixed list of addresses. Your text stays plain Typst; `tftn gegenprobe` prints the
   `typst compile` command that produces the identical PDF without TFTN.
 
-Interface in English and German; more languages can be added as plain files. The bundled document
-types are German-language templates for now.
+Interface and bundled document types in English and German; more interface languages can be added
+as plain files. New documents follow the interface language.
 
 **Status:** early but usable day to day on macOS (Apple silicon). Windows builds and passes the test
 suite, but has not been tried by hand yet.

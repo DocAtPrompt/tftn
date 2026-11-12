@@ -50,6 +50,31 @@ export function tn(quelle: string, werte?: Record<string, string | number>): str
   return einsetzen(texte[quelle] || quelle, werte);
 }
 
+/** Sichtbare Texte aus Dokumenttypen und Paketbeschreibungen (sie stehen deutsch in den Dateien). */
+const SICHTBAR = new Set(["titel", "gruppe", "hilfe", "baustein", "beschreibung", "braucht", "beschriftungen"]);
+/** Werte des Dokuments bzw. Typst-Werte: nie übersetzen, auch nicht darin. */
+const WERTE = new Set(["werte", "wert", "standard"]);
+
+function sichtbarUebersetzen(x: unknown): unknown {
+  if (typeof x === "string") return tn(x);
+  if (Array.isArray(x)) return x.map((e) => (typeof e === "string" ? tn(e) : texteUebersetzen(e)));
+  return texteUebersetzen(x);
+}
+
+/**
+ * Übersetzt in einer Antwort aus Rust die sichtbaren Texte, die aus `typen/` und `pakete/` kommen
+ * (Titel, Gruppen, Hilfen …), in jeder Tiefe. Werte des Dokuments bleiben, wie sie sind.
+ */
+export function texteUebersetzen<T>(x: T): T {
+  if (Array.isArray(x)) return x.map((e) => texteUebersetzen(e)) as T;
+  if (x === null || typeof x !== "object") return x;
+  const aus: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(x as Record<string, unknown>)) {
+    aus[k] = WERTE.has(k) ? v : SICHTBAR.has(k) ? sichtbarUebersetzen(v) : texteUebersetzen(v);
+  }
+  return aus as T;
+}
+
 const ATTRIBUTE = ["title", "placeholder", "aria-label"];
 
 /** Ersetzt den Text ohne den Leerraum drumherum; `null`, wenn es keine Übersetzung gibt. */

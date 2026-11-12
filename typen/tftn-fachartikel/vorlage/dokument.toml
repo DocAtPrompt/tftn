@@ -1,4 +1,5 @@
 titel = "Titel des Artikels"
+sprache = "de"
 datum = 2026-01-15
 abstract = "Eine kurze Zusammenfassung mit *Hervorhebung*."
 schlagworte = ["Schlagwort eins", "Schlagwort zwei"]
