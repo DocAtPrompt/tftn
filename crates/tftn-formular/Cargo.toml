@@ -1,0 +1,22 @@
+[package]
+name = "tftn-formular"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+# Formular aus dem Schema des Dokumenttyps (Profil „TFTN-Schema 1“, KONZEPT 6), Prüfung am Feld und
+# verlustfreies Schreiben von dokument.toml (KONZEPT 4.7, PLAN-M2 AP7).
+
+[dependencies]
+tftn-sprachen.workspace = true
+serde.workspace = true
+# preserve_order: Eigenschaften in Schema-Reihenfolge (KONZEPT 6, x-tftn-reihenfolge)
+serde_json = { workspace = true, features = ["preserve_order"] }
+toml_edit = "0.22"
+typst-syntax.workspace = true
+regex = "1"
+
+[dev-dependencies]
+proptest = "1"

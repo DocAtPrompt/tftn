@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de-AT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TFTN</title>
+    <link rel="stylesheet" href="./src/stil.css" />
+  </head>
+  <body>
+    <header id="kopf">
+      <span id="datei">…</span><span id="hinweis" hidden></span>
+      <button id="neu-knopf" title="Neues Dokument aus einer Vorlage, etwa Fachartikel">Vorlage …</button>
+      <button id="import-knopf" title="Word, OpenDocument, Markdown, HTML, EPUB oder LaTeX über Pandoc übernehmen">Importieren …</button>
+      <button id="oeffnen-knopf" title="Anderes Projekt öffnen (Cmd/Strg+O)">Öffnen …</button>
+      <button id="fassungen-knopf" title="Frühere Fassungen ansehen und zurückholen">Fassungen …</button>
+      <button id="export-knopf" title="Export-Profile des Dokumenttyps">Export ▾</button>
+      <button id="seitenleiste-knopf" title="Seitenleiste">Seitenleiste</button>
+      <button id="schreibansicht-knopf" title="Nur der Text, ohne Ablenkung">Schreibansicht</button>
+      <button id="einstellungen-knopf" title="Einstellungen und Tastenkürzel">Einstellungen …</button>
+    </header>
+    <main id="arbeit">
+      <section id="links">
+        <nav id="gliederung" aria-label="Gliederung"></nav>
+        <div id="schreiben">
+          <div id="editor-knoepfe">
+            <button id="baustein-knopf" title="Baustein einfügen (Cmd/Strg+Umschalt+B; in einer Leerzeile auch „/“)">Baustein …</button>
+            <button id="zitat-knopf" title="Zitat einfügen (Cmd/Strg+Umschalt+L)">Zitat einfügen</button>
+            <button id="gliederung-knopf" title="Überschriften neben dem Text: hinspringen, Abschnitte verschieben">Gliederung</button>
+            <button id="seite-knopf" title="Format, Schrift und Sprache">Seite …</button>
+          </div>
+          <div id="editor"></div>
+        </div>
+      </section>
+      <section id="vorschau">
+        <div id="banner" hidden></div>
+        <div id="seiten"></div>
+      </section>
+    </main>
+    <footer id="status"><span id="zaehler" title="Gezählt wird der geschriebene Text: ohne Befehle, Formeln, Code und Kommentare"></span><span id="sprache" title="Rechtschreibung nach Dokumentsprache; Rechtsklick auf ein unterwelltes Wort zeigt Vorschläge"></span><span id="sync"></span><span id="netz"></span><span id="latenz"></span></footer>
+    <button id="schreibansicht-ende" title="Schreibansicht verlassen (Esc)">Schreibansicht verlassen</button>
+    <script type="module" src="./src/start.ts"></script>
+  </body>
+</html>

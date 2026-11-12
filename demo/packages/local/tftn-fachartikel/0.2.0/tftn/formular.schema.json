@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fachartikel",
+  "type": "object",
+  "required": ["titel", "autoren"],
+  "x-tftn-reihenfolge": ["titel", "untertitel", "autoren", "datum", "abstract", "schlagworte", "literatur"],
+  "properties": {
+    "titel": { "type": "string", "title": "Titel", "x-tftn-pandoc": "title" },
+    "untertitel": { "type": "string", "title": "Untertitel", "x-tftn-pandoc": "subtitle" },
+    "autoren": {
+      "type": "array",
+      "title": "Autorinnen und Autoren",
+      "minItems": 1,
+      "x-tftn-pandoc": "author",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "title": "Name" },
+          "orcid": { "type": "string", "title": "ORCID", "format": "orcid" },
+          "institution": { "type": "array", "title": "Institution", "items": { "type": "string" } },
+          "korrespondierend": { "type": "boolean", "title": "Korrespondierend", "default": false },
+          "email": { "type": "string", "title": "E-Mail", "format": "email" }
+        }
+      }
+    },
+    "datum": { "type": "string", "title": "Datum", "format": "date", "x-tftn-pandoc": "date" },
+    "abstract": {
+      "type": "string",
+      "title": "Zusammenfassung",
+      "x-tftn-widget": "markup",
+      "x-tftn-pandoc": "abstract"
+    },
+    "schlagworte": {
+      "type": "array",
+      "title": "Schlagwörter",
+      "items": { "type": "string" },
+      "x-tftn-pandoc": "keywords"
+    },
+    "literatur": {
+      "type": "object",
+      "title": "Literatur",
+      "x-tftn-gruppe": "Literatur",
+      "required": ["dateien"],
+      "properties": {
+        "dateien": {
+          "type": "array",
+          "title": "Literaturdateien",
+          "description": "BibLaTeX (.bib) oder Hayagriva (.yaml), relativ zum Projektordner",
+          "minItems": 1,
+          "items": { "type": "string", "format": "literaturdatei" }
+        },
+        "stil": {
+          "type": "string",
+          "title": "Zitierstil",
+          "description": "Eingebauter Stil (z. B. american-psychological-association, ieee) oder eine .csl-Datei im Projekt",
+          "format": "zitierstil",
+          "default": "american-psychological-association"
+        }
+      }
+    }
+  }
+}

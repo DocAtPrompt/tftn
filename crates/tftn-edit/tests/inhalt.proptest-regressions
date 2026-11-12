@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 736615f7178b39ad7b09557699705f477f06670a59cbc473239150ad7959b2f5 # shrinks to (v, a, n, neu) = ("", "#figure(image(\"ZIEL.png\"), caption: [Text])", "", "")
+cc b0f70d1e1a566ea31a14193e397eedb0dc2a6a7962f702840d8e8fc6eba52ad1 # shrinks to (v, a, n, neu) = ("", "#hinweis(art: \"info\")[ZIEL*fett*]", "", "")
+cc 5289042c70276db48fe22bfd1597ca74ff193d117f00356c4f09665593573460 # shrinks to (v, a, n, neu) = ("", "#figure(image(\"ZIEL.png\"), caption: [])", "", "Text*fett* ")

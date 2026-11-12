@@ -1,0 +1,12 @@
+[package]
+name = "tftn-sprachen"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+# Sprache der Oberfläche: Deutsch steht im Code, jede andere Sprache ist eine Datei in `sprachen/`.
+
+[dependencies]
+toml.workspace = true

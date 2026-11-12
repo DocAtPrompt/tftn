@@ -1,0 +1,47 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "src-tauri", "xtask"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+publish = false
+license = "MIT OR Apache-2.0"
+
+# Typst ist auf genau eine Version festgelegt (KONZEPT E2).
+[workspace.dependencies]
+typst = "=0.15.1"
+typst-ide = "=0.15.1"
+typst-kit = { version = "=0.15.1", default-features = false }
+typst-layout = "=0.15.1"
+typst-render = "=0.15.1"
+typst-syntax = "=0.15.1"
+tftn-core = { path = "crates/tftn-core" }
+tftn-edit = { path = "crates/tftn-edit" }
+tftn-einstellungen = { path = "crates/tftn-einstellungen" }
+tftn-export = { path = "crates/tftn-export" }
+tftn-formular = { path = "crates/tftn-formular" }
+tftn-katalog = { path = "crates/tftn-katalog" }
+tftn-literatur = { path = "crates/tftn-literatur" }
+tftn-manifest = { path = "crates/tftn-manifest" }
+tftn-messen = { path = "crates/tftn-messen" }
+tftn-holer = { path = "crates/tftn-holer" }
+tftn-pakete = { path = "crates/tftn-pakete" }
+tftn-sprachen = { path = "crates/tftn-sprachen" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+comemo = "0.5.1"
+toml = "0.9"
+semver = "1"
+# Pakete holen (PLAN-M2 AP9): Archive prüfen und entpacken.
+flate2 = "1"
+sha2 = "0.10"
+tar = "0.4"
+# Rechtschreibung nach Dokumentsprache: Hunspell-Wörterbücher aus `woerterbuecher/`.
+spellbook = "0.4.2"
+
+# Abhängigkeiten (Typst, Rastern) auch im Entwicklungsbau optimieren: unoptimiert braucht die
+# Vorschau in `tauri dev` Sekunden statt Millisekunden. Eigene Crates bleiben schnell übersetzbar.
+[profile.dev.package."*"]
+opt-level = 2

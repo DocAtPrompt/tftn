@@ -1,0 +1,60 @@
+# Symbole der Formel-Palette (PLAN-M2 AP10, Festlegung 3). `text` wird eingefügt, `zeichen` steht auf
+# dem Knopf. Der Test `symbole_uebersetzen` prüft jeden Namen gegen typst.
+
+[[gruppe]]
+name = "Griechisch"
+symbol = [
+  { text = "alpha", zeichen = "α" }, { text = "beta", zeichen = "β" }, { text = "gamma", zeichen = "γ" },
+  { text = "delta", zeichen = "δ" }, { text = "epsilon", zeichen = "ε" }, { text = "zeta", zeichen = "ζ" },
+  { text = "eta", zeichen = "η" }, { text = "theta", zeichen = "θ" }, { text = "iota", zeichen = "ι" },
+  { text = "kappa", zeichen = "κ" }, { text = "lambda", zeichen = "λ" }, { text = "mu", zeichen = "μ" },
+  { text = "nu", zeichen = "ν" }, { text = "xi", zeichen = "ξ" }, { text = "pi", zeichen = "π" },
+  { text = "rho", zeichen = "ρ" }, { text = "sigma", zeichen = "σ" }, { text = "tau", zeichen = "τ" },
+  { text = "phi", zeichen = "φ" }, { text = "chi", zeichen = "χ" }, { text = "psi", zeichen = "ψ" },
+  { text = "omega", zeichen = "ω" }, { text = "Gamma", zeichen = "Γ" }, { text = "Delta", zeichen = "Δ" },
+  { text = "Theta", zeichen = "Θ" }, { text = "Lambda", zeichen = "Λ" }, { text = "Xi", zeichen = "Ξ" },
+  { text = "Pi", zeichen = "Π" }, { text = "Sigma", zeichen = "Σ" }, { text = "Phi", zeichen = "Φ" },
+  { text = "Psi", zeichen = "Ψ" }, { text = "Omega", zeichen = "Ω" },
+]
+
+[[gruppe]]
+name = "Operatoren"
+symbol = [
+  { text = "plus.minus", zeichen = "±" }, { text = "minus.plus", zeichen = "∓" }, { text = "times", zeichen = "×" },
+  { text = "div", zeichen = "÷" }, { text = "dot.op", zeichen = "⋅" }, { text = "compose", zeichen = "∘" },
+  { text = "union", zeichen = "∪" }, { text = "inter", zeichen = "∩" }, { text = "and", zeichen = "∧" },
+  { text = "or", zeichen = "∨" }, { text = "not", zeichen = "¬" }, { text = "nabla", zeichen = "∇" },
+  { text = "partial", zeichen = "∂" }, { text = "dif", zeichen = "d" },
+]
+
+[[gruppe]]
+name = "Relationen"
+symbol = [
+  { text = "eq.not", zeichen = "≠" }, { text = "lt.eq", zeichen = "≤" }, { text = "gt.eq", zeichen = "≥" },
+  { text = "lt.double", zeichen = "≪" }, { text = "gt.double", zeichen = "≫" }, { text = "approx", zeichen = "≈" },
+  { text = "tilde.op", zeichen = "∼" }, { text = "equiv", zeichen = "≡" }, { text = "prop", zeichen = "∝" },
+  { text = "in", zeichen = "∈" }, { text = "in.not", zeichen = "∉" }, { text = "subset", zeichen = "⊂" },
+  { text = "subset.eq", zeichen = "⊆" }, { text = "supset", zeichen = "⊃" }, { text = "supset.eq", zeichen = "⊇" },
+  { text = "perp", zeichen = "⟂" }, { text = "parallel", zeichen = "∥" },
+]
+
+[[gruppe]]
+name = "Pfeile"
+symbol = [
+  { text = "arrow.r", zeichen = "→" }, { text = "arrow.l", zeichen = "←" }, { text = "arrow.t", zeichen = "↑" },
+  { text = "arrow.b", zeichen = "↓" }, { text = "arrow.l.r", zeichen = "↔" }, { text = "arrow.r.double", zeichen = "⇒" },
+  { text = "arrow.l.double", zeichen = "⇐" }, { text = "arrow.l.r.double", zeichen = "⇔" }, { text = "arrow.r.bar", zeichen = "↦" },
+  { text = "arrow.r.long", zeichen = "⟶" },
+]
+
+[[gruppe]]
+name = "Sonstiges"
+symbol = [
+  { text = "infinity", zeichen = "∞" }, { text = "forall", zeichen = "∀" }, { text = "exists", zeichen = "∃" },
+  { text = "exists.not", zeichen = "∄" }, { text = "emptyset", zeichen = "∅" }, { text = "degree", zeichen = "°" },
+  { text = "dots.h", zeichen = "…" }, { text = "dots.c", zeichen = "⋯" }, { text = "dots.v", zeichen = "⋮" },
+  { text = "dots.down", zeichen = "⋱" }, { text = "angle", zeichen = "∠" }, { text = "therefore", zeichen = "∴" },
+  { text = "because", zeichen = "∵" }, { text = "ell", zeichen = "ℓ" }, { text = "planck", zeichen = "ℎ" },
+  { text = "aleph", zeichen = "ℵ" }, { text = "NN", zeichen = "ℕ" }, { text = "ZZ", zeichen = "ℤ" },
+  { text = "QQ", zeichen = "ℚ" }, { text = "RR", zeichen = "ℝ" }, { text = "CC", zeichen = "ℂ" },
+]

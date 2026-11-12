@@ -1,0 +1,6 @@
+# Genau eine Rust-Version auf Mac und Windows (PLAN-M1 0.3).
+# 1.92 ist die Mindestversion von Typst 0.15.
+[toolchain]
+channel = "1.92.0"
+profile = "minimal"
+components = ["rustfmt", "clippy"]

@@ -1,0 +1,159 @@
+# Bausteine für cetz-plot (PLAN-M2 AP10): Diagramme aus Daten, inline oder aus CSV. Die Zeichenfläche
+# kommt aus cetz, und zwar aus der Version, die cetz-plot selbst nutzt (`auch`). Prüfen: tftn typ-pruefen.
+paket = "cetz-plot"
+versionen = ">=0.1.4, <0.2.0"
+empfohlen = "0.1.4"
+titel = "Diagramme aus Daten"
+import = '#import "@preview/cetz-plot:{version}"'
+auch = ["cetz"]
+
+[[baustein]]
+id = "linien"
+funktion = "cetz-plot.plot.plot"
+titel = "Liniendiagramm"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.plot.plot(size: (8, 5), x-label: [${feld:X-Achse:x}], y-label: [${feld:Y-Achse:y}], {
+    cetz-plot.plot.add((${feld:Daten:(0, 0), (1, 2), (2, 1)}))
+  })
+})'''
+
+[baustein.parameter.size]
+widget = "punkt"
+titel = "Größe (Breite, Höhe)"
+
+[baustein.parameter.x-label]
+widget = "inhalt"
+titel = "Beschriftung X-Achse"
+
+[baustein.parameter.y-label]
+widget = "inhalt"
+titel = "Beschriftung Y-Achse"
+
+[[baustein]]
+id = "streu"
+funktion = "cetz-plot.plot.plot"
+titel = "Streudiagramm"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.plot.plot(size: (8, 5), x-label: [${feld:X-Achse:x}], y-label: [${feld:Y-Achse:y}], {
+    cetz-plot.plot.add((${feld:Daten:(0, 0), (1, 2), (2, 1)}), mark: "o", style: (stroke: none))
+  })
+})'''
+
+[[baustein]]
+id = "reihe"
+funktion = "cetz-plot.plot.add"
+titel = "Weitere Datenreihe"
+gruppe = "Daten"
+modus = ["code"]
+einfuegen = '''cetz-plot.plot.add((${feld:Daten:(0, 1), (1, 1), (2, 3)}))'''
+
+[baustein.parameter.daten]
+widget = "liste"
+element = "punkt"
+titel = "Punkte"
+position = 0
+
+[[baustein]]
+id = "saeulen"
+funktion = "cetz-plot.chart.columnchart"
+titel = "Säulendiagramm"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.chart.columnchart((${feld:Daten:("A", 3), ("B", 5), ("C", 2)}), size: (8, 5), x-label: [${feld:X-Achse:x}], y-label: [${feld:Y-Achse:y}])
+})'''
+
+[baustein.parameter.size]
+widget = "punkt"
+titel = "Größe (Breite, Höhe)"
+
+[baustein.parameter.x-label]
+widget = "inhalt"
+titel = "Beschriftung X-Achse"
+
+[baustein.parameter.y-label]
+widget = "inhalt"
+titel = "Beschriftung Y-Achse"
+
+[[baustein]]
+id = "balken"
+funktion = "cetz-plot.chart.barchart"
+titel = "Balkendiagramm"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.chart.barchart((${feld:Daten:("A", 3), ("B", 5), ("C", 2)}), size: (8, 5), x-label: [${feld:X-Achse:x}], y-label: [${feld:Y-Achse:y}])
+})'''
+
+[baustein.parameter.size]
+widget = "punkt"
+titel = "Größe (Breite, Höhe)"
+
+[baustein.parameter.x-label]
+widget = "inhalt"
+titel = "Beschriftung X-Achse"
+
+[baustein.parameter.y-label]
+widget = "inhalt"
+titel = "Beschriftung Y-Achse"
+
+[[baustein]]
+id = "kreis"
+funktion = "cetz-plot.chart.piechart"
+titel = "Kreisdiagramm"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.chart.piechart((${feld:Daten:("A", 3), ("B", 5), ("C", 2)}), value-key: 1, label-key: 0, radius: 2)
+})'''
+
+[baustein.parameter.radius]
+widget = "zahl"
+titel = "Radius"
+min = 0.0
+
+[[baustein]]
+id = "linien-csv"
+funktion = "csv"
+titel = "Liniendiagramm aus CSV"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.plot.plot(size: (8, 5), x-label: [${feld:X-Achse:x}], y-label: [${feld:Y-Achse:y}], {
+    cetz-plot.plot.add(csv("${feld:Datei:daten.csv}").slice(1).map(z => (float(z.at(0)), float(z.at(1)))))
+  })
+})'''
+
+[baustein.parameter.pfad]
+widget = "datei"
+titel = "CSV-Datei"
+position = 0
+endungen = ["csv"]
+
+[[baustein]]
+id = "streu-csv"
+funktion = "cetz-plot.plot.plot"
+titel = "Streudiagramm aus CSV"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.plot.plot(size: (8, 5), x-label: [${feld:X-Achse:x}], y-label: [${feld:Y-Achse:y}], {
+    cetz-plot.plot.add(csv("${feld:Datei:daten.csv}").slice(1).map(z => (float(z.at(0)), float(z.at(1)))), mark: "o", style: (stroke: none))
+  })
+})'''
+
+[[baustein]]
+id = "saeulen-csv"
+funktion = "cetz-plot.chart.columnchart"
+titel = "Säulendiagramm aus CSV"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.chart.columnchart(csv("${feld:Datei:daten.csv}").slice(1).map(z => (z.at(0), float(z.at(1)))), size: (8, 5), x-label: [${feld:X-Achse:x}], y-label: [${feld:Y-Achse:y}])
+})'''
+
+[[baustein]]
+id = "kreis-csv"
+funktion = "cetz-plot.chart.piechart"
+titel = "Kreisdiagramm aus CSV"
+gruppe = "Daten"
+einfuegen = '''#cetz.canvas({
+  cetz-plot.chart.piechart(csv("${feld:Datei:daten.csv}").slice(1).map(z => (z.at(0), float(z.at(1)))), value-key: 1, label-key: 0, radius: 2)
+})'''
+

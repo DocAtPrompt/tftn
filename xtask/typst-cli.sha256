@@ -1,0 +1,5 @@
+# typst-CLI-Archive von https://github.com/typst/typst/releases/tag/v0.15.1
+# SHA-256 laut GitHub-Release (abgerufen 2026-10-31). Format: version  ziel  sha256  datei
+0.15.1  aarch64-apple-darwin      48f62ed034aa3a7978309579ac6ca00045e2ef0da73114e8af27cfd8e74dc05a  typst-aarch64-apple-darwin.tar.xz
+0.15.1  x86_64-pc-windows-msvc    19ce3551153c2fe7ee9fa2f95208310c8f4d3209fedb699e0333faf8913f6736  typst-x86_64-pc-windows-msvc.zip
+0.15.1  x86_64-unknown-linux-musl  a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c  typst-x86_64-unknown-linux-musl.tar.xz

@@ -1,0 +1,18 @@
+# Erfundene Testdaten (PLAN-M1 0.5)
+titel = "Über die Reproduzierbarkeit ärztlicher Dokumentation"
+datum = 2026-01-15
+abstract = """
+Ärztliche Befunde werden häufig mit Textverarbeitungen erstellt, deren Ergebnis sich nach Jahren \
+nicht mehr gleich erzeugen lässt. Wir beschreiben ein Vorgehen, bei dem Text, Formularwerte und \
+Literatur getrennt gespeichert und zu einem bytegleichen PDF zusammengesetzt werden. An 1.248 \
+erfundenen Befunden zeigen wir, dass sich der Aufwand für die Gestaltung um rund 30 % senken lässt."""
+schlagworte = ["Dokumentation", "Schriftsatz", "Reproduzierbarkeit", "Allgemeinmedizin"]
+
+[[autoren]]
+name = "Erika Musterfrau"
+institution = ["Erfundene Medizinische Universität, Innsbruck"]
+korrespondierend = true
+
+[[autoren]]
+name = "Jörg Österreicher"
+institution = ["Beispielpraxis für Allgemeinmedizin, Wien"]

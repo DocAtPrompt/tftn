@@ -1,0 +1,344 @@
+# Bausteine aus Typst selbst (Entwurf 2026-11-04 Abschnitt 5, Quelle 1). Format wie
+# [[tool.tftn.baustein]] im Manifest (KONZEPT 5.4); `funktion` fehlt bei reiner Markup-Syntax.
+
+[[baustein]]
+id = "ueberschrift"
+titel = "Überschrift"
+gruppe = "Text"
+einfuegen = "= ${feld:Titel}"
+
+[[baustein]]
+id = "unterueberschrift"
+titel = "Unterüberschrift"
+gruppe = "Text"
+einfuegen = "== ${feld:Titel}"
+
+[[baustein]]
+id = "abbildung"
+titel = "Abbildung"
+gruppe = "Abbildungen"
+funktion = "figure"
+einfuegen = """
+#figure(
+  image("${feld:Datei:bilder/bild.png}"),
+  caption: [${feld:Bildunterschrift}],
+)"""
+
+[baustein.parameter.caption]
+widget = "inhalt"
+titel = "Unterschrift"
+
+[[baustein]]
+id = "bild"
+titel = "Bild"
+gruppe = "Abbildungen"
+funktion = "image"
+einfuegen = '#image("${feld:Datei:bilder/bild.png}")'
+
+[baustein.parameter.pfad]
+widget = "datei"
+position = 0
+endungen = ["png", "jpg", "jpeg", "gif", "svg", "webp", "pdf"]
+titel = "Datei"
+
+[baustein.parameter.width]
+widget = "prozent"
+min = 1
+max = 100
+titel = "Breite"
+
+[[baustein]]
+id = "tabelle"
+titel = "Tabelle"
+gruppe = "Abbildungen"
+funktion = "table"
+einfuegen = """
+#figure(
+  table(
+    columns: 2,
+    [${feld:Kopf 1}], [${feld:Kopf 2}],
+    [${feld:Zelle}], [],
+  ),
+  caption: [${feld:Tabellenunterschrift}],
+)"""
+
+[[baustein]]
+id = "fussnote"
+titel = "Fußnote"
+gruppe = "Text"
+funktion = "footnote"
+einfuegen = "#footnote[${auswahl}]"
+
+[baustein.parameter.text]
+widget = "inhalt"
+rumpf = true
+titel = "Text"
+
+[[baustein]]
+id = "formel"
+titel = "Formel"
+gruppe = "Formeln"
+einfuegen = "$ ${feld:Formel:x} $"
+
+[[baustein]]
+id = "formel-im-satz"
+titel = "Formel im Satz"
+gruppe = "Formeln"
+einfuegen = "$${feld:Formel:x}$"
+
+[[baustein]]
+id = "zitatblock"
+titel = "Zitat als Block"
+gruppe = "Text"
+funktion = "quote"
+einfuegen = "#quote(block: true)[${auswahl}]"
+
+[baustein.parameter.text]
+widget = "inhalt"
+rumpf = true
+titel = "Text"
+
+[baustein.parameter.attribution]
+widget = "inhalt"
+titel = "Quelle"
+
+[baustein.parameter.block]
+widget = "schalter"
+titel = "Als Block"
+
+[[baustein]]
+id = "liste"
+titel = "Liste"
+gruppe = "Text"
+einfuegen = "- ${auswahl}"
+
+[[baustein]]
+id = "aufzaehlung"
+titel = "Aufzählung"
+gruppe = "Text"
+einfuegen = "+ ${auswahl}"
+
+[[baustein]]
+id = "link"
+titel = "Link"
+gruppe = "Text"
+funktion = "link"
+einfuegen = '#link("${feld:Adresse:https://}")[${auswahl}]'
+
+[baustein.parameter.ziel]
+widget = "text"
+position = 0
+titel = "Ziel"
+
+[baustein.parameter.text]
+widget = "inhalt"
+rumpf = true
+titel = "Text"
+
+[[baustein]]
+id = "code"
+titel = "Programmcode"
+gruppe = "Text"
+funktion = "raw"
+einfuegen = """
+```${feld:Sprache:}
+${auswahl}
+```"""
+
+# Gilt für `#raw("…", lang: …)`; ein ```-Block ist kein Aufruf und hat keine Widgets.
+[baustein.parameter.code]
+widget = "text"
+position = 0
+mehrzeilig = true
+titel = "Code"
+
+[baustein.parameter.lang]
+widget = "text"
+titel = "Sprache"
+
+[baustein.parameter.block]
+widget = "schalter"
+titel = "Als Block"
+
+[[baustein]]
+id = "seitenumbruch"
+titel = "Seitenumbruch"
+gruppe = "Seite"
+funktion = "pagebreak"
+einfuegen = "#pagebreak()"
+
+[[baustein]]
+id = "inhaltsverzeichnis"
+titel = "Inhaltsverzeichnis"
+gruppe = "Seite"
+funktion = "outline"
+einfuegen = "#outline()"
+
+[baustein.parameter.title]
+widget = "inhalt"
+titel = "Titel"
+
+[baustein.parameter.depth]
+widget = "zahl"
+ganzzahl = true
+min = 1
+max = 6
+titel = "Tiefe"
+
+[[baustein]]
+id = "fett"
+titel = "Fett"
+gruppe = "Auszeichnung"
+funktion = "strong"
+einfuegen = "#strong[${feld:Text}]"
+
+[baustein.parameter.text]
+widget = "inhalt"
+rumpf = true
+titel = "Text"
+
+[[baustein]]
+id = "kursiv"
+titel = "Kursiv"
+gruppe = "Auszeichnung"
+funktion = "emph"
+einfuegen = "#emph[${feld:Text}]"
+
+[baustein.parameter.text]
+widget = "inhalt"
+rumpf = true
+titel = "Text"
+
+# Formel-Aufbau (PLAN-M2 AP10, Festlegung 3): innerhalb einer Formel und in der Palette des Fachs „Formel“.
+
+[[baustein]]
+id = "formel-mehrzeilig"
+titel = "Mehrzeilige Formel"
+gruppe = "Formeln"
+einfuegen = "$ ${feld:Links:a} &= ${feld:Rechts:b} \\\n  &= ${feld:Weiter:c} $"
+
+[[baustein]]
+id = "mathe-bruch"
+titel = "Bruch"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'frac(${feld:Zähler:a}, ${feld:Nenner:b})'
+
+[[baustein]]
+id = "mathe-wurzel"
+titel = "Wurzel"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'sqrt(${feld:Inhalt:x})'
+
+[[baustein]]
+id = "mathe-nte-wurzel"
+titel = "n-te Wurzel"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'root(${feld:Grad:3}, ${feld:Inhalt:x})'
+
+[[baustein]]
+id = "mathe-hoch"
+titel = "Hochgestellt"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = '${feld:Basis:x}^(${feld:Exponent:2})'
+
+[[baustein]]
+id = "mathe-tief"
+titel = "Tiefgestellt"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = '${feld:Basis:x}_(${feld:Index:i})'
+
+[[baustein]]
+id = "mathe-summe"
+titel = "Summe"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'sum_(${feld:Von:i=1})^(${feld:Bis:n}) ${cursor}'
+
+[[baustein]]
+id = "mathe-produkt"
+titel = "Produkt"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'product_(${feld:Von:i=1})^(${feld:Bis:n}) ${cursor}'
+
+[[baustein]]
+id = "mathe-integral"
+titel = "Integral"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'integral_(${feld:Von:a})^(${feld:Bis:b}) ${feld:Inhalt:f(x)} dif ${feld:Variable:x}'
+
+[[baustein]]
+id = "mathe-grenzwert"
+titel = "Grenzwert"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'lim_(${feld:Stelle:x -> 0}) ${cursor}'
+
+[[baustein]]
+id = "mathe-matrix"
+titel = "Matrix"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'mat(${feld:A:a}, ${feld:B:b}; ${feld:C:c}, ${feld:D:d})'
+
+[[baustein]]
+id = "mathe-faelle"
+titel = "Fallunterscheidung"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'cases(${feld:Fall 1:1 "wenn" x > 0}, ${feld:Fall 2:0 "sonst"})'
+
+[[baustein]]
+id = "mathe-vektor"
+titel = "Vektor"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'vec(${feld:A:a}, ${feld:B:b})'
+
+[[baustein]]
+id = "mathe-klammer"
+titel = "Klammer, wachsend"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'lr((${feld:Inhalt:x}))'
+
+[[baustein]]
+id = "mathe-betrag"
+titel = "Betrag"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'abs(${feld:Inhalt:x})'
+
+[[baustein]]
+id = "mathe-norm"
+titel = "Norm"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = 'norm(${feld:Inhalt:x})'
+
+[[baustein]]
+id = "mathe-text"
+titel = "Text in der Formel"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = '"${feld:Text:wenn}"'
+
+[[baustein]]
+id = "mathe-ausrichten"
+titel = "Ausrichtungspunkt"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = '& '
+
+[[baustein]]
+id = "mathe-zeile"
+titel = "Neue Zeile"
+gruppe = "Formel-Aufbau"
+modus = ["mathe"]
+einfuegen = "\\\n"

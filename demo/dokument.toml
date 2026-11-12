@@ -1,0 +1,18 @@
+titel = "TFTN in fünf Minuten"
+untertitel = "Ein Beispielartikel zum Ausprobieren"
+datum = 2026-11-12
+abstract = "Dieser erfundene Artikel zeigt, was TFTN kann: Überschriften, Hervorhebungen, Listen, Formeln, eine Abbildung, eine Tabelle, Fußnoten, Querverweise und Zitate mit Literaturverzeichnis. Ändern Sie ruhig alles – die Vorschau folgt *sofort*."
+schlagworte = ["Typst", "Schreiben", "Beispiel"]
+
+[[autoren]]
+name = "Erika Beispiel"
+institution = ["Institut für erfundene Studien"]
+korrespondierend = true
+
+[[autoren]]
+name = "Max Muster"
+institution = ["Institut für erfundene Studien"]
+
+[literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"

@@ -1,0 +1,7 @@
+[package]
+name = "tftn-probe"
+version = "0.1.0"
+entrypoint = "lib.typ"
+authors = ["TFTN"]
+license = "MIT-0"
+description = "Testpaket für TFTN (selbst geschrieben, nicht im Universe)"

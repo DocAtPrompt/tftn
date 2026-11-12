@@ -1,0 +1,11 @@
+{
+  "build": {
+    "beforeBuildCommand": "npm run build && cargo xtask holer-bauen --release"
+  },
+  "bundle": {
+    "externalBin": [
+      "../_lokal/typst-cli/0.15.1/typst",
+      "../target/sidecar/tftn-holer"
+    ]
+  }
+}

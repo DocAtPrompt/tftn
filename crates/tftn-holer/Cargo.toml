@@ -1,0 +1,31 @@
+[package]
+name = "tftn-holer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+# Das einzige Crate mit HTTP-Client (PLAN-M2 AP9, Entwurf 8.2): holt nur von
+# https://packages.typst.org, schreibt nur in den Zwischenspeicher und beendet sich.
+
+[[bin]]
+name = "tftn-holer"
+path = "src/main.rs"
+
+[features]
+# Nur für Tests: erlaubt einen lokalen Prüfserver über --pruefserver (Festlegung 13).
+pruefserver = []
+
+[dependencies]
+serde_json.workspace = true
+tftn-pakete.workspace = true
+tftn-sprachen.workspace = true
+ureq = "3"
+
+[dev-dependencies]
+tftn-holer = { path = ".", features = ["pruefserver"] }
+flate2.workspace = true
+tar.workspace = true
+tftn-core.workspace = true
+tftn-export.workspace = true

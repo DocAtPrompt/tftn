@@ -1,0 +1,21 @@
+# Erzeugtes – wird auf jedem Rechner neu gebaut (siehe Büro/Claude/CLAUDE.md)
+/target/
+/src-tauri/target/
+/src-tauri/gen/
+/dist/
+node_modules/
+
+# Nicht gesichert, nicht versioniert
+_lokal/
+_renders/
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Frühere Fassungen, die TFTN beim Speichern ablegt (etwa im Testartikel)
+.fassungen/
+
+# Interne Papiere (eigenes Git, nie öffentlich)
+/intern/

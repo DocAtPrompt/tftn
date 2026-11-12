@@ -1,0 +1,9 @@
+paket = "demo"
+versionen = ">=0.1.0, <0.2.0"
+import = '#import "@preview/demo:{version}": kasten'
+
+[[baustein]]
+id = "kasten"
+funktion = "kasten"
+titel = "Demo-Kasten"
+einfuegen = "#kasten[${auswahl}]"

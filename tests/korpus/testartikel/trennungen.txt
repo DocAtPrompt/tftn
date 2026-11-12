@@ -1,0 +1,2 @@
+# Trennausnahmen: ein Wort je Zeile, erlaubte Trennstellen mit - markiert.
+Sozial-versicherungs-träger-dokumentations-pflicht

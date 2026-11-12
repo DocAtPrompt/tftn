@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 2ed10dde2e192dccd62053bf6d37d87c49a603bdee3c62df01ce113ec8853a46 # shrinks to start = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", schritte = [(0, "aa", 59538, 53456), (0, "", 0, 0), (0, "", 0, 0), (0, "", 0, 0), (0, "", 0, 0), (0, "ä\r\naa", 3639, 22391), (65, "\n", 19859, 21749), (0, "", 19130, 1)]
+cc 9be4e3de8a120f2f2335b2b7e01c333fd43493e42afc058e80c07f2ed3c26403 # shrinks to (alt, aenderungen) = ("# \"🇦$),𝔸g [xr\"krbpz`xxes\r𝔸eßd-a,däwrk😀\rlp", [Aenderung { von: 6, bis: 16, text: "" }])
+cc 5f7f2c100a4ec65ccd97de9487653be2a2db1bdcdf1062356d9e79fc14b3e7ba # shrinks to (alt, aenderungen) = ("*\n\n=\n\nb𝔸l\\🇦t_g gä]\n:axq$-x\nr[[j–d ", [Aenderung { von: 7, bis: 9, text: "😀“öß}" }]) (CI Linux 2026-11-01)
+cc 258d552714c76302dfe8a53c345d976302049715df2370ff923189416781614f # shrinks to (alt, aenderungen) = (" #$)u\nrqÄg𝔸 ä=\n{<o Ä_", [Aenderung { von: 0, bis: 0, text: "#" }, Aenderung { von: 2, bis: 2, text: "a" }])

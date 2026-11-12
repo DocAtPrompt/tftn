@@ -1,0 +1,7 @@
+[package]
+name = "tftn-probe-basis"
+version = "0.1.0"
+entrypoint = "lib.typ"
+authors = ["TFTN"]
+license = "MIT-0"
+description = "Abhängigkeit des Testpakets tftn-probe"

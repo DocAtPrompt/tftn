@@ -1,0 +1,72 @@
+# Bausteine für fletcher (PLAN-M2 AP10): Fluss- und Ablaufdiagramme. Prüfen: tftn typ-pruefen.
+paket = "fletcher"
+versionen = ">=0.5.8, <0.6.0"
+empfohlen = "0.5.8"
+titel = "Ablaufdiagramme"
+import = '#import "@preview/fletcher:{version}"'
+
+[[baustein]]
+id = "diagramm"
+funktion = "fletcher.diagram"
+titel = "Ablaufdiagramm"
+gruppe = "Ablauf"
+einfuegen = """
+#fletcher.diagram(node-stroke: 1pt, {
+  fletcher.node((0, 0), [${feld:Anfang:Start}])
+  fletcher.edge((0, 0), (1, 0), marks: "-|>")
+  fletcher.node((1, 0), [${feld:Ende:Ende}])
+  ${cursor}
+})"""
+
+[baustein.parameter.spacing]
+widget = "laenge"
+titel = "Abstand"
+
+[[baustein]]
+id = "knoten"
+funktion = "fletcher.node"
+titel = "Knoten"
+gruppe = "Ablauf"
+modus = ["code"]
+einfuegen = "fletcher.node((${feld:Stelle:0, 1}), [${feld:Text:Schritt}])"
+
+[baustein.parameter.stelle]
+widget = "punkt"
+titel = "Stelle (Spalte, Zeile)"
+position = 0
+
+[baustein.parameter.text]
+widget = "inhalt"
+titel = "Text"
+position = 1
+
+[baustein.parameter.fill]
+widget = "farbe"
+titel = "Füllung"
+
+[[baustein]]
+id = "kante"
+funktion = "fletcher.edge"
+titel = "Verbindung"
+gruppe = "Ablauf"
+modus = ["code"]
+einfuegen = 'fletcher.edge((${feld:Von:0, 0}), (${feld:Nach:0, 1}), marks: "-|>")'
+
+[baustein.parameter.von]
+widget = "punkt"
+titel = "Von"
+position = 0
+
+[baustein.parameter.nach]
+widget = "punkt"
+titel = "Nach"
+position = 1
+
+[baustein.parameter.marks]
+widget = "wahl"
+titel = "Pfeil"
+werte = ["-|>", "<|-|>", "--|>", "-"]
+
+[baustein.parameter.label]
+widget = "inhalt"
+titel = "Beschriftung"

@@ -1,0 +1,120 @@
+# Bausteine für cetz (PLAN-M2 AP10). Die Schreibweise ist voll qualifiziert (`cetz.draw.line`), damit
+# nichts mit Typsts eigenem `line`, `rect` oder `circle` kollidiert. Prüfen: tftn typ-pruefen.
+paket = "cetz"
+versionen = ">=0.5.0, <0.6.0"
+empfohlen = "0.5.3"
+titel = "Freie Zeichnungen"
+import = '#import "@preview/cetz:{version}"'
+
+[[baustein]]
+id = "zeichnung"
+funktion = "cetz.canvas"
+titel = "Zeichnung"
+gruppe = "Zeichnung"
+einfuegen = """
+#cetz.canvas({
+  cetz.draw.line((0, 0), (${feld:Ende:2, 1}))
+  ${cursor}
+})"""
+
+[baustein.parameter.length]
+widget = "laenge"
+titel = "Einheit"
+hilfe = "So lang ist eine Koordinateneinheit."
+standard = "1cm"
+
+[[baustein]]
+id = "linie"
+funktion = "cetz.draw.line"
+titel = "Linie"
+gruppe = "Zeichnung"
+modus = ["code"]
+einfuegen = "cetz.draw.line((${feld:Von:0, 0}), (${feld:Nach:2, 1}))"
+
+[baustein.parameter.von]
+widget = "punkt"
+titel = "Von"
+position = 0
+
+[baustein.parameter.nach]
+widget = "punkt"
+titel = "Nach"
+position = 1
+
+[baustein.parameter.stroke]
+widget = "farbe"
+titel = "Farbe"
+
+[[baustein]]
+id = "pfeil"
+funktion = "cetz.draw.line"
+titel = "Pfeil"
+gruppe = "Zeichnung"
+modus = ["code"]
+einfuegen = 'cetz.draw.line((${feld:Von:0, 0}), (${feld:Nach:2, 1}), mark: (end: ">"))'
+
+[[baustein]]
+id = "rechteck"
+funktion = "cetz.draw.rect"
+titel = "Rechteck"
+gruppe = "Zeichnung"
+modus = ["code"]
+einfuegen = "cetz.draw.rect((${feld:Ecke:0, 0}), (${feld:Gegenüber:2, 1}))"
+
+[baustein.parameter.ecke]
+widget = "punkt"
+titel = "Ecke"
+position = 0
+
+[baustein.parameter.gegenueber]
+widget = "punkt"
+titel = "Gegenüberliegende Ecke"
+position = 1
+
+[baustein.parameter.fill]
+widget = "farbe"
+titel = "Füllung"
+
+[baustein.parameter.stroke]
+widget = "farbe"
+titel = "Rand"
+
+[[baustein]]
+id = "kreis"
+funktion = "cetz.draw.circle"
+titel = "Kreis"
+gruppe = "Zeichnung"
+modus = ["code"]
+einfuegen = "cetz.draw.circle((${feld:Mitte:1, 1}), radius: ${feld:Radius:1})"
+
+[baustein.parameter.mitte]
+widget = "punkt"
+titel = "Mitte"
+position = 0
+
+[baustein.parameter.radius]
+widget = "zahl"
+titel = "Radius"
+min = 0.0
+
+[baustein.parameter.fill]
+widget = "farbe"
+titel = "Füllung"
+
+[[baustein]]
+id = "text"
+funktion = "cetz.draw.content"
+titel = "Text an Punkt"
+gruppe = "Zeichnung"
+modus = ["code"]
+einfuegen = "cetz.draw.content((${feld:Stelle:1, 1}), [${feld:Text:Text}])"
+
+[baustein.parameter.stelle]
+widget = "punkt"
+titel = "Stelle"
+position = 0
+
+[baustein.parameter.text]
+widget = "inhalt"
+titel = "Text"
+position = 1

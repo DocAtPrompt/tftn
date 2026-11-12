@@ -1,0 +1,6 @@
+# Mac und Windows teilen denselben Arbeitsbaum über Tresorit: überall LF.
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.ttf binary
+*.otf binary

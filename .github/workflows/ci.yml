@@ -1,0 +1,174 @@
+# CI nach PLAN-M1 4.6, sparsam (2026-11-12): Bei privaten Repos gibt es nur ein Freikontingent, und
+# macOS-Minuten zählen zehnfach, Windows doppelt. Daher:
+# - Push auf main: nur Linux (Tests, fmt, clippy, Netzfreiheit); reine Doku-Commits gar nicht.
+#   macOS deckt `cargo xtask ci` auf dem Mac ab.
+# - Von Hand (Actions → CI → Run workflow): wahlweise alle Plattformen samt Plattformvergleich,
+#   und nur auf Wunsch zusätzlich das App-Bündel. Vor einem Release oder nach größeren Umbauten.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+  workflow_dispatch:
+    inputs:
+      plattformen:
+        description: "Plattformen"
+        type: choice
+        options: [nur Linux, alle]
+        default: alle
+      buendel:
+        description: "App-Bündel bauen (macOS, kostet viele Minuten)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # Volle Debug-Infos machen unter Linux jedes Test-Programm mit typst Hunderte MB groß; die Platte
+  # des Runners lief voll (lld: Bus error). Zeilentabellen reichen für Backtraces mit Datei:Zeile.
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  TYPST: "0.15.1"
+
+jobs:
+  test:
+    name: Tests (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      # Ganze Matrix als JSON: `include`-Einträge ließen sich sonst nicht abwählen.
+      matrix: >-
+        ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.plattformen == 'alle' && '{"include":[
+        {"name":"macOS arm64","os":"macos-15","ziel":"aarch64-apple-darwin","exe":"","app":true},
+        {"name":"Windows x64","os":"windows-2022","ziel":"x86_64-pc-windows-msvc","exe":".exe","app":true},
+        {"name":"Linux x64","os":"ubuntu-24.04","ziel":"x86_64-unknown-linux-musl","exe":"","app":false}]}'
+        || '{"include":[
+        {"name":"Linux x64","os":"ubuntu-24.04","ziel":"x86_64-unknown-linux-musl","exe":"","app":false}]}') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          # auch nach einem fehlgeschlagenen Schritt speichern: der erste Bau dauert unter Windows ~45 min
+          cache-on-failure: true
+
+      - name: typst-CLI holen (geprüft gegen xtask/typst-cli.sha256)
+        run: cargo xtask typst-holen ${{ env.TYPST }} --nur-host
+
+      - name: TFTN_TYPST setzen
+        shell: bash
+        run: echo "TFTN_TYPST=${{ github.workspace }}/_lokal/typst-cli/${{ env.TYPST }}/typst-${{ matrix.ziel }}${{ matrix.exe }}" >> "$GITHUB_ENV"
+
+      - name: veraPDF (nur Linux, PLAN-M1 4.6)
+        if: runner.os == 'Linux'
+        run: |
+          /home/linuxbrew/.linuxbrew/bin/brew install verapdf
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+
+      - name: veraPDF auf diesem Runner überspringen
+        if: runner.os != 'Linux'
+        shell: bash
+        run: echo "TFTN_OHNE_VERAPDF=1" >> "$GITHUB_ENV"
+
+      - name: Oberfläche bauen und testen
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+      - name: Rust-Tests (mit App)
+        if: matrix.app
+        run: cargo test --workspace
+
+      - name: Rust-Tests (ohne App; Linux ohne WebKitGTK)
+        if: ${{ !matrix.app }}
+        run: cargo test --workspace --exclude tftn-app
+
+      - name: Plattenplatz (Linux)
+        if: ${{ always() && runner.os == 'Linux' }}
+        run: df -h . && du -sh target
+
+      # Gleicher Umfang wie die Tests: `-p tftn-cli` allein vereinigt andere Features und baut
+      # alle Abhängigkeiten neu (Windows: 20 min). Derselbe Befehl wie in `xtask/src/main.rs`.
+      - name: tftn bauen
+        run: cargo build --workspace --bins --exclude xtask ${{ !matrix.app && '--exclude tftn-app' || '' }}
+
+      # Release-Bau dauert; daher nur von Hand und nur auf Wunsch (macOS-Minuten zählen zehnfach).
+      - name: App-Bündel bauen (Tauri-Bundler, PLAN-M1 4.7)
+        if: github.event_name == 'workflow_dispatch' && inputs.buendel && matrix.ziel == 'aarch64-apple-darwin'
+        timeout-minutes: 40
+        run: |
+          npm run buendel
+          codesign --verify --deep --strict target/release/bundle/macos/TFTN.app
+          target/release/bundle/macos/TFTN.app/Contents/MacOS/typst --version
+          # Holer beigelegt, ohne Prüfserver: falscher Aufruf endet mit Exit 2 (PLAN-M2 AP9)
+          set +e; target/release/bundle/macos/TFTN.app/Contents/MacOS/tftn-holer; test $? -eq 2
+
+      - name: Korpus exportieren, Prüfsummen festhalten
+        timeout-minutes: 10
+        run: cargo xtask pruefsummen pruefsummen.txt
+
+      - name: Visuelle Regression (Referenzplattform macOS, PLAN-M1 4.3)
+        if: matrix.ziel == 'aarch64-apple-darwin'
+        timeout-minutes: 10
+        run: cargo xtask referenzen
+
+      - name: Diff-Bilder hochladen
+        if: failure() && matrix.ziel == 'aarch64-apple-darwin'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diff
+          path: target/visual-diff/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pruefsummen-${{ matrix.ziel }}
+          path: pruefsummen.txt
+
+  pruefen:
+    name: Format, clippy, Netzfreiheit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo fmt --check
+        run: cargo fmt --all --check
+      - name: clippy -D warnings (ohne App)
+        run: cargo clippy --workspace --exclude tftn-app --all-targets -- -D warnings
+      # Kein HTTP-Client in App, Kommandozeile und tftn-pakete; tftn-holer nur mit ureq/rustls
+      # (PLAN-M2 AP9). Dieselbe Prüfung wie `cargo xtask ci`.
+      - name: Netzfreiheit
+        run: cargo xtask netzfreiheit
+      - name: tftn-holer ohne Prüfserver
+        run: cargo xtask holer-bauen
+
+  plattformvergleich:
+    name: Plattformvergleich (A8)
+    needs: test
+    # Braucht alle drei Plattformen, also nur beim Start von Hand mit „alle“.
+    if: github.event_name == 'workflow_dispatch' && inputs.plattformen == 'alle'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pruefsummen-*
+      - name: Alle Prüfsummen gleich?
+        run: |
+          for d in pruefsummen-*; do echo "== $d"; cat "$d/pruefsummen.txt"; done
+          n=$(cat pruefsummen-*/pruefsummen.txt | sort -u | wc -l)
+          m=$(wc -l < "$(ls -d pruefsummen-* | head -1)/pruefsummen.txt")
+          if [ "$n" -ne "$m" ]; then echo "Plattformen erzeugen verschiedene PDFs"; exit 1; fi
+          echo "Alle Plattformen bytegleich."

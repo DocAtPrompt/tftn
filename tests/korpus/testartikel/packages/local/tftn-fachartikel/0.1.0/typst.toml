@@ -1,0 +1,62 @@
+[package]
+name = "tftn-fachartikel"
+version = "0.1.0"
+entrypoint = "lib.typ"
+compiler = "0.15.1"
+authors = ["TFTN"]
+description = "Fachartikel (TFTN)"
+
+[template]
+path = "vorlage"
+entrypoint = "main.typ"
+
+# Manifest für TFTN (KONZEPT 5); Typst ignoriert diesen Abschnitt.
+[tool.tftn]
+schema-version = 1
+titel = "Fachartikel"
+achse = "publikation"
+formular = "tftn/formular.schema.json"
+daten = "dokument.toml"
+sprache = { lang = "de", region = "AT" }
+schriften = [
+  "schriften/LibertinusSerif-Regular.otf",
+  "schriften/LibertinusSerif-Italic.otf",
+  "schriften/LibertinusSerif-Bold.otf",
+  "schriften/LibertinusSerif-BoldItalic.otf",
+  "schriften/LibertinusSerif-Semibold.otf",
+  "schriften/LibertinusSerif-SemiboldItalic.otf",
+  "schriften/NewCMMath-Regular.otf",
+  "schriften/NewCMMath-Book.otf",
+  "schriften/NewCMMath-Bold.otf",
+  "schriften/DejaVuSansMono.ttf",
+  "schriften/DejaVuSansMono-Bold.ttf",
+  "schriften/DejaVuSansMono-Oblique.ttf",
+  "schriften/DejaVuSansMono-BoldOblique.ttf",
+  "schriften/LIZENZEN.txt",
+]
+
+[tool.tftn.literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"   # Platzhalter bis zur Zielzeitschrift (E7)
+quelle = "zotero-bbt"
+
+[tool.tftn.export.vorschau]
+art = "pdf"
+
+[tool.tftn.export.archiv]
+art = "pdf"
+pdf-standards = ["a-2b"]
+
+[[tool.tftn.baustein]]
+id = "hinweis"
+funktion = "hinweis"
+titel = "Hinweiskasten"
+einfuegen = "#hinweis[${auswahl}]"
+  [tool.tftn.baustein.parameter.farbe]
+  widget = "farbe"
+  raum = "rgb"
+  standard = "luma(230)"
+  [tool.tftn.baustein.parameter.art]
+  widget = "wahl"
+  werte = ["info", "warnung", "merke"]
+  standard = "info"

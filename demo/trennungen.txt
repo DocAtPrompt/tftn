@@ -1,0 +1,3 @@
+# Trennausnahmen: ein Wort je Zeile, erlaubte Trennstellen mit - markiert.
+# Das Wort wird danach nur noch an diesen Stellen getrennt.
+Sozial-versicherungs-träger

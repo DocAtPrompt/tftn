@@ -1,0 +1,37 @@
+[package]
+name = "tftn-app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lib]
+name = "tftn_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+notify = "8"
+serde.workspace = true
+serde_json.workspace = true
+semver.workspace = true
+tftn-core.workspace = true
+tftn-edit.workspace = true
+tftn-einstellungen.workspace = true
+tftn-export.workspace = true
+tftn-katalog.workspace = true
+tftn-formular.workspace = true
+tftn-literatur.workspace = true
+tftn-manifest.workspace = true
+tftn-pakete.workspace = true
+tftn-sprachen.workspace = true
+typst.workspace = true
+typst-layout.workspace = true
+
+[dev-dependencies]
+flate2.workspace = true
+tar.workspace = true

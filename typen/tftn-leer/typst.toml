@@ -1,0 +1,56 @@
+[package]
+name = "tftn-leer"
+version = "0.2.1"
+entrypoint = "lib.typ"
+compiler = "0.15.1"
+authors = ["TFTN"]
+description = "Leeres Dokument (TFTN)"
+
+[template]
+path = "vorlage"
+entrypoint = "main.typ"
+
+# Das Dokument zum Einfach-Losschreiben: keine Titelei, kein Formular, keine Literatur.
+[tool.tftn]
+schema-version = 1
+titel = "Leeres Dokument"
+achse = "publikation"
+sprache = { lang = "de", region = "AT" }
+schriften = [
+  "../tftn-fachartikel/schriften/LibertinusSerif-Regular.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-Italic.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-Bold.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-BoldItalic.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-Semibold.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-SemiboldItalic.otf",
+  "../tftn-fachartikel/schriften/NewCMMath-Regular.otf",
+  "../tftn-fachartikel/schriften/NewCMMath-Book.otf",
+  "../tftn-fachartikel/schriften/NewCMMath-Bold.otf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-Bold.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-Oblique.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-BoldOblique.ttf",
+  "../tftn-fachartikel/schriften/LIZENZEN.txt",
+  "schriften/SourceSerif4-Regular.otf",
+  "schriften/SourceSerif4-It.otf",
+  "schriften/SourceSerif4-Bold.otf",
+  "schriften/SourceSerif4-BoldIt.otf",
+  "schriften/SourceSans3-Regular.otf",
+  "schriften/SourceSans3-It.otf",
+  "schriften/SourceSans3-Bold.otf",
+  "schriften/SourceSans3-BoldIt.otf",
+  "schriften/LIZENZEN-Source.txt",
+]
+
+[[tool.tftn.baustein]]
+id = "randnotiz"
+funktion = "randnotiz"
+titel = "Randtext"
+einfuegen = "#randnotiz[${auswahl}]"
+
+[tool.tftn.export.vorschau]
+art = "pdf"
+
+[tool.tftn.export.archiv]
+art = "pdf"
+pdf-standards = ["a-2b"]
