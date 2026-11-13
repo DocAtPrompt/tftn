@@ -131,7 +131,7 @@ fn readme_nennt_fonts_nur_wenn_da() {
         (Some("en"), "- `fonts/`: freely licensed"),
     ] {
         let p = anlegen(
-            &format!("readme-fonts-{sprache:?}"),
+            &format!("readme-fonts-{}", sprache.unwrap_or("de")),
             "tftn-fachartikel",
             sprache,
         );
