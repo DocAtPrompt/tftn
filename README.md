@@ -3,6 +3,12 @@
 A native, offline writing app for [Typst](https://typst.app) on macOS and Windows: write on the
 left, see the finished page on the right as you type. Built with Rust, Tauri 2 and CodeMirror 6.
 
+**Why offline, when Typst has an excellent web app?** Some texts must not leave your computer:
+reports about patients or clients, legal and HR documents, anything covered by professional
+secrecy or data protection law (such as the GDPR). TFTN keeps every document, every keystroke and
+every preview on your own machine – no account, no cloud, no upload – so you can write such texts
+with Typst without handing them to a third party.
+
 - **Live preview with click-to-source** in both directions.
 - **Blocks and completion** for figures, tables, equations, citations and more – type “/” on an empty
   line.
