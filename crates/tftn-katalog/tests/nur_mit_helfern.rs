@@ -107,7 +107,7 @@ fn ist_ueberschrift(s: &MarkupStelle) -> bool {
 /// Fach „Dokument“: ein Feld setzen und schreiben.
 fn titelei(p: &Projekt, setzen: &[(&str, serde_json::Value)]) {
     let schema =
-        std::fs::read_to_string(repo().join("typen/tftn-fachartikel/tftn/formular.schema.json"))
+        std::fs::read_to_string(repo().join("types/tftn-fachartikel/tftn/formular.schema.json"))
             .unwrap();
     let f = formular_lesen(&schema).unwrap();
     let stile = eingebaute_stile();

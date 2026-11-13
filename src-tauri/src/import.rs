@@ -310,7 +310,7 @@ mod tests {
             eprintln!("Pandoc fehlt – Import-Beispiele übersprungen");
             return;
         };
-        let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../typen");
+        let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../types");
         let korpus = Path::new(env!("CARGO_MANIFEST_DIR")).join("../tests/korpus/import");
         let o = std::env::temp_dir().join(format!("tftn-import-bsp-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&o);

@@ -66,8 +66,8 @@ jobs:
           $ziel = Join-Path $env:LOCALAPPDATA "TFTN"
           Get-ChildItem $ziel | Format-Table Name, Length
           foreach ($t in @("tftn-app.exe", "typst.exe", "tftn-holer.exe",
-                           "typen\tftn-fachartikel\vorlage-en\main.typ",
-                           "typen\tftn-leer\typst.toml", "sprachen\en.toml", "beschreibungen")) {
+                           "types\tftn-fachartikel\vorlage-en\main.typ",
+                           "types\tftn-leer\typst.toml", "languages\en.toml", "package-descriptions")) {
             if (-not (Test-Path (Join-Path $ziel $t))) { throw "fehlt: $t" }
           }
           & (Join-Path $ziel "typst.exe") --version

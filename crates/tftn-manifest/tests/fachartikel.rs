@@ -17,7 +17,7 @@ fn neues_projekt(name: &str) -> Projekt {
     let ordner = Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
     let _ = std::fs::remove_dir_all(&ordner);
     projekt_anlegen(
-        &wurzel().join("typen"),
+        &wurzel().join("types"),
         "tftn-fachartikel",
         &ordner,
         Some(ZEITSTEMPEL),
@@ -101,7 +101,7 @@ fn eigene_csl_datei() {
 
 #[test]
 fn vorgabe_gleich_manifest() {
-    let typ = wurzel().join("typen/tftn-fachartikel");
+    let typ = wurzel().join("types/tftn-fachartikel");
     let paket = Typpaket::lesen(&typ).unwrap();
     let lit = paket.manifest().unwrap().literatur.clone().unwrap();
     let daten: toml::Table =
@@ -121,7 +121,7 @@ fn vorgabe_gleich_manifest() {
 #[test]
 fn schema_besteht_profil() {
     let json =
-        std::fs::read_to_string(wurzel().join("typen/tftn-fachartikel/tftn/formular.schema.json"))
+        std::fs::read_to_string(wurzel().join("types/tftn-fachartikel/tftn/formular.schema.json"))
             .unwrap();
     let f = tftn_formular::formular_lesen(&json).unwrap();
     let lit = f.felder.iter().find(|f| f.name == "literatur").unwrap();
@@ -132,7 +132,7 @@ fn schema_besteht_profil() {
 
 #[test]
 fn vorlage_besteht_eigenes_schema() {
-    let typ = wurzel().join("typen/tftn-fachartikel");
+    let typ = wurzel().join("types/tftn-fachartikel");
     let f = tftn_formular::formular_lesen(
         &std::fs::read_to_string(typ.join("tftn/formular.schema.json")).unwrap(),
     )

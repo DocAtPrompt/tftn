@@ -314,7 +314,7 @@ mod tests {
             eprintln!("Pandoc fehlt – Word-Export übersprungen");
             return;
         };
-        let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../typen");
+        let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../types");
         let o = std::env::temp_dir().join(format!("tftn-word-leer-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&o);
         let q = crate::typen::quellen(&typen, &o);

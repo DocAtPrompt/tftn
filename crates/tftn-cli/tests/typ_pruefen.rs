@@ -10,7 +10,7 @@ const ZEITSTEMPEL: i64 = 1_793_404_800; // 2026-10-31T00:00:00Z
 fn fall(name: &str) -> (PathBuf, PathBuf) {
     let basis = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("typ-pruefen-{name}"));
     let _ = std::fs::remove_dir_all(&basis);
-    let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen");
+    let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types");
     projekt_anlegen(
         &typen,
         "tftn-fachartikel",

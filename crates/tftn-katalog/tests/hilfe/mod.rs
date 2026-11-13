@@ -35,7 +35,7 @@ pub fn fall(name: &str) -> (Projekt, Katalog, Vec<String>) {
     let ordner = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("diagramme-{name}"));
     let _ = std::fs::remove_dir_all(&ordner);
     let projekt = projekt_anlegen(
-        &repo().join("typen"),
+        &repo().join("types"),
         "tftn-fachartikel",
         &ordner,
         Some(ZEITSTEMPEL),
@@ -48,7 +48,7 @@ pub fn fall(name: &str) -> (Projekt, Katalog, Vec<String>) {
     );
     let (k, w) = Katalog::bauen(&Quellen {
         projekt: Some(&projekt),
-        beschreibungen: &[repo().join("pakete")],
+        beschreibungen: &[repo().join("package-descriptions")],
     });
     (projekt, k, w)
 }

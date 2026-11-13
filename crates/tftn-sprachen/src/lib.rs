@@ -12,7 +12,7 @@
 //! ```
 //!
 //! `{name}` ist ein Platzhalter und bleibt in der Übersetzung stehen. Fehlt ein Text oder ist er
-//! leer, bleibt er deutsch. Mitgeliefert wird `sprachen/en.toml`; eigene Dateien im Ordner
+//! leer, bleibt er deutsch. Mitgeliefert wird `languages/en.toml`; eigene Dateien im Ordner
 //! `sprachen` des Einstellungsordners kommen dazu und haben Vorrang.
 
 pub mod quellen;

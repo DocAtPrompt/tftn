@@ -1,6 +1,6 @@
 //! typstyle-Stabilität S1–S3 (PLAN-M1 4.2) mit typstyle-core 0.15.2, das auf typst-syntax 0.15.1
 //! aufbaut. typstyle ist nur Werkzeug, nie automatisch beim Speichern. Dazu: Die Vorlagen in
-//! `typen/` sind formatiert eingecheckt (ersetzt `typstyle --check` in der CI).
+//! `types/` sind formatiert eingecheckt (ersetzt `typstyle --check` in der CI).
 //!
 //! S2 braucht die typst-CLI in der Projektversion (TFTN_TYPST oder PATH).
 
@@ -53,7 +53,7 @@ fn typ_dateien(ordner: &Path) -> Vec<PathBuf> {
 
 fn alle_quellen() -> Vec<PathBuf> {
     let w = wurzel();
-    let mut liste = typ_dateien(&w.join("typen"));
+    let mut liste = typ_dateien(&w.join("types"));
     liste.extend(typ_dateien(&w.join("tests/korpus")));
     assert!(liste.len() >= 4, "{liste:?}");
     liste
@@ -95,10 +95,10 @@ fn s1_idempotent() {
     }
 }
 
-/// Die Vorlagen in `typen/` sind so eingecheckt, wie typstyle sie ausgibt.
+/// Die Vorlagen in `types/` sind so eingecheckt, wie typstyle sie ausgibt.
 #[test]
 fn vorlagen_sind_formatiert() {
-    for datei in typ_dateien(&wurzel().join("typen")) {
+    for datei in typ_dateien(&wurzel().join("types")) {
         let text = std::fs::read_to_string(&datei).unwrap();
         assert!(
             fmt(&text) == text,
@@ -191,7 +191,7 @@ fn s3_patch_bleibt_formatiert() {
 #[test]
 fn s3_grenze_ergaenzen_in_langer_zeile() {
     let vorlage = fmt(&std::fs::read_to_string(
-        wurzel().join("typen/tftn-fachartikel/vorlage/main.typ"),
+        wurzel().join("types/tftn-fachartikel/vorlage/main.typ"),
     )
     .unwrap());
     let faelle = s3_faelle(&vorlage);

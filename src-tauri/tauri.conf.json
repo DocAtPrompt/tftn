@@ -39,10 +39,10 @@
     ],
     "resources": {
       "../_lokal/typst-cli/0.15.1/LICENSE": "lizenzen/typst-LICENSE.txt",
-      "../typen/": "typen/",
-      "../pakete/": "beschreibungen/",
+      "../types/": "types/",
+      "../package-descriptions/": "package-descriptions/",
       "../dictionaries/": "dictionaries/",
-      "../sprachen/": "sprachen/"
+      "../languages/": "languages/"
     },
     "macOS": {
       "signingIdentity": "-",

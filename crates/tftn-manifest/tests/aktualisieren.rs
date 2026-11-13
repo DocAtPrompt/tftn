@@ -15,7 +15,7 @@ fn wurzel() -> PathBuf {
 
 fn buendel() -> Vec<Typquelle> {
     vec![Typquelle {
-        ordner: wurzel().join("typen"),
+        ordner: wurzel().join("types"),
         herkunft: Herkunft::Tftn,
     }]
 }
@@ -58,7 +58,7 @@ fn neuere_version_erkannt() {
     assert_eq!(n.version.to_string(), "0.3.0");
     let o = ordner("neuer-neu");
     let neu = projekt_anlegen(
-        &wurzel().join("typen"),
+        &wurzel().join("types"),
         "tftn-fachartikel",
         &o.join("p"),
         Some(0),
@@ -69,7 +69,7 @@ fn neuere_version_erkannt() {
     // Eigener Fachartikel 0.1.5 hat Vorrang: für 0.1.0 ist er neuer, für 0.3.0 nicht.
     let eigen = o.join("eigen");
     kopieren(
-        &wurzel().join("typen/tftn-fachartikel"),
+        &wurzel().join("types/tftn-fachartikel"),
         &eigen.join("tftn-fachartikel"),
     );
     let toml = eigen.join("tftn-fachartikel/typst.toml");
@@ -199,7 +199,7 @@ fn neue_schriften_kopiert() {
     let p = testartikel("schriften-projekt");
     let eigen = o.join("eigen");
     let t = eigen.join("tftn-fachartikel");
-    kopieren(&wurzel().join("typen/tftn-fachartikel"), &t);
+    kopieren(&wurzel().join("types/tftn-fachartikel"), &t);
     std::fs::write(t.join("schriften/Neu.otf"), "neue schrift").unwrap();
     std::fs::write(t.join("schriften/LIZENZEN.txt"), "geändert").unwrap();
     let toml = t.join("typst.toml");

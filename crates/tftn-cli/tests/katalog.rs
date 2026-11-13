@@ -9,7 +9,7 @@ const ZEITSTEMPEL: i64 = 1_793_404_800; // 2026-10-31T00:00:00Z
 fn tmp_projekt(name: &str) -> PathBuf {
     let ordner = Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
     let _ = std::fs::remove_dir_all(&ordner);
-    let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen");
+    let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types");
     projekt_anlegen(&typen, "tftn-fachartikel", &ordner, Some(ZEITSTEMPEL)).unwrap();
     ordner
 }

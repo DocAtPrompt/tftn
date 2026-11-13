@@ -14,7 +14,7 @@ use crate::{ManifestFehler, Typpaket};
 pub enum Herkunft {
     /// `<Einstellungsordner>/typen/` im Tresor
     Eigen,
-    /// mit TFTN geliefert (App-Bündel bzw. `typen/` im Repo)
+    /// mit TFTN geliefert (App-Bündel bzw. `types/` im Repo)
     Tftn,
 }
 

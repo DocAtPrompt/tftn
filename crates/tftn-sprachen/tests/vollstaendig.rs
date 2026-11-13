@@ -1,4 +1,4 @@
-//! `sprachen/en.toml` übersetzt jeden Text des Projekts, mit denselben Platzhaltern, und enthält
+//! `languages/en.toml` übersetzt jeden Text des Projekts, mit denselben Platzhaltern, und enthält
 //! nichts, was im Code nicht mehr vorkommt. Nachziehen: `cargo xtask sprachen`, dann übersetzen.
 
 use std::path::Path;
@@ -14,7 +14,8 @@ fn englisch_ist_vollstaendig() {
         "t(…) braucht einen festen Text (für Werte aus Tabellen: n(\"…\") und tn(wert)): {:?}",
         b.offen
     );
-    let datei = std::fs::read_to_string(wurzel.join("sprachen/en.toml")).expect("sprachen/en.toml");
+    let datei =
+        std::fs::read_to_string(wurzel.join("languages/en.toml")).expect("languages/en.toml");
     let tabelle: toml::Table = toml::from_str(&datei).expect("en.toml ist gültiges TOML");
     let texte = tabelle
         .get("texte")
@@ -36,7 +37,7 @@ fn englisch_ist_vollstaendig() {
     let alt: Vec<_> = texte.keys().filter(|k| !b.texte.contains_key(*k)).collect();
     assert!(
         fehlt.is_empty() && leer.is_empty() && alt.is_empty() && platz.is_empty(),
-        "sprachen/en.toml passt nicht zum Code (cargo xtask sprachen):\n\
+        "languages/en.toml passt nicht zum Code (cargo xtask sprachen):\n\
          fehlt: {fehlt:#?}\nleer: {leer:#?}\nnicht mehr im Code: {alt:#?}\nandere Platzhalter: {platz:#?}"
     );
 }

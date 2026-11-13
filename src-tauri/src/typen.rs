@@ -48,11 +48,11 @@ pub fn quellen(buendel: &Path, einstellungsordner: &Path) -> Vec<Typquelle> {
     q
 }
 
-/// Ordner der mitgelieferten Typen: im Entwicklungsbau `typen/` im Repo, sonst im App-Bündel.
+/// Ordner der mitgelieferten Typen: im Entwicklungsbau `types/` im Repo, sonst im App-Bündel.
 pub fn buendel_ordner(resource_dir: Option<PathBuf>) -> PathBuf {
     match resource_dir {
-        Some(r) if !cfg!(debug_assertions) => r.join("typen"),
-        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("../typen"),
+        Some(r) if !cfg!(debug_assertions) => r.join("types"),
+        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("../types"),
     }
 }
 
@@ -556,7 +556,7 @@ mod tests {
     fn typen() -> PathBuf {
         std::env::var_os("TFTN_TEST_TYPEN")
             .map(PathBuf::from)
-            .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../typen"))
+            .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../types"))
     }
 
     fn ordner(name: &str) -> PathBuf {

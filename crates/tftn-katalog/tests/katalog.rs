@@ -22,7 +22,7 @@ fn tmp(name: &str) -> PathBuf {
 fn neues_projekt(name: &str) -> Projekt {
     let ordner = Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
     let _ = std::fs::remove_dir_all(&ordner);
-    let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen");
+    let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types");
     projekt_anlegen(&typen, "tftn-fachartikel", &ordner, Some(ZEITSTEMPEL))
         .unwrap()
         .projekt

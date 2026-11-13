@@ -1,7 +1,7 @@
 // Sprache der Oberfläche. Deutsch steht im Code: t("…") übersetzt einen festen Text, n("…") markiert
 // einen Text in einer Tabelle (bleibt deutsch, wird aber in die Sprachdatei aufgenommen) und tn(wert)
 // übersetzt so einen markierten Wert später. Platzhalter heißen {name}. Die Übersetzungen kommen aus
-// sprachen/<kennung>.toml über Rust (start.ts lädt sie, bevor main.ts läuft). Fehlt eine, bleibt der
+// languages/<kennung>.toml über Rust (start.ts lädt sie, bevor main.ts läuft). Fehlt eine, bleibt der
 // deutsche Text.
 
 let texte: Record<string, string> = {};
@@ -62,7 +62,7 @@ function sichtbarUebersetzen(x: unknown): unknown {
 }
 
 /**
- * Übersetzt in einer Antwort aus Rust die sichtbaren Texte, die aus `typen/` und `pakete/` kommen
+ * Übersetzt in einer Antwort aus Rust die sichtbaren Texte, die aus `types/` und `package-descriptions/` kommen
  * (Titel, Gruppen, Hilfen …), in jeder Tiefe. Werte des Dokuments bleiben, wie sie sind.
  */
 export function texteUebersetzen<T>(x: T): T {

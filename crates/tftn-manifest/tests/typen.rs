@@ -6,7 +6,7 @@ use tftn_manifest::anlegen::projekt_anlegen_aus;
 use tftn_manifest::typen::{Herkunft, Typquelle, finden_in, verfuegbar};
 
 fn typen() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types")
 }
 
 fn kopieren(von: &Path, nach: &Path) {
@@ -22,7 +22,7 @@ fn kopieren(von: &Path, nach: &Path) {
     }
 }
 
-/// Eigener Testordner mit `buendel/` (Kopie von `typen/`) und leerem `eigen/`.
+/// Eigener Testordner mit `buendel/` (Kopie von `types/`) und leerem `eigen/`.
 fn ordner(name: &str) -> (PathBuf, PathBuf, PathBuf) {
     let o = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("ap8-{name}"));
     let _ = std::fs::remove_dir_all(&o);

@@ -1,4 +1,4 @@
-//! `cargo xtask sprachen [DATEI…]`: schreibt `sprachen/en.toml` neu, mit genau den Texten, die im
+//! `cargo xtask sprachen [DATEI…]`: schreibt `languages/en.toml` neu, mit genau den Texten, die im
 //! Code stehen (`tr!`, `t`, `n`, `ui/index.html`), gegliedert nach Datei. Vorhandene Übersetzungen
 //! bleiben; weitere kommen aus den angegebenen Dateien (Abschnitt `[texte]` oder flach). Neue Texte
 //! stehen leer drin, bis jemand sie übersetzt; der Test `englisch_ist_vollstaendig` besteht erst dann.
@@ -33,7 +33,7 @@ fn texte_lesen(pfad: &Path) -> Result<HashMap<String, String>, String> {
 
 pub fn sprachen(dazu: &[String]) -> Result<(), String> {
     let wurzel = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
-    let ziel = wurzel.join("sprachen/en.toml");
+    let ziel = wurzel.join("languages/en.toml");
     let mut alt = if ziel.exists() {
         texte_lesen(&ziel)?
     } else {
@@ -46,11 +46,11 @@ pub fn sprachen(dazu: &[String]) -> Result<(), String> {
     }
     let b = bestand(&wurzel);
     let text = sprachdatei(KOPF, "English", &b, &alt);
-    std::fs::create_dir_all(wurzel.join("sprachen")).map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(wurzel.join("languages")).map_err(|e| e.to_string())?;
     std::fs::write(&ziel, text).map_err(|e| format!("{}: {e}", ziel.display()))?;
     let leer = b.texte.keys().filter(|k| !alt.contains_key(*k)).count();
     println!(
-        "sprachen/en.toml: {} Texte, davon {leer} noch nicht übersetzt.",
+        "languages/en.toml: {} Texte, davon {leer} noch nicht übersetzt.",
         b.texte.len()
     );
     for o in &b.offen {

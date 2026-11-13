@@ -190,7 +190,7 @@ fn anlegen_innen(
              With typst {TYPST_VERSION}, this line in the project folder produces the same PDF as TFTN:\n\n\
              ```bash\nmkdir -p _renders\n{zeile}\n```\n\n\
              ## Origin\n\n\
-             - `packages/local/`: document type and its dependencies, copied from TFTN `typen/`.\n\
+             - `packages/local/`: document type and its dependencies, copied from TFTN `types/`.\n\
              - `fonts/`: freely licensed fonts, licenses in `fonts/LIZENZEN.txt`.\n",
             titel = tftn_sprachen::uebersetzen(&manifest.titel),
             typname = tftn_sprachen::uebersetzen(&manifest.titel),
@@ -203,7 +203,7 @@ fn anlegen_innen(
              Mit typst {TYPST_VERSION} ergibt diese Zeile im Projektordner dasselbe PDF wie TFTN:\n\n\
              ```bash\nmkdir -p _renders\n{zeile}\n```\n\n\
              ## Herkunft\n\n\
-             - `packages/local/`: Dokumenttyp und seine Abhängigkeiten, kopiert aus TFTN `typen/`.\n\
+             - `packages/local/`: Dokumenttyp und seine Abhängigkeiten, kopiert aus TFTN `types/`.\n\
              - `fonts/`: frei lizenzierte Schriften, Lizenzen in `fonts/LIZENZEN.txt`.\n",
             titel = manifest.titel,
             typname = manifest.titel,

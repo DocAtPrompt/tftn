@@ -168,7 +168,7 @@ pub enum Achse {
     Formular,
 }
 
-/// Ein Paket aus dem Ordner `typen/`.
+/// Ein Paket aus dem Ordner `types/`.
 #[derive(Debug, Clone)]
 pub struct Typpaket {
     pub ordner: PathBuf,
@@ -329,7 +329,7 @@ modus = ["markup", "code"]"#,
     #[test]
     fn fachartikel_liest_weiter() {
         let p = Typpaket::lesen(
-            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen/tftn-fachartikel"),
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types/tftn-fachartikel"),
         )
         .unwrap();
         assert_eq!(p.manifest().unwrap().baustein[0].modus, vec![Modus::Markup]);

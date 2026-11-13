@@ -10,7 +10,7 @@ use tftn_manifest::anlegen::projekt_anlegen_sprache;
 const ZEITSTEMPEL: i64 = 1_793_404_800; // 2026-10-31T00:00:00Z
 
 fn typen() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types")
 }
 
 fn anlegen(name: &str, typ: &str, sprache: Option<&str>) -> Projekt {

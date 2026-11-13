@@ -80,7 +80,7 @@ fn quelle() -> PathBuf {
 /// Fachartikel aus `ABSCHRIFTEN` Abschriften des Testartikels (Labels je Abschrift umbenannt).
 fn langer_artikel(ziel: &Path) -> Projekt {
     let _ = std::fs::remove_dir_all(ziel);
-    let typen = quelle().join("typen");
+    let typen = quelle().join("types");
     projekt_anlegen(&typen, "tftn-fachartikel", ziel, Some(1_793_404_800))
         .expect("Projekt anlegen");
     let korpus = quelle().join("tests/korpus/testartikel");

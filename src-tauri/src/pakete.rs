@@ -433,11 +433,11 @@ pub fn beschreibungs_ordner(buendel: &Path, einstellungsordner: &Path) -> Vec<Pa
     aus
 }
 
-/// Mitgelieferte Beschreibungen: im Entwicklungsbau `pakete/` im Repo, sonst im App-Bündel.
+/// Mitgelieferte Beschreibungen: im Entwicklungsbau `package-descriptions/` im Repo, sonst im App-Bündel.
 pub fn beschreibungen_buendel(resource_dir: Option<PathBuf>) -> PathBuf {
     match resource_dir {
-        Some(r) if !cfg!(debug_assertions) => r.join("beschreibungen"),
-        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("../pakete"),
+        Some(r) if !cfg!(debug_assertions) => r.join("package-descriptions"),
+        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("../package-descriptions"),
     }
 }
 

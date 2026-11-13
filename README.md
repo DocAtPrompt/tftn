@@ -90,9 +90,9 @@ project). `npm run buendel` builds `target/release/bundle/macos/TFTN.app` (relea
 | `crates/tftn-sprachen` | interface translations (`tr!`) |
 | `crates/tftn-cli` | the `tftn` command line tool |
 | `src-tauri/`, `ui/` | the app: Tauri shell and interface (TypeScript, CodeMirror 6) |
-| `typen/` | bundled document types (Typst packages) |
-| `pakete/` | descriptions of Universe packages with helpers (cetz, fletcher, cetz-plot) |
-| `sprachen/` | interface language files (`en.toml`) |
+| `types/` | bundled document types (Typst packages) |
+| `package-descriptions/` | descriptions of Universe packages with helpers (cetz, fletcher, cetz-plot) |
+| `languages/` | interface language files (`en.toml`) |
 | `dictionaries/` | Hunspell dictionaries, each with its license |
 | `tests/korpus/` | test documents (synthetic), reference images, checksums |
 | `demo/` | sample project |
@@ -108,12 +108,12 @@ Code, comments and identifiers are in German.
 | `cargo test --workspace` | Rust tests (needs typst 0.15.1 on `PATH` or in `TFTN_TYPST`) |
 | `npm test` | UI tests (vitest) |
 | `cargo xtask referenzen` | visual regression against `tests/referenz/` |
-| `cargo xtask sprachen` | sync `sprachen/en.toml` with the texts in the code |
+| `cargo xtask sprachen` | sync `languages/en.toml` with the texts in the code |
 | `cargo xtask typstyle [--check]` | format the bundled Typst sources |
 | `cargo xtask messen` | measure keystroke-to-preview latency |
 
 Every visible text is written in German in the code (`tr!("…")` in Rust, `t("…")` in TypeScript);
-`cargo xtask sprachen` collects them and a test requires `sprachen/en.toml` to be complete.
+`cargo xtask sprachen` collects them and a test requires `languages/en.toml` to be complete.
 
 ## Command line
 

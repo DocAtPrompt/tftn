@@ -1,5 +1,5 @@
 //! `cargo xtask typstyle [--check] [PFAD…]`: Typst-Quellen mit typstyle-core formatieren
-//! (PLAN-M1 4.2), ohne Pfade die Vorlagen in `typen/`. Nur als Werkzeug, nie beim Speichern.
+//! (PLAN-M1 4.2), ohne Pfade die Vorlagen in `types/`. Nur als Werkzeug, nie beim Speichern.
 //! Einstellungen wie im Test `crates/tftn-edit/tests/typstyle.rs` (dort geprüft: S1–S3).
 
 use std::path::{Path, PathBuf};
@@ -16,7 +16,7 @@ pub fn typstyle(args: &[String]) -> Result<(), String> {
         .map(PathBuf::from)
         .collect();
     if pfade.is_empty() {
-        pfade.push(projektordner().join("typen"));
+        pfade.push(projektordner().join("types"));
     }
     let konfig = Config {
         max_width: 100,

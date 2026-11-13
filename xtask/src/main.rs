@@ -13,7 +13,7 @@
 //! `holer-bauen [--release]` – `tftn-holer` bauen und als Sidecar unter `target/sidecar/` ablegen
 //! (PLAN-M2 AP9); prüft, dass das Programm keinen Prüfserver kennt.
 //! `netzfreiheit` – kein HTTP-Client außer in `tftn-holer`, siehe `ci.rs`.
-//! `sprachen [DATEI…]` – `sprachen/en.toml` an die Texte im Code angleichen, siehe `sprachen.rs`.
+//! `sprachen [DATEI…]` – `languages/en.toml` an die Texte im Code angleichen, siehe `sprachen.rs`.
 //! Jeder gestartete Prozess hat eine Frist (Projektregel Hintergrundprozesse).
 
 mod ci;

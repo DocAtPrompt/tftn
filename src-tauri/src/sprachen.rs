@@ -1,4 +1,4 @@
-//! Sprache der Oberfläche: mitgelieferte Dateien (`sprachen/` im Bündel) und eigene im Ordner
+//! Sprache der Oberfläche: mitgelieferte Dateien (`languages/` im Bündel) und eigene im Ordner
 //! `sprachen` des Einstellungsordners; die eigenen haben Vorrang.
 
 use std::path::{Path, PathBuf};
@@ -8,8 +8,8 @@ use tftn_sprachen::{Katalog, Sprache, VORLAGE};
 /// Mitgelieferte Sprachdateien; im Entwicklungsbau direkt aus dem Quellbaum.
 pub fn mitgeliefert(resource_dir: Option<PathBuf>) -> PathBuf {
     match resource_dir {
-        Some(r) if !cfg!(debug_assertions) => r.join("sprachen"),
-        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("../sprachen"),
+        Some(r) if !cfg!(debug_assertions) => r.join("languages"),
+        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("../languages"),
     }
 }
 

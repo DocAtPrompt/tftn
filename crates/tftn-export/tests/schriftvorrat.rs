@@ -10,7 +10,7 @@ use tftn_export::{STANDARD_FRIST, TypstCli, ausfuehren, exportieren};
 #[test]
 fn ohne_eingebundene_schriften_gilt_der_vorrat() {
     let vorrat = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../typen/tftn-fachartikel/schriften")
+        .join("../../types/tftn-fachartikel/schriften")
         .canonicalize()
         .unwrap();
     // Alle Tests setzen denselben Vorrat: Sie laufen parallel in einem Prozess.
@@ -65,7 +65,7 @@ fn ohne_eingebundene_schriften_gilt_der_vorrat() {
 
 fn projekt_mit(name: &str, text: &str) -> Projekt {
     let typen = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../typen")
+        .join("../../types")
         .canonicalize()
         .unwrap();
     schriftvorrat_setzen(vec![

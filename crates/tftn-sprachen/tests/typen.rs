@@ -1,5 +1,5 @@
-//! Die sichtbaren Texte der mitgelieferten Dokumenttypen (`typen/`) und Paketbeschreibungen
-//! (`pakete/`) gehören zum Bestand, damit `sprachen/en.toml` sie übersetzt.
+//! Die sichtbaren Texte der mitgelieferten Dokumenttypen (`types/`) und Paketbeschreibungen
+//! (`package-descriptions/`) gehören zum Bestand, damit `languages/en.toml` sie übersetzt.
 
 use std::path::Path;
 
@@ -10,18 +10,18 @@ fn typen_und_pakete_im_bestand() {
     let wurzel = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let b = bestand(&wurzel);
     for text in [
-        // typen/*/typst.toml
+        // types/*/typst.toml
         "Fachartikel",
         "Fachartikel (TFTN)",
         "Hinweiskasten",
         "Randtext",
         "Bilder: lege sie in den Dokumentordner, etwa in einen Unterordner bilder.",
-        // typen/*/tftn/formular.schema.json
+        // types/*/tftn/formular.schema.json
         "Zusammenfassung",
         "Autorinnen und Autoren",
         "Englisch",
         "BibLaTeX (.bib) oder Hayagriva (.yaml), relativ zum Projektordner",
-        // pakete/*.toml
+        // package-descriptions/*.toml
         "Freie Zeichnungen",
         "Zeichnung",
         "So lang ist eine Koordinateneinheit.",
@@ -31,7 +31,7 @@ fn typen_und_pakete_im_bestand() {
     assert!(
         b.dateien
             .iter()
-            .any(|d| d == "typen/tftn-fachartikel/typst.toml"),
+            .any(|d| d == "types/tftn-fachartikel/typst.toml"),
         "{:?}",
         b.dateien
     );

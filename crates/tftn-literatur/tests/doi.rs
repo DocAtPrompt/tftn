@@ -156,7 +156,7 @@ fn typst_setzt_den_eintrag() {
         "Siehe @lecun2015.\n#bibliography(\"literatur.bib\")\n",
     )
     .unwrap();
-    let typen = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen");
+    let typen = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types");
     tftn_core::schriftvorrat_setzen(vec![typen.join("tftn-leer/schriften")]);
     let p = tftn_core::Projekt::oeffnen(&o).unwrap();
     let k = tftn_core::kompilieren(&tftn_core::ProjektWorld::neu(&p).unwrap());

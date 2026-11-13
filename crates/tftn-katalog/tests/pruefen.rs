@@ -14,7 +14,7 @@ const LIB: &str = "#let kasten(farbe: none, body) = rect(fill: farbe, body)\n";
 fn fall(name: &str, baustein: &str) -> (Projekt, Katalog) {
     let basis = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("pruefen-{name}"));
     let _ = std::fs::remove_dir_all(&basis);
-    let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen");
+    let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types");
     let projekt = projekt_anlegen(
         &typen,
         "tftn-fachartikel",

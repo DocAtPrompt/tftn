@@ -16,5 +16,5 @@ SOURCE_DATE_EPOCH=1794516420 typst compile --root . --package-path packages --pa
 
 ## Herkunft
 
-- `packages/local/`: Dokumenttyp und seine Abhängigkeiten, kopiert aus TFTN `typen/`.
+- `packages/local/`: Dokumenttyp und seine Abhängigkeiten, kopiert aus TFTN `types/`.
 - `fonts/`: frei lizenzierte Schriften, Lizenzen in `fonts/LIZENZEN.txt`.

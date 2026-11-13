@@ -22,7 +22,7 @@ Aufruf:
                                                  Bausteine aller Quellen prüfen (Funktion,
                                                  Parameter, Schnipsel übersetzt)
 
-TYP ist ein Paket aus typen/, z. B. tftn-fachartikel (Ordner aus --typen, TFTN_TYPEN
+TYP ist ein Paket aus types/, z. B. tftn-fachartikel (Ordner aus --typen, TFTN_TYPEN
 oder dem TFTN-Quellordner).
 --sprache en legt die englische Vorlage an, wenn der Typ eine hat (sonst die deutsche).
 --abnehmen setzt den Zeitstempel in tftn.toml auf jetzt und legt das Ergebnis mit
@@ -143,13 +143,13 @@ fn main() -> ExitCode {
     }
 }
 
-/// Ordner der Dokumenttypen: `--typen`, `TFTN_TYPEN` oder `typen/` im TFTN-Quellordner.
+/// Ordner der Dokumenttypen: `--typen`, `TFTN_TYPEN` oder `types/` im TFTN-Quellordner.
 fn typen_ordner(aufruf: &Aufruf) -> PathBuf {
     aufruf
         .typen
         .clone()
         .or_else(|| std::env::var_os("TFTN_TYPEN").map(PathBuf::from))
-        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../typen"))
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types"))
 }
 
 fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {

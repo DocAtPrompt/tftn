@@ -3133,7 +3133,7 @@ mod tests {
         let o = std::env::temp_dir().join(format!("tftn-app-literatur-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&o);
         let p = tftn_manifest::anlegen::projekt_anlegen(
-            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../typen"),
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../types"),
             "tftn-fachartikel",
             &o,
             Some(1_793_404_800),
@@ -3168,7 +3168,7 @@ mod tests {
     fn wer_das_literaturverzeichnis_setzt() {
         let o = std::env::temp_dir().join(format!("tftn-app-verzeichnis-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&o);
-        let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../typen");
+        let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../types");
         let artikel = tftn_manifest::anlegen::projekt_anlegen(
             &typen,
             "tftn-fachartikel",

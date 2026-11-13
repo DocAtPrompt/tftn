@@ -381,18 +381,18 @@ mod tests {
 
     fn buendel() -> Vec<tftn_manifest::typen::Typquelle> {
         vec![tftn_manifest::typen::Typquelle {
-            ordner: Path::new(env!("CARGO_MANIFEST_DIR")).join("../typen"),
+            ordner: Path::new(env!("CARGO_MANIFEST_DIR")).join("../types"),
             herkunft: tftn_manifest::typen::Herkunft::Tftn,
         }]
     }
 
-    /// Neues Projekt aus `typen/` (Fachartikel 0.2.0) in einem eigenen Temp-Ordner.
+    /// Neues Projekt aus `types/` (Fachartikel 0.3.0) in einem eigenen Temp-Ordner.
     fn projekt(name: &str) -> Projekt {
         let ordner =
             std::env::temp_dir().join(format!("tftn-app-formular-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&ordner);
         tftn_manifest::anlegen::projekt_anlegen(
-            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../typen"),
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../types"),
             "tftn-fachartikel",
             &ordner,
             Some(1_793_404_800),

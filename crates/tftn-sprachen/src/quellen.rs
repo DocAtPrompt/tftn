@@ -1,6 +1,6 @@
 //! Welche Texte übersetzt werden müssen: alles in `tr!("…")` (Rust), `t("…")` und `n("…")`
 //! (TypeScript) sowie die sichtbaren Texte von `ui/index.html`. Daraus schreibt `cargo xtask
-//! sprachen` die Sprachdatei, und ein Test prüft, dass `sprachen/en.toml` vollständig ist.
+//! sprachen` die Sprachdatei, und ein Test prüft, dass `languages/en.toml` vollständig ist.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -293,7 +293,7 @@ pub fn bestand(wurzel: &Path) -> Bestand {
     }
     // Mitgelieferte Dokumenttypen und Paketbeschreibungen: die Oberfläche zeigt ihre Texte an.
     let mut daten = Vec::new();
-    if let Ok(e) = std::fs::read_dir(wurzel.join("typen")) {
+    if let Ok(e) = std::fs::read_dir(wurzel.join("types")) {
         let mut typen: Vec<PathBuf> = e.flatten().map(|e| e.path()).collect();
         typen.sort();
         for t in typen {
@@ -301,7 +301,7 @@ pub fn bestand(wurzel: &Path) -> Bestand {
             dateien(&t.join("tftn"), ".json", &mut daten);
         }
     }
-    dateien(&wurzel.join("pakete"), ".toml", &mut daten);
+    dateien(&wurzel.join("package-descriptions"), ".toml", &mut daten);
     for p in daten {
         let Ok(text) = std::fs::read_to_string(&p) else {
             continue;
@@ -316,7 +316,7 @@ pub fn bestand(wurzel: &Path) -> Bestand {
     b
 }
 
-/// Sichtbare Texte eines Manifests (`typst.toml` eines Typs, Paketbeschreibung in `pakete/`):
+/// Sichtbare Texte eines Manifests (`typst.toml` eines Typs, Paketbeschreibung in `package-descriptions/`):
 /// `titel`, `gruppe`, `hilfe`, `braucht`, `beschriftungen` in jeder Tiefe und
 /// `[package] description`.
 pub fn aus_manifest(text: &str) -> Vec<String> {
