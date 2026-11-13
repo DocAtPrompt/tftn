@@ -1,0 +1,91 @@
+# Windows-Installer zu einem Release (von Hand: Actions → Windows-Bündel → Run workflow).
+# Baut aus dem Stand des Tags einen NSIS-Installer, installiert ihn zur Probe still, prüft die
+# mitgelieferten Teile und hängt ihn an das Release des Tags. Ein Mac kann das nicht bauen (MSVC).
+name: Windows-Bündel
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release-Tag, z. B. v0.1.1"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  TYPST: "0.15.1"
+
+jobs:
+  buendel:
+    name: Installer (Windows x64)
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          # der erste Bau dauert unter Windows lange; auch nach einem Fehlschlag speichern
+          cache-on-failure: true
+
+      - name: typst-CLI holen (geprüft gegen xtask/typst-cli.sha256)
+        run: cargo xtask typst-holen ${{ env.TYPST }} --nur-host
+
+      - name: Oberfläche
+        run: npm ci
+
+      - name: Installer bauen (Tauri-Bundler, NSIS)
+        run: npx tauri build --bundles nsis --config src-tauri/tauri.buendel.json
+
+      - name: Installer benennen, Prüfsumme
+        id: datei
+        shell: bash
+        run: |
+          set -euo pipefail
+          von=$(ls target/release/bundle/nsis/*-setup.exe | head -1)
+          version="${{ inputs.tag }}"; version="${version#v}"
+          name="TFTN-${version}-windows-x64-setup.exe"
+          mv "$von" "$name"
+          sha256sum "$name" | tee "$name.sha256"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Probe-Installation (still) und Teile prüfen
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath ".\${{ steps.datei.outputs.name }}" -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Installer endete mit $($p.ExitCode)" }
+          $ziel = Join-Path $env:LOCALAPPDATA "TFTN"
+          Get-ChildItem $ziel | Format-Table Name, Length
+          foreach ($t in @("tftn-app.exe", "typst.exe", "tftn-holer.exe",
+                           "typen\tftn-fachartikel\vorlage-en\main.typ",
+                           "typen\tftn-leer\typst.toml", "sprachen\en.toml", "beschreibungen")) {
+            if (-not (Test-Path (Join-Path $ziel $t))) { throw "fehlt: $t" }
+          }
+          & (Join-Path $ziel "typst.exe") --version
+          if ($LASTEXITCODE -ne 0) { throw "typst.exe startet nicht" }
+          # Holer ohne Prüfserver: falscher Aufruf endet mit Exit 2 (PLAN-M2 AP9)
+          & (Join-Path $ziel "tftn-holer.exe")
+          if ($LASTEXITCODE -ne 2) { throw "tftn-holer: Exit $LASTEXITCODE statt 2" }
+          $global:LASTEXITCODE = 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tftn-windows
+          path: |
+            ${{ steps.datei.outputs.name }}
+            ${{ steps.datei.outputs.name }}.sha256
+
+      - name: An das Release hängen
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ inputs.tag }}" "${{ steps.datei.outputs.name }}" --clobber
