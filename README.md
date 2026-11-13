@@ -23,8 +23,8 @@ left, see the finished page on the right as you type. Built with Rust, Tauri 2 a
 Interface and bundled document types in English and German; more interface languages can be added
 as plain files. New documents follow the interface language.
 
-**Status:** early but usable day to day on macOS (Apple silicon). Windows builds and passes the test
-suite, but has not been tried by hand yet.
+**Status:** early but usable day to day on macOS (Apple silicon). The Windows build passes the test
+suite and an automated install check, but has hardly been used by hand yet.
 
 ## Documentation
 
@@ -34,9 +34,15 @@ suite, but has not been tried by hand yet.
 
 ## Install
 
-Download `TFTN.app` from the [releases](https://github.com/DocAtPrompt/tftn/releases) and drag it to
-`/Applications`. The app is not notarized: on first launch, right-click → “Open”. The matching typst
-CLI is bundled. For Windows, build from source for now.
+Download from the [releases](https://github.com/DocAtPrompt/tftn/releases):
+
+- **macOS** (Apple silicon): unzip `TFTN-<version>-macos-arm64.zip` and drag `TFTN.app` to
+  `/Applications`. The app is not notarized: on first launch, right-click → “Open”.
+- **Windows** (10/11, x64): run `TFTN-<version>-windows-x64-setup.exe`; it installs for the current
+  user without admin rights. The installer is not signed: if SmartScreen warns, choose “More info” →
+  “Run anyway”.
+
+The matching typst CLI is bundled.
 
 Optional: [Pandoc](https://pandoc.org) 3.1.2 or later for import and Word export
 (`brew install pandoc`, `winget install --id JohnMacFarlane.Pandoc`).

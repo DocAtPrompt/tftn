@@ -33,7 +33,9 @@ blank document and the journal article) come in both languages too.
 **Install (macOS):** drag `TFTN.app` from the release page into `/Applications`. The app is not
 notarized: on first launch, right-click → “Open”. The matching typst CLI is bundled.
 
-**Windows:** an installer will follow; until then, build from source (see the README).
+**Windows:** run `TFTN-<version>-windows-x64-setup.exe` from the releases page; it installs for the
+current user without admin rights. The installer is not signed: if SmartScreen warns, choose
+“More info” → “Run anyway”.
 
 **Try it:** use “Open …” and choose the `demo/` folder from the source. The sample article shows
 equations, a figure, a table, footnotes, cross-references and citations. Feel free to change

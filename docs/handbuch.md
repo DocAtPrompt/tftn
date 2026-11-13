@@ -30,7 +30,9 @@ Ihr Text bleibt gewöhnliches Typst. Jedes Dokument lässt sich auch ohne TFTN m
 **Installieren (macOS):** `TFTN.app` aus der Release-Seite nach `/Programme` ziehen. Die App ist
 nicht notarisiert: Beim ersten Start Rechtsklick → „Öffnen“. Die passende typst-CLI liegt bei.
 
-**Windows:** Ein fertiger Installer folgt; bis dahin aus dem Quelltext bauen (siehe README).
+**Windows:** `TFTN-<version>-windows-x64-setup.exe` von der Release-Seite ausführen; er installiert
+für den aktuellen Benutzer, ohne Administratorrechte. Der Installer ist nicht signiert: Warnt
+SmartScreen, „Weitere Informationen“ → „Trotzdem ausführen“.
 
 **Ausprobieren:** Mit „Öffnen …“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
 zeigt Formeln, eine Abbildung, eine Tabelle, Fußnoten, Querverweise und Zitate. Ändern ist
