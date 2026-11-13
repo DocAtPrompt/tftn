@@ -210,6 +210,9 @@ pub fn markup_patch(
             let (Some(erste), Some(letzte)) = (marken.first(), marken.last()) else {
                 return Err(PatchFehler::UngueltigerWert(tr!("Liste ohne Punkte")));
             };
+            if *aufzaehlung {
+                eigene_nummern_pruefen(text, marken)?;
+            }
             let neu_marke = if *aufzaehlung { "-" } else { "+" };
             let mut aus = String::new();
             let mut pos = erste.start;
@@ -228,9 +231,9 @@ pub fn markup_patch(
             Patch {
                 bereich: bereich.clone(),
                 text: if *block {
-                    format!("${}$", innen.trim())
+                    formel_quelltext(innen.trim(), false)
                 } else {
-                    format!("$ {innen} $")
+                    formel_quelltext(innen, true)
                 },
             }
         }
@@ -243,6 +246,29 @@ pub fn markup_patch(
     };
     pruefen(quelle, stelle, &patch)?;
     Ok(patch)
+}
+
+/// Eine Aufzählung mit eigenen Nummern (`3.`, Sprünge wie `1.` → `10.`) verlöre sie als Liste, und
+/// zurück kämen sie nicht wieder. Nummern, die Typst ohnehin vergäbe, sind kein Verlust.
+fn eigene_nummern_pruefen(text: &str, marken: &[Range<usize>]) -> Result<(), PatchFehler> {
+    let mut naechste = 1usize;
+    for m in marken {
+        let marke = &text[m.clone()];
+        if let Some(n) = marke
+            .strip_suffix('.')
+            .and_then(|z| z.parse::<usize>().ok())
+        {
+            if n != naechste {
+                return Err(PatchFehler::UngueltigerWert(tr!(
+                    "Die Aufzählung hat eigene Nummern ({marke}); als Liste gingen sie verloren – bitte im Text umstellen",
+                    marke
+                )));
+            }
+            naechste = n;
+        }
+        naechste += 1;
+    }
+    Ok(())
 }
 
 /// Text der Formel ohne `$` und ohne Leerraum am Rand; `None`, wenn `stelle` keine Formel ist.
@@ -273,16 +299,26 @@ pub fn formel_patch(
     let neu = formel_leer_pruefen(neu)?;
     let innen_von = bereich.start + 1;
     let innen = &quelle.text()[innen_von..bereich.end - 1];
+    // Endet die neue Formel in einem `//`-Kommentar, muss vor dem schließenden `$` ein Umbruch stehen.
+    let kommentar = neu.lines().last().is_some_and(|z| z.contains("//"));
+    let mit_umbruch = |hinten: &str| {
+        if kommentar && !hinten.contains('\n') {
+            format!("{neu}\n")
+        } else {
+            neu.to_string()
+        }
+    };
     let patch = if innen.trim().is_empty() {
         Patch {
             bereich: innen_von..bereich.end - 1,
-            text: neu.to_string(),
+            text: mit_umbruch(""),
         }
     } else {
         let vorne = innen.len() - innen.trim_start().len();
+        let ende = vorne + innen.trim().len();
         Patch {
-            bereich: innen_von + vorne..innen_von + vorne + innen.trim().len(),
-            text: neu.to_string(),
+            bereich: innen_von + vorne..innen_von + ende,
+            text: mit_umbruch(&innen[ende..]),
         }
     };
     let ergebnis = Source::detached(anwenden(quelle.text(), &patch));
@@ -369,6 +405,18 @@ pub fn zitat_patch(
     }
 }
 
+/// `$ innen $` (Block) bzw. `$innen$`. Endet die letzte Zeile in einem `//`-Kommentar, käme das
+/// schließende `$` mit in den Kommentar; dann steht es in einer eigenen Zeile.
+pub fn formel_quelltext(innen: &str, block: bool) -> String {
+    let kommentar = innen.lines().last().is_some_and(|z| z.contains("//"));
+    match (block, kommentar) {
+        (true, false) => format!("$ {innen} $"),
+        (true, true) => format!("$ {innen}\n$"),
+        (false, false) => format!("${innen}$"),
+        (false, true) => format!("${innen}\n$"),
+    }
+}
+
 /// Neue Formel bei `byte`: `$ neu $` (Block) oder `$neu$` (im Satz). Nur im Markup.
 pub fn formel_einfuegen(
     quelle: &Source,
@@ -379,11 +427,7 @@ pub fn formel_einfuegen(
     let neu = formel_leer_pruefen(neu)?;
     let patch = Patch {
         bereich: byte..byte,
-        text: if block {
-            format!("$ {neu} $")
-        } else {
-            format!("${neu}$")
-        },
+        text: formel_quelltext(neu, block),
     };
     let ergebnis = Source::detached(anwenden(quelle.text(), &patch));
     formel_ergebnis_pruefen(quelle, &ergebnis, 1)?;

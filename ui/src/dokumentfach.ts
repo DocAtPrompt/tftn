@@ -323,7 +323,14 @@ export class DokumentFach {
         const s = el("select");
         if (!f.pflicht || wert === undefined) s.append(new Option("—", ""));
         art.werte.forEach((w, i) => s.append(new Option(art.beschriftungen[i] ?? String(w), String(i))));
-        merken(s, String(eingabeZeigen(art, wert)));
+        const gezeigt = String(eingabeZeigen(art, wert));
+        if (gezeigt === "" && wert !== undefined && wert !== null) {
+          // Wert aus der Datei, den die Auswahl nicht kennt: zeigen statt still die erste Option.
+          const fremd = new Option(t("{wert} (nicht in der Liste)", { wert: JSON.stringify(wert) }), "?", true, true);
+          fremd.disabled = true;
+          s.append(fremd);
+        }
+        merken(s, gezeigt === "" && wert !== undefined && wert !== null ? "?" : gezeigt);
         beiAenderung(s);
         return s;
       }

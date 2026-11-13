@@ -146,11 +146,12 @@ export class ZitatPalette {
     this.fuss.textContent =
       s.anzahl === 0
         ? t("Keine Literatur geladen (literatur.bib fehlt oder ist fehlerhaft).")
-        : t("{treffer} von {anzahl} Einträgen · Suche {ms} ms · Enter fügt ein", {
-            treffer: s.treffer.length,
-            anzahl: s.anzahl,
-            ms: s.dauer_ms.toFixed(1),
-          });
+        : (() => {
+            const w = { treffer: s.treffer.length, anzahl: s.anzahl, ms: s.dauer_ms.toFixed(1) };
+            return this.aendern
+              ? t("{treffer} von {anzahl} Einträgen · Suche {ms} ms · Enter übernimmt die Quelle", w)
+              : t("{treffer} von {anzahl} Einträgen · Suche {ms} ms · Enter fügt ein", w);
+          })();
   }
 
   private markieren() {

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lebenslauf",
+  "type": "object",
+  "required": ["name"],
+  "x-tftn-reihenfolge": ["name", "beruf", "kontakt", "geburtsdatum", "foto", "ort", "datum", "sprache"],
+  "properties": {
+    "name": { "type": "string", "title": "Name", "x-tftn-pandoc": "title" },
+    "beruf": { "type": "string", "title": "Beruf oder Titel", "description": "Steht unter dem Namen" },
+    "kontakt": {
+      "type": "object",
+      "title": "Kontakt",
+      "x-tftn-gruppe": "Kontakt",
+      "properties": {
+        "zeilen": { "type": "array", "title": "Anschrift", "items": { "type": "string" } },
+        "telefon": { "type": "string", "title": "Telefon" },
+        "email": { "type": "string", "title": "E-Mail", "format": "email" },
+        "web": { "type": "string", "title": "Webseite" }
+      }
+    },
+    "geburtsdatum": { "type": "string", "title": "Geburtsdatum", "description": "Leer: wird nicht angegeben", "format": "date" },
+    "foto": { "type": "string", "title": "Foto", "description": "Bilddatei im Dokumentordner, z. B. foto.jpg; leer: ohne Foto" },
+    "ort": { "type": "string", "title": "Ort", "description": "Ort und Datum stehen am Ende; leer: weggelassen" },
+    "datum": { "type": "string", "title": "Datum", "format": "date" },
+    "sprache": {
+      "type": "string",
+      "title": "Sprache",
+      "description": "Sprache des Lebenslaufs: Silbentrennung, Rechtschreibung und Datum",
+      "default": "de",
+      "oneOf": [
+        { "const": "de", "title": "Deutsch" },
+        { "const": "en", "title": "Englisch" }
+      ]
+    }
+  }
+}

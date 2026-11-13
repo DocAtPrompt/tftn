@@ -1,0 +1,10 @@
+name = "First Last"
+beruf = "Profession"
+ort = "Vienna"
+datum = 2026-01-15
+sprache = "en"
+
+[kontakt]
+zeilen = ["Straße 1", "1010 Wien", "Austria"]
+telefon = "+43 1 234 56 78"
+email = "name@example.org"

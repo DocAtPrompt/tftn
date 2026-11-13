@@ -4,6 +4,7 @@
 import { type EditorState, type Extension, StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView } from "@codemirror/view";
 import { t } from "./sprache";
+import { anAnker } from "./platz";
 
 export interface RechtschreibungJs {
   rev: number;
@@ -108,8 +109,8 @@ export function rechtschreibMenue(a: RechtschreibAktionen): Extension {
         const warten = zeile(t("Vorschläge …"), "menue-gruppe");
         huelle.replaceChildren(zeile(w.wort, "menue-titel"), warten, ...unten);
         huelle.hidden = false;
-        huelle.style.left = `${Math.min(e.clientX, window.innerWidth - 240)}px`;
-        huelle.style.top = `${Math.min(e.clientY, window.innerHeight - 220)}px`;
+        const anker = { x: e.clientX, oben: e.clientY, unten: e.clientY };
+        anAnker(huelle, anker);
         setTimeout(() => document.addEventListener("mousedown", daneben, true));
         a.vorschlaege(w.wort).then(
           (liste) => {
@@ -118,6 +119,7 @@ export function rechtschreibMenue(a: RechtschreibAktionen): Extension {
               ? liste.map((v) => zeile(v, "menue-eintrag", () => ersetzen(v)))
               : [zeile(t("Keine Vorschläge"), "menue-gruppe")];
             warten.replaceWith(...zeilen);
+            anAnker(huelle, anker); // gewachsen: wieder ganz ins Fenster
           },
           () => warten.replaceWith(zeile(t("Keine Vorschläge"), "menue-gruppe")),
         );

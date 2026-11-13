@@ -1,6 +1,7 @@
 // TFTN-Editor (PLAN-M1 AP3, AP4): CodeMirror 6 als einziger Schreiber, Rust führt den Spiegel
 // und kompiliert die Vorschau.
 
+import { meldungMit } from "./meldung";
 import { type ChangeSet, Compartment, EditorState, Prec, StateEffect, StateField, type Transaction } from "@codemirror/state";
 import {
   Decoration,
@@ -665,7 +666,7 @@ function fehlerMelden(fehler: unknown, was: string) {
     // Die Positionen der Leiste gehören zu einem älteren Text: neu holen.
     seitenleiste?.nachladen();
   } else {
-    hinweis(`${was}: ${fehler}`);
+    hinweis(meldungMit(was, String(fehler)));
   }
 }
 
@@ -1346,6 +1347,7 @@ async function start() {
     tabelle: tabelleAktion,
     markup: markupAktion,
     zitat: zitatAendern,
+    zurueck: () => view.focus(),
     zitatQuelle: (r, seite) => palette.oeffnenZumAendern((schluessel) => {
       zitatAendern(r, seite, schluessel);
       view.focus();

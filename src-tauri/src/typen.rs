@@ -880,12 +880,16 @@ mod tests {
     fn typen_js_mit_herkunft() {
         let o = ordner("liste");
         let js = typen_js(&quellen(&typen(), &o), &o.join("typen"), Some(&o));
-        assert_eq!(js.typen.len(), 2);
-        assert_eq!(js.typen[0].name, "tftn-fachartikel");
-        assert_eq!(js.typen[1].name, "tftn-leer");
-        assert_eq!(js.typen[0].version, "0.3.0");
+        assert_eq!(js.typen.len(), 8);
+        let i = js
+            .typen
+            .iter()
+            .position(|t| t.name == "tftn-fachartikel")
+            .unwrap();
+        assert!(js.typen.iter().any(|t| t.name == "tftn-leer"));
+        assert_eq!(js.typen[i].version, "0.3.0");
         let v = serde_json::to_value(&js).unwrap();
-        assert_eq!(v["typen"][0]["herkunft"], "tftn");
+        assert_eq!(v["typen"][i]["herkunft"], "tftn");
         assert!(v.get("eigener_ordner").is_some() && v.get("vorgabe_ordner").is_some());
         let _ = std::fs::remove_dir_all(&o);
     }

@@ -65,6 +65,20 @@ fn mein_typ(eigen: &Path) -> PathBuf {
     t
 }
 
+/// Mitgelieferte Typen mit Vorlage: Befund, Bericht, Brief, Fachartikel, Fachbuch, Lebenslauf,
+/// Leer, Plakat.
+const ANZAHL: usize = 8;
+
+fn name<'a>(
+    liste: &'a [tftn_manifest::typen::TypEintrag],
+    n: &str,
+) -> &'a tftn_manifest::typen::TypEintrag {
+    liste
+        .iter()
+        .find(|t| t.name == n)
+        .unwrap_or_else(|| panic!("{n} fehlt"))
+}
+
 #[test]
 fn liste_aus_buendel() {
     let (_, buendel, _) = ordner("liste");
@@ -73,9 +87,8 @@ fn liste_aus_buendel() {
         herkunft: Herkunft::Tftn,
     }]);
     assert!(warnungen.is_empty(), "{warnungen:?}");
-    assert_eq!(liste.len(), 2, "{liste:?}");
-    let t = &liste[0];
-    assert_eq!(t.name, "tftn-fachartikel");
+    assert_eq!(liste.len(), ANZAHL, "{liste:?}");
+    let t = name(&liste, "tftn-fachartikel");
     assert_eq!(t.version.to_string(), "0.3.0");
     assert_eq!(t.titel, "Fachartikel");
     assert_eq!(t.beschreibung.as_deref(), Some("Fachartikel (TFTN)"));
@@ -85,7 +98,7 @@ fn liste_aus_buendel() {
         t.braucht
     );
     assert!(
-        liste[1].braucht.is_empty(),
+        name(&liste, "tftn-leer").braucht.is_empty(),
         "das leere Dokument braucht nichts"
     );
     assert_eq!(t.herkunft, Herkunft::Tftn);
@@ -107,10 +120,11 @@ fn eigener_typ_hat_vorrang() {
         r#"titel = "Mein Artikel""#,
     );
     let (liste, warnungen) = verfuegbar(&quellen(&eigen, &buendel));
-    assert_eq!(liste.len(), 2, "{liste:?}");
-    assert_eq!(liste[0].titel, "Mein Artikel");
-    assert_eq!(liste[0].version.to_string(), "0.1.5");
-    assert_eq!(liste[0].herkunft, Herkunft::Eigen);
+    assert_eq!(liste.len(), ANZAHL, "{liste:?}");
+    let t = name(&liste, "tftn-fachartikel");
+    assert_eq!(t.titel, "Mein Artikel");
+    assert_eq!(t.version.to_string(), "0.1.5");
+    assert_eq!(t.herkunft, Herkunft::Eigen);
     assert_eq!(
         warnungen,
         ["tftn-fachartikel im eigenen Ordner überdeckt tftn-fachartikel 0.3.0 aus TFTN"]
@@ -123,8 +137,8 @@ fn kaputter_eigener_typ_ist_warnung() {
     std::fs::create_dir_all(eigen.join("x")).unwrap();
     std::fs::write(eigen.join("x/typst.toml"), "kaputt").unwrap();
     let (liste, warnungen) = verfuegbar(&quellen(&eigen, &buendel));
-    assert_eq!(liste.len(), 2);
-    assert_eq!(liste[0].name, "tftn-fachartikel");
+    assert_eq!(liste.len(), ANZAHL);
+    name(&liste, "tftn-fachartikel");
     assert_eq!(warnungen.len(), 1, "{warnungen:?}");
     assert!(warnungen[0].contains('x'), "{warnungen:?}");
 }

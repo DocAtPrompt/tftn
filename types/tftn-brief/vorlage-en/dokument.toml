@@ -1,0 +1,12 @@
+sprache = "en"
+empfaenger = ["Ms Erika Sample", "1 Sample Street", "London SW1A 1AA", "United Kingdom"]
+ort = "Vienna"
+datum = 2026-01-15
+betreff = "Subject of the letter"
+gruss = "Kind regards"
+
+[absender]
+name = "First Last"
+zeilen = ["Straße 1", "1010 Wien", "Austria"]
+telefon = "+43 1 234 56 78"
+email = "name@example.org"

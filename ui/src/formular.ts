@@ -166,7 +166,18 @@ export function eingabeZeigen(art: Art, wert: unknown): string | boolean {
       return iso ? `${iso[3]}.${iso[2]}.${iso[1]}` : String(wert);
     }
     case "liste":
-      return Array.isArray(wert) ? wert.map((w) => String(eingabeZeigen(art.element, w))).join("\n") : "";
+      if (Array.isArray(wert)) return wert.map((w) => String(eingabeZeigen(art.element, w))).join("\n");
+      // Von Hand falsch eingetragen (`schlagworte = "a, b"`): Rohwert zeigen, je Komma eine Zeile –
+      // Bestätigen macht daraus eine Liste, statt den Wert still zu leeren.
+      return typeof wert === "string"
+        ? wert
+            .split(",")
+            .map((z) => z.trim())
+            .filter((z) => z !== "")
+            .join("\n")
+        : typeof wert === "object"
+          ? JSON.stringify(wert)
+          : String(wert);
     case "wahl": {
       const i = art.werte.findIndex((w) => JSON.stringify(w) === JSON.stringify(wert));
       return i < 0 ? "" : String(i);

@@ -30,15 +30,22 @@ pub struct Daten {
     doc: DocumentMut,
     /// Die Datei hatte CRLF (Windows): beim Ausgeben wieder so (toml_edit schreibt sonst LF).
     crlf: bool,
+    /// Die Datei begann mit einem UTF-8-BOM: beim Ausgeben wieder davor (toml_edit lässt ihn weg).
+    bom: bool,
 }
 
 impl Daten {
     /// Liest den Text; die Fehlermeldung nennt Zeile und Spalte.
     pub fn lesen(text: &str) -> Result<Daten, String> {
+        let (bom, text) = match text.strip_prefix('\u{feff}') {
+            Some(rest) => (true, rest),
+            None => (false, text),
+        };
         text.parse::<DocumentMut>()
             .map(|doc| Daten {
                 doc,
                 crlf: text.contains("\r\n"),
+                bom,
             })
             .map_err(|e| {
                 let start = e.span().map(|s| s.start).unwrap_or(0).min(text.len());
@@ -56,12 +63,13 @@ impl Daten {
 
     pub fn text(&self) -> String {
         let t = self.doc.to_string();
-        if self.crlf {
+        let t = if self.crlf {
             // Zeilenumbrüche in mehrzeiligen Strings liest TOML als `\n` zurück; der Wert bleibt.
             t.replace("\r\n", "\n").replace('\n', "\r\n")
         } else {
             t
-        }
+        };
+        if self.bom { format!("\u{feff}{t}") } else { t }
     }
 
     /// Alle Werte als JSON-Objekt; Datumswerte als `JJJJ-MM-TT`.
@@ -135,6 +143,40 @@ impl Daten {
         .ok_or_else(|| tr!("Eintrag fehlt"))?;
         if t.get(schluessel).is_none() {
             t.insert(schluessel, Item::ArrayOfTables(ArrayOfTables::new()));
+        }
+        // Von Hand als Inline-Array geschrieben (`autoren = [{…}]`): in dieser Form bearbeiten.
+        if let Some(Item::Value(Value::Array(arr))) = t.get_mut(schluessel) {
+            if !arr.iter().all(Value::is_inline_table) {
+                return Err(tr!("die Daten haben hier keine Liste von Einträgen"));
+            }
+            let n = arr.len();
+            match aktion {
+                EintragAktion::Hinzufuegen => {
+                    anzahl(n + 1, None, *max)?;
+                    let mut neu = neuer_eintrag(felder).into_inline_table();
+                    neu.fmt();
+                    arr.push(neu);
+                }
+                EintragAktion::Entfernen { index } => {
+                    if index >= n {
+                        return Err(tr!("Eintrag fehlt"));
+                    }
+                    anzahl(n - 1, *min, None)?;
+                    arr.remove(index);
+                }
+                EintragAktion::Verschieben { index, nach } => {
+                    if index >= n || nach >= n {
+                        return Err(tr!("Eintrag fehlt"));
+                    }
+                    let v = arr.remove(index);
+                    arr.insert_formatted(nach, v);
+                }
+            }
+            arr.fmt();
+            if arr.is_empty() {
+                t.remove(schluessel);
+            }
+            return Ok(());
         }
         let liste = t
             .get_mut(schluessel)

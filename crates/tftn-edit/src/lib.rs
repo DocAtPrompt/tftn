@@ -32,8 +32,8 @@ pub use literal::{
     schreiben,
 };
 pub use markup::{
-    EBENE_MAX, MarkupAktion, MarkupStelle, formel_einfuegen, formel_patch, formel_text,
-    markup_patch, markup_stellen, zitat_patch,
+    EBENE_MAX, MarkupAktion, MarkupStelle, formel_einfuegen, formel_patch, formel_quelltext,
+    formel_text, markup_patch, markup_stellen, zitat_patch,
 };
 pub use seite::{Raender, SeitenFeld, SeitenStand, Zeile, seite_lesen, seite_patch};
 pub use tabelle::{

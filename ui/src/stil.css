@@ -673,6 +673,9 @@ body {
   border: 1px solid var(--linie);
   border-radius: 6px;
   box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  /* höher als das Fenster: rollen statt abschneiden */
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
 }
 
 .popover[hidden] {
@@ -697,6 +700,8 @@ body {
   border: 1px solid var(--linie);
   border-radius: 6px;
   box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
 }
 
 .vorschau-menue[hidden] {

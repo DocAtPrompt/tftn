@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Befund",
+  "type": "object",
+  "required": ["titel", "patient"],
+  "x-tftn-reihenfolge": ["titel", "patient", "ort", "datum", "empfaenger", "praxis", "gruss", "unterschrift", "sprache"],
+  "properties": {
+    "titel": { "type": "string", "title": "Art des Dokuments", "description": "z. B. Befund, Arztbrief, Ärztliche Bestätigung", "default": "Befund" },
+    "patient": {
+      "type": "object",
+      "title": "Patient/in",
+      "x-tftn-gruppe": "Patient/in",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "title": "Name", "x-tftn-sensibel": true },
+        "geburtsdatum": { "type": "string", "title": "Geburtsdatum", "format": "date", "x-tftn-sensibel": true },
+        "svnr": { "type": "string", "title": "Sozialversicherungsnummer", "format": "sv-nummer", "x-tftn-sensibel": true }
+      }
+    },
+    "ort": { "type": "string", "title": "Ort" },
+    "datum": { "type": "string", "title": "Datum", "format": "date" },
+    "empfaenger": {
+      "type": "array",
+      "title": "Empfänger",
+      "description": "z. B. zuweisende Ärztin; je Zeile ein Eintrag, leer: kein Empfänger",
+      "maxItems": 6,
+      "items": { "type": "string" }
+    },
+    "praxis": {
+      "type": "object",
+      "title": "Ordination",
+      "x-tftn-gruppe": "Ordination",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "title": "Name" },
+        "fach": { "type": "string", "title": "Fachrichtung" },
+        "zeilen": { "type": "array", "title": "Anschrift", "items": { "type": "string" } },
+        "telefon": { "type": "string", "title": "Telefon" },
+        "email": { "type": "string", "title": "E-Mail", "format": "email" }
+      }
+    },
+    "gruss": { "type": "string", "title": "Grußformel", "default": "Mit freundlichen Grüßen" },
+    "unterschrift": { "type": "string", "title": "Name unter der Unterschrift", "description": "Leer: der Name der Ordination" },
+    "sprache": {
+      "type": "string",
+      "title": "Sprache",
+      "description": "Sprache des Dokuments: Silbentrennung, Rechtschreibung, Datum und Beschriftungen",
+      "default": "de",
+      "oneOf": [
+        { "const": "de", "title": "Deutsch" },
+        { "const": "en", "title": "Englisch" }
+      ]
+    }
+  }
+}

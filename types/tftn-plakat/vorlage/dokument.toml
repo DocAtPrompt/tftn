@@ -1,0 +1,13 @@
+titel = "Titel des Plakats"
+untertitel = "Untertitel"
+autoren = ["Vorname Nachname"]
+institution = "Institution"
+kontakt = "name@example.org"
+format = "a0"
+spalten = 3
+farbe = "#1f4e79"
+sprache = "de"
+
+[literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"

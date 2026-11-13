@@ -10,8 +10,9 @@ check) does a request go out, and only to a fixed address.
 Your text stays plain Typst. Every document can be compiled without TFTN using the typst CLI and
 yields the same PDF.
 
-The interface is available in English and German. The document types that ship with TFTN (the
-blank document and the journal article) come in both languages too.
+The interface is available in English and German. The document types that ship with TFTN come in
+both languages too: blank document, letter, medical report (doctor's letter), report, journal
+article, book, poster and CV.
 
 ## Contents
 
@@ -47,8 +48,12 @@ type, for example a journal article with front matter and bibliography.
 
 **Language of a new document:** new documents and the empty draft use the interface language –
 with an English interface you get an English template (hyphenation, spell checking, and labels such
-as “Abstract”, “Keywords” and “References”). In a journal article you can switch later: “Document”
-tab → “Language”.
+as “Abstract”, “Keywords” and “References”). In every document type with a form you can switch
+later: “Document” tab → “Language”.
+
+**Medical reports** contain health data. Keep such documents outside any Git repository; TFTN
+shows a warning in the “Document” tab if the folder lies inside one. Everything stays on your
+computer – TFTN never sends text anywhere.
 
 **What is a project?** A folder with `tftn.toml`, the main file (usually `main.typ`), and for
 templates also `dokument.toml` (front matter), the bibliography file, the fonts (`fonts/`) and the

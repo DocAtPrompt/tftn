@@ -1,0 +1,13 @@
+titel = "Title of the poster"
+untertitel = "Subtitle"
+autoren = ["First Last"]
+institution = "Institution"
+kontakt = "name@example.org"
+format = "a0"
+spalten = 3
+farbe = "#1f4e79"
+sprache = "en"
+
+[literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"

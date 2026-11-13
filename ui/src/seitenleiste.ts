@@ -62,6 +62,8 @@ export interface SeitenleisteAktionen {
   bausteine(anfrage: string): Promise<EintragJs[]>;
   einfuegen(id: string): void;
   geschlossen(): void;
+  /** Zurück in den Text (Esc in einem Feld der Leiste). */
+  zurueck?(): void;
 }
 
 export type Fach = "hier" | "einfuegen" | "formel" | "seite" | "dokument" | "pakete";
@@ -312,14 +314,30 @@ export class Seitenleiste {
     z.dataset.schluessel = "zitat-seite";
     const seite = el("input");
     seite.placeholder = t("Seitenangabe");
-    seite.title = t("Enter übernimmt; beginnt die Angabe mit einer Zahl, kommt „S.“ davor; leer entfernt sie");
+    seite.title = t("Enter oder Verlassen übernimmt, Esc verwirft; beginnt die Angabe mit einer Zahl, kommt „S.“ davor; leer entfernt sie");
     seite.spellcheck = false;
-    seite.value = m.zusatz ?? "";
+    let vorher = m.zusatz ?? "";
+    seite.value = vorher;
+    const uebernehmen = () => {
+      const neu = seite.value.trim();
+      if (neu === vorher) return;
+      vorher = neu; // Enter, danach Verlassen: nur einmal schreiben
+      this.a.zitat(this.rev, neu || null, null);
+    };
     seite.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter") return;
-      e.preventDefault();
-      this.a.zitat(this.rev, seite.value.trim() || null, null);
+      if (e.key === "Enter") {
+        e.preventDefault();
+        uebernehmen();
+      } else if (e.key === "Escape") {
+        // verwerfen und zurück in den Text, ohne die Leiste zu schließen
+        e.preventDefault();
+        e.stopPropagation();
+        seite.value = vorher;
+        this.a.zurueck?.();
+      }
     });
+    // Verlassen übernimmt wie Enter (wie die übrigen Felder der Leiste).
+    seite.addEventListener("blur", uebernehmen);
     const quelle = el("button", "", t("Andere Quelle …"));
     quelle.addEventListener("click", () => this.a.zitatQuelle(this.rev, m.zusatz ?? null));
     z.append(el("span", "leiste-titel", t("Zitat: {schluessel}", { schluessel: m.schluessel ?? "" })), seite, quelle);

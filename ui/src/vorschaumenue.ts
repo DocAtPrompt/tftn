@@ -6,6 +6,7 @@
 import type { HierJs } from "./seitenleiste";
 import type { FeldJs, Wert } from "./werte";
 import { t } from "./sprache";
+import { anAnker } from "./platz";
 
 /** Antwort von `klick` (Rust `KlickAntwort`). */
 export type KlickAntwort =
@@ -120,8 +121,7 @@ export class VorschauMenue {
     }
     this.huelle.replaceChildren(...zeilen);
     this.huelle.hidden = false;
-    this.huelle.style.left = `${Math.min(maus.x, window.innerWidth - 240)}px`;
-    this.huelle.style.top = `${Math.min(maus.y, window.innerHeight - 40 - 24 * zeilen.length)}px`;
+    anAnker(this.huelle, { x: maus.x, oben: maus.y, unten: maus.y });
     setTimeout(() => document.addEventListener("mousedown", this.schliesser, true));
   }
 

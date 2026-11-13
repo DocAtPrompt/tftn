@@ -1,0 +1,11 @@
+titel = "Titel des Berichts"
+untertitel = "Untertitel"
+autoren = ["Vorname Nachname"]
+institution = "Institution"
+datum = 2026-01-15
+sprache = "de"
+inhaltsverzeichnis = true
+
+[literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"

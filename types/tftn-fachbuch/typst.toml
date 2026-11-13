@@ -1,0 +1,55 @@
+[package]
+name = "tftn-fachbuch"
+version = "0.1.0"
+entrypoint = "lib.typ"
+compiler = "0.15.1"
+authors = ["TFTN"]
+description = "Fachbuch (TFTN)"
+
+[template]
+path = "vorlage"
+entrypoint = "main.typ"
+
+# Manifest für TFTN (KONZEPT 5); Typst ignoriert diesen Abschnitt.
+[tool.tftn]
+schema-version = 1
+titel = "Fachbuch"
+achse = "publikation"
+formular = "tftn/formular.schema.json"
+daten = "dokument.toml"
+sprache = { lang = "de", region = "AT" }
+vorlagen = { en = "vorlage-en" }
+schriften = [
+  "../tftn-fachartikel/schriften/LibertinusSerif-Regular.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-Italic.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-Bold.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-BoldItalic.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-Semibold.otf",
+  "../tftn-fachartikel/schriften/LibertinusSerif-SemiboldItalic.otf",
+  "../tftn-fachartikel/schriften/NewCMMath-Regular.otf",
+  "../tftn-fachartikel/schriften/NewCMMath-Book.otf",
+  "../tftn-fachartikel/schriften/NewCMMath-Bold.otf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-Bold.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-Oblique.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-BoldOblique.ttf",
+  "../tftn-fachartikel/schriften/LIZENZEN.txt",
+]
+
+braucht = [
+  "Titel, Autorinnen und Autoren und Impressum: trägst du gleich danach im Fach „Dokument“ ein.",
+  "Kapitel: je eine Datei im Ordner kapitel, eingebunden mit #include in main.typ.",
+  "Literatur: eine .bib-Datei, am einfachsten als Auto-Export aus Zotero, unter dem Namen literatur.bib im Dokumentordner.",
+]
+
+[tool.tftn.literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"
+quelle = "zotero-bbt"
+
+[tool.tftn.export.vorschau]
+art = "pdf"
+
+[tool.tftn.export.archiv]
+art = "pdf"
+pdf-standards = ["a-2b"]

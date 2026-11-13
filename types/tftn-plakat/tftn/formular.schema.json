@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Plakat",
+  "type": "object",
+  "required": ["titel"],
+  "x-tftn-reihenfolge": ["titel", "untertitel", "autoren", "institution", "kontakt", "format", "spalten", "farbe", "sprache", "literatur"],
+  "properties": {
+    "titel": { "type": "string", "title": "Titel", "x-tftn-pandoc": "title" },
+    "untertitel": { "type": "string", "title": "Untertitel", "x-tftn-pandoc": "subtitle" },
+    "autoren": { "type": "array", "title": "Autorinnen und Autoren", "items": { "type": "string" }, "x-tftn-pandoc": "author" },
+    "institution": { "type": "string", "title": "Institution" },
+    "kontakt": { "type": "string", "title": "Kontakt", "description": "Steht unten links, z. B. eine E-Mail-Adresse" },
+    "format": {
+      "type": "string",
+      "title": "Format",
+      "default": "a0",
+      "x-tftn-gruppe": "Aussehen",
+      "oneOf": [
+        { "const": "a0", "title": "A0 (84 × 119 cm)" },
+        { "const": "a1", "title": "A1 (59 × 84 cm)" },
+        { "const": "a2", "title": "A2 (42 × 59 cm)" }
+      ]
+    },
+    "spalten": { "type": "integer", "title": "Spalten", "minimum": 1, "maximum": 4, "default": 3, "x-tftn-gruppe": "Aussehen" },
+    "farbe": { "type": "string", "title": "Farbe", "description": "Farbe von Kopfband und Überschriften als #RRGGBB", "pattern": "^#[0-9a-fA-F]{6}$", "default": "#1f4e79", "x-tftn-gruppe": "Aussehen" },
+    "sprache": {
+      "type": "string",
+      "title": "Sprache",
+      "description": "Sprache des Texts: Silbentrennung, Rechtschreibung und Beschriftungen",
+      "default": "de",
+      "oneOf": [
+        { "const": "de", "title": "Deutsch" },
+        { "const": "en", "title": "Englisch" }
+      ]
+    },
+    "literatur": {
+      "type": "object",
+      "title": "Literatur",
+      "x-tftn-gruppe": "Literatur",
+      "required": ["dateien"],
+      "properties": {
+        "dateien": {
+          "type": "array",
+          "title": "Literaturdateien",
+          "description": "BibLaTeX (.bib) oder Hayagriva (.yaml), relativ zum Projektordner",
+          "minItems": 1,
+          "items": { "type": "string", "format": "literaturdatei" }
+        },
+        "stil": {
+          "type": "string",
+          "title": "Zitierstil",
+          "description": "Eingebauter Stil (z. B. american-psychological-association, ieee) oder eine .csl-Datei im Projekt",
+          "format": "zitierstil",
+          "default": "american-psychological-association"
+        }
+      }
+    }
+  }
+}

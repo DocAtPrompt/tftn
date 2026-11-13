@@ -96,6 +96,14 @@ describe("zeigen_ist_umkehrung", () => {
   });
 });
 
+describe("falscher_typ_in_der_datei", () => {
+  it("liste aus Text: Rohwert sichtbar, Bestätigen ergibt Liste", () => {
+    expect(eingabeZeigen(liste, "a, b")).toBe("a\nb");
+    expect(wert(liste, eingabeZeigen(liste, "a, b"))).toEqual(["a", "b"]);
+    expect(eingabeZeigen(liste, 5)).toBe("5");
+  });
+});
+
 describe("pfade", () => {
   it("pfadText und wertAn", () => {
     expect(pfadText(["autoren", 0, "name"])).toBe("autoren.0.name");

@@ -1,0 +1,13 @@
+titel = "Title of the book"
+untertitel = "Subtitle"
+autoren = ["First Last"]
+verlag = "Publisher"
+ort = "Vienna"
+jahr = 2026
+auflage = 1
+widmung = "For everyone who reads it."
+sprache = "en"
+
+[literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"

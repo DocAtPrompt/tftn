@@ -1,0 +1,13 @@
+titel = "Titel des Buchs"
+untertitel = "Untertitel"
+autoren = ["Vorname Nachname"]
+verlag = "Verlag"
+ort = "Wien"
+jahr = 2026
+auflage = 1
+widmung = "Für alle, die es lesen."
+sprache = "de"
+
+[literatur]
+dateien = ["literatur.bib"]
+stil = "american-psychological-association"

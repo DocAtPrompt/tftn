@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fachbuch",
+  "type": "object",
+  "required": ["titel"],
+  "x-tftn-reihenfolge": ["titel", "untertitel", "autoren", "verlag", "ort", "jahr", "auflage", "isbn", "widmung", "sprache", "literatur"],
+  "properties": {
+    "titel": { "type": "string", "title": "Titel", "x-tftn-pandoc": "title" },
+    "untertitel": { "type": "string", "title": "Untertitel", "x-tftn-pandoc": "subtitle" },
+    "autoren": { "type": "array", "title": "Autorinnen und Autoren", "items": { "type": "string" }, "x-tftn-pandoc": "author" },
+    "verlag": { "type": "string", "title": "Verlag", "x-tftn-gruppe": "Impressum" },
+    "ort": { "type": "string", "title": "Verlagsort", "x-tftn-gruppe": "Impressum" },
+    "jahr": { "type": "integer", "title": "Jahr", "minimum": 1, "maximum": 9999, "x-tftn-gruppe": "Impressum" },
+    "auflage": { "type": "integer", "title": "Auflage", "minimum": 1, "x-tftn-gruppe": "Impressum" },
+    "isbn": { "type": "string", "title": "ISBN", "x-tftn-gruppe": "Impressum" },
+    "widmung": { "type": "string", "title": "Widmung", "description": "Leer: keine Widmungsseite", "x-tftn-widget": "markup" },
+    "sprache": {
+      "type": "string",
+      "title": "Sprache",
+      "description": "Sprache des Buchs: Silbentrennung, Rechtschreibung und Beschriftungen",
+      "default": "de",
+      "oneOf": [
+        { "const": "de", "title": "Deutsch" },
+        { "const": "en", "title": "Englisch" }
+      ]
+    },
+    "literatur": {
+      "type": "object",
+      "title": "Literatur",
+      "x-tftn-gruppe": "Literatur",
+      "required": ["dateien"],
+      "properties": {
+        "dateien": {
+          "type": "array",
+          "title": "Literaturdateien",
+          "description": "BibLaTeX (.bib) oder Hayagriva (.yaml), relativ zum Projektordner",
+          "minItems": 1,
+          "items": { "type": "string", "format": "literaturdatei" }
+        },
+        "stil": {
+          "type": "string",
+          "title": "Zitierstil",
+          "description": "Eingebauter Stil (z. B. american-psychological-association, ieee) oder eine .csl-Datei im Projekt",
+          "format": "zitierstil",
+          "default": "american-psychological-association"
+        }
+      }
+    }
+  }
+}

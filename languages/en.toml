@@ -72,6 +72,7 @@ name = "English"
 # crates/tftn-edit/src/markup.rs
 "An dieser Stelle steht kein Zitat." = "There is no citation at this position."
 "An dieser Stelle steht keine Formel." = "There is no equation at this place."
+"Die Aufzählung hat eigene Nummern ({marke}); als Liste gingen sie verloren – bitte im Text umstellen" = "The numbered list has its own numbers ({marke}); they would be lost as a bullet list – please change it in the text"
 "Die Formel ist leer." = "The equation is empty."
 "Die Formel ist so nicht gültig (Syntaxfehler)." = "The equation is not valid like this (syntax error)."
 "Diese Quelle lässt sich hier nur im Code eintragen." = "This source can only be entered in code here."
@@ -563,6 +564,7 @@ name = "English"
 "nach export/, Zeitstempel wird auf jetzt gesetzt" = "to export/, timestamp is set to now"
 "nach oben" = "move up"
 "nach unten" = "move down"
+"{wert} (nicht in der Liste)" = "{wert} (not in the list)"
 
 # ui/src/editoren.ts
 "etwa 12 pt" = "e.g. 12 pt"
@@ -922,7 +924,7 @@ name = "English"
 "Dokument" = "Document"
 "Ebene höher" = "Promote"
 "Ebene tiefer" = "Demote"
-"Enter übernimmt; beginnt die Angabe mit einer Zahl, kommt „S.“ davor; leer entfernt sie" = "Enter applies; if the reference starts with a number, “p.” is added before it; empty removes it"
+"Enter oder Verlassen übernimmt, Esc verwirft; beginnt die Angabe mit einer Zahl, kommt „S.“ davor; leer entfernt sie" = "Enter or leaving the field applies, Esc discards; if it starts with a number, “p.” is added; empty removes it"
 "Formel als Block" = "Block equation"
 "Formel im Satz" = "Inline equation"
 "Hier" = "Here"
@@ -1033,7 +1035,6 @@ name = "English"
 "ungültiges Label – nur Buchstaben, Ziffern, _ - . :" = "invalid label – only letters, digits, _ - . :"
 "vier ganze Zahlen, getrennt durch ;" = "four whole numbers separated by ;"
 "zwei Werte, getrennt durch ;" = "two values separated by ;"
-"{wert} (nicht in der Liste)" = "{wert} (not in the list)"
 "„{eintrag}“: {fehler}" = "“{eintrag}”: {fehler}"
 
 # ui/src/zaehler.ts
@@ -1052,45 +1053,145 @@ name = "English"
 "{doi} · bei Crossref bzw. DataCite (Netz), Eintrag kommt in die Literaturdatei" = "{doi} · via Crossref or DataCite (network), entry goes into the bibliography file"
 "{titel}. In: {quelle}" = "{titel}. In: {quelle}"
 "{treffer} von {anzahl} Einträgen · Suche {ms} ms · Enter fügt ein" = "{treffer} of {anzahl} entries · search {ms} ms · Enter inserts"
+"{treffer} von {anzahl} Einträgen · Suche {ms} ms · Enter übernimmt die Quelle" = "{treffer} of {anzahl} entries · search {ms} ms · Enter uses this source"
+
+# types/tftn-befund/typst.toml
+"Befund / Arztbrief" = "Medical report / letter"
+"Befund oder Arztbrief (TFTN)" = "Medical report or doctor's letter (TFTN)"
+"Echte Patientendaten nie in einen Git-Ordner legen; TFTN warnt, wenn der Dokumentordner in einem liegt." = "Never put real patient data into a Git folder; TFTN warns if the document folder is inside one."
+"Ordination, Patient/in und Datum: trägst du gleich danach im Fach „Dokument“ ein." = "Practice, patient and date: you enter them right afterwards in the “Document” pane."
+
+# types/tftn-befund/tftn/formular.schema.json
+"Anschrift" = "Address"
+"Art des Dokuments" = "Kind of document"
+"Befund" = "Medical report"
+"Datum" = "Date"
+"E-Mail" = "Email"
+"Empfänger" = "Recipient"
+"Englisch" = "English"
+"Fachrichtung" = "Speciality"
+"Geburtsdatum" = "Date of birth"
+"Grußformel" = "Closing"
+"Leer: der Name der Ordination" = "Empty: the name of the practice"
+"Name unter der Unterschrift" = "Name below the signature"
+"Ordination" = "Practice"
+"Ort" = "Place"
+"Patient/in" = "Patient"
+"Sozialversicherungsnummer" = "Social insurance number"
+"Sprache des Dokuments: Silbentrennung, Rechtschreibung, Datum und Beschriftungen" = "Language of the document: hyphenation, spell checking, date and labels"
+"Telefon" = "Phone"
+"z. B. Befund, Arztbrief, Ärztliche Bestätigung" = "e.g. medical report, doctor's letter, medical certificate"
+"z. B. zuweisende Ärztin; je Zeile ein Eintrag, leer: kein Empfänger" = "e.g. the referring physician; one entry per line, empty: no recipient"
+
+# types/tftn-bericht/typst.toml
+"Bericht" = "Report"
+"Bericht (TFTN)" = "Report (TFTN)"
+"Literatur: eine .bib-Datei, am einfachsten als Auto-Export aus Zotero, unter dem Namen literatur.bib im Dokumentordner." = "References: a .bib file, easiest as an auto-export from Zotero, named literatur.bib in the document folder."
+"Titel, Autorinnen und Autoren und Datum: trägst du gleich danach im Fach „Dokument“ ein." = "Title, authors and date: you enter them right afterwards in the “Document” pane."
+
+# types/tftn-bericht/tftn/formular.schema.json
+"Autorinnen und Autoren" = "Authors"
+"BibLaTeX (.bib) oder Hayagriva (.yaml), relativ zum Projektordner" = "BibLaTeX (.bib) or Hayagriva (.yaml), relative to the project folder"
+"Eingebauter Stil (z. B. american-psychological-association, ieee) oder eine .csl-Datei im Projekt" = "Built-in style (e.g. american-psychological-association, ieee) or a .csl file in the project"
+"Inhaltsverzeichnis" = "Table of contents"
+"Institution" = "Institution"
+"Literaturdateien" = "Bibliography files"
+"Sprache des Texts: Silbentrennung, Rechtschreibung und Beschriftungen" = "Language of the text: hyphenation, spell checking and labels"
+"Steht oben auf der Titelseite, z. B. Universität oder Firma" = "Shown at the top of the title page, e.g. university or company"
+"Titel" = "Title"
+"Untertitel" = "Subtitle"
+"Zitierstil" = "Citation style"
+
+# types/tftn-brief/typst.toml
+"Absender, Anschrift, Datum und Betreff: trägst du gleich danach im Fach „Dokument“ ein." = "Sender, address, date and subject: you enter them right afterwards in the “Document” pane."
+"Brief" = "Letter"
+"Brief (TFTN)" = "Letter (TFTN)"
+"Die Anschrift sitzt im Fenster eines DL-Kuverts (Fenster links)." = "The address sits in the window of a DL envelope (window on the left)."
+
+# types/tftn-brief/tftn/formular.schema.json
+"Absender" = "Sender"
+"Anschrift im Fenster, je Zeile ein Eintrag" = "Address in the window, one entry per line"
+"Betreff" = "Subject"
+"Leer: der Name des Absenders" = "Empty: the sender's name"
+"Sprache des Briefs: Silbentrennung, Rechtschreibung, Datum und Seitenzahlen" = "Language of the letter: hyphenation, spell checking, date and page numbers"
+"Straße, Postleitzahl und Ort, je Zeile ein Eintrag" = "Street, postcode and town, one entry per line"
 
 # types/tftn-fachartikel/typst.toml
 "Bilder: lege sie in den Dokumentordner, etwa in einen Unterordner bilder." = "Images: put them in the document folder, for example in a subfolder named bilder."
 "Fachartikel" = "Journal article"
 "Fachartikel (TFTN)" = "Journal article (TFTN)"
 "Hinweiskasten" = "Note box"
-"Literatur: eine .bib-Datei, am einfachsten als Auto-Export aus Zotero, unter dem Namen literatur.bib im Dokumentordner." = "References: a .bib file, easiest as an auto-export from Zotero, named literatur.bib in the document folder."
 "Titel, Autorinnen und Autoren, Datum und Zusammenfassung: trägst du gleich danach im Fach „Dokument“ ein." = "Title, authors, date and abstract: you fill them in right afterwards in the “Document” tab."
 
 # types/tftn-fachartikel/tftn/formular.schema.json
-"Autorinnen und Autoren" = "Authors"
-"BibLaTeX (.bib) oder Hayagriva (.yaml), relativ zum Projektordner" = "BibLaTeX (.bib) or Hayagriva (.yaml), relative to the project folder"
-"Datum" = "Date"
-"E-Mail" = "Email"
-"Eingebauter Stil (z. B. american-psychological-association, ieee) oder eine .csl-Datei im Projekt" = "Built-in style (e.g. american-psychological-association, ieee) or a .csl file in the project"
-"Englisch" = "English"
-"Institution" = "Institution"
 "Korrespondierend" = "Corresponding"
-"Literaturdateien" = "Bibliography files"
 "ORCID" = "ORCID"
 "Schlagwörter" = "Keywords"
 "Sprache des Texts: Silbentrennung, Rechtschreibung und Beschriftungen wie Zusammenfassung oder Literatur" = "Language of the text: hyphenation, spell checking and labels such as Abstract or References"
-"Titel" = "Title"
-"Untertitel" = "Subtitle"
-"Zitierstil" = "Citation style"
 "Zusammenfassung" = "Abstract"
+
+# types/tftn-fachbuch/typst.toml
+"Fachbuch" = "Book"
+"Fachbuch (TFTN)" = "Book (TFTN)"
+"Kapitel: je eine Datei im Ordner kapitel, eingebunden mit #include in main.typ." = "Chapters: one file each in the chapters folder, included with #include in main.typ."
+"Titel, Autorinnen und Autoren und Impressum: trägst du gleich danach im Fach „Dokument“ ein." = "Title, authors and imprint: you enter them right afterwards in the “Document” pane."
+
+# types/tftn-fachbuch/tftn/formular.schema.json
+"Auflage" = "Edition"
+"ISBN" = "ISBN"
+"Impressum" = "Imprint"
+"Jahr" = "Year"
+"Leer: keine Widmungsseite" = "Empty: no dedication page"
+"Sprache des Buchs: Silbentrennung, Rechtschreibung und Beschriftungen" = "Language of the book: hyphenation, spell checking and labels"
+"Verlag" = "Publisher"
+"Verlagsort" = "Place of publication"
+"Widmung" = "Dedication"
 
 # types/tftn-kern/typst.toml
 "Gemeinsame Bausteine der TFTN-Dokumenttypen: Datum (deutsch und englisch), Trennausnahmen, Hinweiskasten" = "Shared building blocks of the TFTN document types: date (German and English), hyphenation exceptions, note box"
+
+# types/tftn-lebenslauf/typst.toml
+"Lebenslauf" = "CV"
+"Lebenslauf (TFTN)" = "CV (TFTN)"
+"Name, Kontakt und auf Wunsch ein Foto: trägst du gleich danach im Fach „Dokument“ ein." = "Name, contact details and optionally a photo: you enter them right afterwards in the “Document” pane."
+"Station" = "Entry"
+"Stationen: über „Einfügen“ → „Station“, je eine für jede Tätigkeit oder Ausbildung." = "Entries: via “Insert” → “Entry”, one for each position or degree."
+
+# types/tftn-lebenslauf/tftn/formular.schema.json
+"Beruf oder Titel" = "Profession or title"
+"Bilddatei im Dokumentordner, z. B. foto.jpg; leer: ohne Foto" = "Picture file in the document folder, e.g. photo.jpg; empty: no photo"
+"Foto" = "Photo"
+"Kontakt" = "Contact"
+"Leer: wird nicht angegeben" = "Empty: not shown"
+"Ort und Datum stehen am Ende; leer: weggelassen" = "Place and date appear at the end; empty: left out"
+"Sprache des Lebenslaufs: Silbentrennung, Rechtschreibung und Datum" = "Language of the CV: hyphenation, spell checking and date"
+"Steht unter dem Namen" = "Shown below the name"
+"Webseite" = "Website"
 
 # types/tftn-leer/typst.toml
 "Leeres Dokument" = "Blank document"
 "Leeres Dokument (TFTN)" = "Blank document (TFTN)"
 "Randtext" = "Margin note"
 
+# types/tftn-plakat/typst.toml
+"Kasten" = "Box"
+"Plakat (Poster)" = "Poster"
+"Plakat (TFTN)" = "Poster (TFTN)"
+"Titel, Autorinnen und Autoren, Format und Farbe: trägst du gleich danach im Fach „Dokument“ ein." = "Title, authors, size and colour: you enter them right afterwards in the “Document” pane."
+
+# types/tftn-plakat/tftn/formular.schema.json
+"A0 (84 × 119 cm)" = "A0 (84 × 119 cm)"
+"A1 (59 × 84 cm)" = "A1 (59 × 84 cm)"
+"A2 (42 × 59 cm)" = "A2 (42 × 59 cm)"
+"Aussehen" = "Appearance"
+"Farbe" = "Colour"
+"Farbe von Kopfband und Überschriften als #RRGGBB" = "Colour of the header band and headings as #RRGGBB"
+"Plakat" = "Poster"
+"Steht unten links, z. B. eine E-Mail-Adresse" = "Shown at the bottom left, e.g. an email address"
+
 # package-descriptions/cetz-0.5.toml
 "Ecke" = "Corner"
 "Einheit" = "Unit"
-"Farbe" = "Colour"
 "Freie Zeichnungen" = "Free drawings"
 "Füllung" = "Fill"
 "Gegenüberliegende Ecke" = "Opposite corner"

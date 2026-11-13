@@ -40,12 +40,17 @@ ausdrücklich erwünscht.
 
 **Ein neues Dokument:** TFTN startet mit einem leeren Entwurf. Einfach losschreiben; Cmd/Strg+S gibt
 ihm einen Namen und legt es im Ordner „Dokumente“ ab. „Vorlage …“ legt stattdessen ein Dokument eines
-Dokumenttyps an, etwa einen Fachartikel mit Titelei und Literaturverzeichnis.
+Dokumenttyps an. Mitgeliefert sind: leeres Dokument, Brief, Befund/Arztbrief, Bericht, Fachartikel,
+Fachbuch, Plakat und Lebenslauf, jeweils auf Deutsch und Englisch.
 
 **Sprache eines neuen Dokuments:** Neue Dokumente und der leere Entwurf folgen der Sprache der
 Oberfläche – mit englischer Oberfläche entsteht eine englische Vorlage (Silbentrennung,
-Rechtschreibung und Beschriftungen wie „Abstract“, „Keywords“ und „References“). Beim Fachartikel
-lässt sich das später umstellen: Fach „Dokument“ → „Sprache“.
+Rechtschreibung und Beschriftungen wie „Abstract“, „Keywords“ und „References“). Bei jedem
+Dokumenttyp mit Formular lässt sich das später umstellen: Fach „Dokument“ → „Sprache“.
+
+**Befunde** enthalten Gesundheitsdaten. Solche Dokumente gehören in keinen Git-Ordner; liegt der
+Dokumentordner in einem, warnt das Fach „Dokument“. Alles bleibt auf dem eigenen Rechner – TFTN
+schickt nie Text irgendwohin.
 
 **Was ist ein Projekt?** Ein Ordner mit `tftn.toml`, der Hauptdatei (meist `main.typ`), bei
 Vorlagen dazu `dokument.toml` (Titelei), der Literaturdatei, den Schriften (`fonts/`) und den

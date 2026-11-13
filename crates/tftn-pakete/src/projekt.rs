@@ -51,6 +51,15 @@ fn tftn_toml(wurzel: &Path) -> Result<(PathBuf, String, toml_edit::DocumentMut),
     Ok((pfad, text, doc))
 }
 
+/// Hinzufügen und Entfernen lesen `tftn.toml`, ändern sie und schreiben sie zurück. Zwei Fenster
+/// derselben App dürfen das nicht verschränkt tun, sonst geht ein `[pakete]`-Eintrag verloren.
+fn sperre() -> std::sync::MutexGuard<'static, ()> {
+    static SPERRE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    SPERRE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 fn vermerkt(doc: &toml_edit::DocumentMut, s: &PaketSpec) -> Option<String> {
     doc.get("pakete")?
         .get(s.to_string())?
@@ -65,6 +74,7 @@ pub fn uebernehmen(
     zs: &Zwischenspeicher,
     pakete: &[(PaketSpec, String)],
 ) -> Result<Uebernahme, PaketFehler> {
+    let _sperre = sperre();
     let (pfad, text, mut doc) = tftn_toml(wurzel)?;
     let mut quellen = Vec::new();
     for (s, sha) in pakete {
@@ -125,7 +135,7 @@ pub fn uebernehmen(
             let tabelle = doc
                 .entry("pakete")
                 .or_insert_with(|| toml_edit::Item::Table(toml_edit::Table::new()))
-                .as_table_mut()
+                .as_table_like_mut() // auch `pakete = {}`
                 .ok_or_else(|| {
                     PaketFehler::Projekt(tr!("[pakete] in tftn.toml ist keine Tabelle"))
                 })?;
@@ -202,6 +212,7 @@ pub fn benutzer(wurzel: &Path, spec: &PaketSpec) -> Vec<String> {
 /// PLAN-M2 AP10). Abgelehnt, solange jemand `spec` importiert. Die Einträge in `[pakete]` werden
 /// erst nach den Ordnern angepasst, auch wenn unterwegs ein Ordner nicht wegging.
 pub fn entfernen(wurzel: &Path, spec: &PaketSpec) -> Result<Vec<PaketSpec>, PaketFehler> {
+    let _sperre = sperre();
     let (pfad, text, mut doc) = tftn_toml(wurzel)?;
     if !paketordner(wurzel, spec).is_dir() {
         return Err(PaketFehler::Projekt(tr!(
@@ -243,7 +254,7 @@ pub fn entfernen(wurzel: &Path, spec: &PaketSpec) -> Result<Vec<PaketSpec>, Pake
         stapel.extend(abhaengig.into_iter().rev());
     }
     let mut geaendert = false;
-    if let Some(t) = doc.get_mut("pakete").and_then(|t| t.as_table_mut()) {
+    if let Some(t) = doc.get_mut("pakete").and_then(|t| t.as_table_like_mut()) {
         for s in &weg {
             geaendert |= t.remove(&s.to_string()).is_some();
         }

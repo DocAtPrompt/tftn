@@ -54,11 +54,7 @@ pub struct SymbolGruppeJs {
 /// Quelltext der Vorschau: die Importe der Hauptdatei, eine Seite so groß wie die Formel, die Formel.
 pub fn vorschau_quelltext(haupt: &str, text: &str, block: bool) -> String {
     let importe = tftn_katalog::obere_importe(haupt);
-    let formel = if block {
-        format!("$ {text} $")
-    } else {
-        format!("${text}$")
-    };
+    let formel = tftn_edit::formel_quelltext(text, block);
     format!("{importe}#set page(width: auto, height: auto, margin: 4pt)\n{formel}\n")
 }
 
@@ -175,6 +171,17 @@ mod tests {
         let b = vorschau(&mut world(), "", "frac(a, b)", true);
         assert_eq!(b.fehler, Vec::<String>::new());
         assert!(b.bild.unwrap().starts_with("data:image/png"));
+    }
+
+    /// Abschlussprüfung AP10: Endet die Formel mit einem `//`-Kommentar, ist das kein Syntaxfehler.
+    #[test]
+    fn kommentar_am_ende() {
+        let mut w = world();
+        for block in [true, false] {
+            let b = vorschau(&mut w, "", "x^2 // Kommentar", block);
+            assert_eq!(b.fehler, Vec::<String>::new(), "block {block}");
+            assert!(b.bild.is_some());
+        }
     }
 
     #[test]

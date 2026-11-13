@@ -276,6 +276,8 @@ impl FormularSitzung {
         if stand(&text) != stand_ui {
             return Err("veraltet".into());
         }
+        // Die Historie stellt ihre Stapel vorab um; scheitert das Schreiben, gilt der alte Stand.
+        let vorher = self.historie.clone();
         let ziel = if zurueck {
             self.historie.rueckgaengig(&text)
         } else {
@@ -283,6 +285,7 @@ impl FormularSitzung {
         };
         if let Some(ziel) = ziel {
             atomar_schreiben(&self.datei, &ziel).map_err(|e| {
+                self.historie = vorher;
                 tr!(
                     "{datei} nicht geschrieben: {fehler}",
                     datei = self.name(),
@@ -441,6 +444,29 @@ mod tests {
         let js = f.wiederholen(&js.stand, STILE).unwrap();
         assert!(lesen(&p).contains(r#"titel = "Neu""#));
         assert!(js.rueck);
+    }
+
+    /// Scheitert das Zurückschreiben (Sperre, keine Rechte), bleibt die Historie, wie sie war.
+    #[cfg(unix)]
+    #[test]
+    fn historie_bleibt_wenn_schreiben_scheitert() {
+        use std::os::unix::fs::PermissionsExt;
+        let p = projekt("schreibfehler");
+        let mut f = FormularSitzung::neu(&p);
+        let js = f.laden(STILE);
+        let js = f
+            .setzen(&js.stand, titel(), Some(json!("Neu")), STILE)
+            .unwrap();
+        let rechte =
+            |m| std::fs::set_permissions(&p.wurzel, std::fs::Permissions::from_mode(m)).unwrap();
+        rechte(0o555);
+        let fehler = f.rueckgaengig(&js.stand, STILE);
+        rechte(0o755);
+        assert!(fehler.is_err());
+        let js = f.laden(STILE);
+        assert!(js.rueck, "Historie nach Schreibfehler leer");
+        f.rueckgaengig(&js.stand, STILE).unwrap();
+        assert!(!lesen(&p).contains("Neu"));
     }
 
     #[test]

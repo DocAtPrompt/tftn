@@ -65,9 +65,9 @@ fn liste_wird_aufzaehlung_und_zurueck() {
 
 #[test]
 fn nummerierte_aufzaehlung_mit_folgezeile() {
-    let t = "1. eins\n   weiter\n10. zehn";
+    let t = "1. eins\n   weiter\n2. zwei";
     let neu = helfer(t, "eins", MarkupAktion::ListeUmschalten).unwrap();
-    assert_eq!(neu, "- eins\n   weiter\n- zehn");
+    assert_eq!(neu, "- eins\n   weiter\n- zwei");
     let q = Source::detached(neu.as_str());
     let Some(MarkupStelle::Liste {
         marken,
@@ -80,6 +80,27 @@ fn nummerierte_aufzaehlung_mit_folgezeile() {
     };
     assert!(!aufzaehlung);
     assert_eq!(marken.len(), 2, "„weiter“ gehört weiter zum ersten Punkt");
+}
+
+/// Abschlussprüfung AP4: Eigene Nummern (`3.`, Sprünge) gingen beim Umschalten verloren und kämen
+/// beim Zurückschalten nicht wieder; dann lieber ablehnen. Nummern wie automatisch gehen.
+#[test]
+fn eigene_nummern_werden_nicht_verworfen() {
+    for (t, cursor) in [
+        ("3. drei\n4. vier", "vier"),
+        ("1. eins\n10. zehn", "eins"),
+        ("+ a\n5. b", "a"),
+    ] {
+        let r = helfer(t, cursor, MarkupAktion::ListeUmschalten);
+        assert!(
+            matches!(&r, Err(PatchFehler::UngueltigerWert(m)) if m.contains("Nummer")),
+            "{t:?}: {r:?}"
+        );
+    }
+    assert_eq!(
+        helfer("+ a\n2. b\n+ c", "a", MarkupAktion::ListeUmschalten).unwrap(),
+        "- a\n- b\n- c"
+    );
 }
 
 #[test]
@@ -294,11 +315,11 @@ fn formel_text_und_patch() {
 /// Review Focus 1: Es wird abgelehnt, und die Meldung kommt als Fehler zurück.
 #[test]
 fn formel_patch_lehnt_ab() {
-    for neu in [
-        "$", "a $ b", "a$ + $b", "frac(a", "a // b", "a \\", "", "   ",
-    ] {
+    for neu in ["$", "a $ b", "a$ + $b", "frac(a", "a \\", "", "   "] {
         assert!(formel_aendern("$x$", "x", neu).is_err(), "{neu:?}");
     }
+    // Ein Kommentar am Ende ist seit der Abschlussprüfung AP10 erlaubt: `$` kommt in eine eigene Zeile.
+    assert_eq!(formel_aendern("$x$", "x", "a // b").unwrap(), "$a // b\n$");
     let keine = Source::detached("= A");
     let s = markup_stellen(&keine, 2).remove(0);
     assert_eq!(formel_text(&keine, &s), None);
@@ -613,5 +634,29 @@ proptest! {
             Err(PatchFehler::UngueltigerWert(_)) => {}
             Err(andere) => prop_assert!(false, "{text:?} {zusatz:?}: {andere:?}"),
         }
+    }
+}
+
+/// Abschlussprüfung AP10: Eine neue Formel, die mit `//`-Kommentar endet, schließt trotzdem.
+#[test]
+fn formel_mit_kommentar_am_ende() {
+    for block in [true, false] {
+        let q = Source::detached("Text ");
+        let p = formel_einfuegen(&q, 5, "a + b // Summe", block).unwrap();
+        let neu = anwenden(q.text(), &p);
+        assert!(neu.trim_end().ends_with('$'), "{neu:?}");
+    }
+}
+
+#[test]
+fn formel_aendern_mit_kommentar_am_ende() {
+    for t in ["Text $ x $ mehr", "Text $x$ mehr", "Text $ $ mehr"] {
+        let q = Source::detached(t);
+        let stelle = markup_stellen(&q, 6)
+            .into_iter()
+            .find(|s| matches!(s, MarkupStelle::Formel { .. }))
+            .unwrap();
+        let p = formel_patch(&q, &stelle, "a // c").unwrap_or_else(|e| panic!("{t:?}: {e:?}"));
+        assert!(anwenden(t, &p).contains("a // c\n"), "{t:?}");
     }
 }

@@ -13,8 +13,8 @@ with Typst without handing them to a third party.
 - **Blocks and completion** for figures, tables, equations, citations and more – type “/” on an empty
   line.
 - **Change values without code:** markers, a context sidebar, a table grid and an equation palette.
-- **Document types** as Typst packages (a journal article ships with TFTN), with a form for the front
-  matter.
+- **Document types** as Typst packages, with a form for the front matter. TFTN ships a blank
+  document, letter, medical report, report, journal article, book, poster and CV.
 - **Citations** from your BibTeX/BibLaTeX file, or straight from a DOI (Crossref, DataCite).
 - **Typst Universe packages** vendored into the project with checksums – documents build offline,
   on any machine.

@@ -1,0 +1,18 @@
+# Made-up example data. Never put real patient data into a Git repository.
+sprache = "en"
+titel = "Medical report"
+ort = "Vienna"
+datum = 2026-01-15
+empfaenger = ["Dr Referring Physician", "2 Sample Street", "London SW1A 1AA"]
+gruss = "Kind regards"
+
+[praxis]
+name = "Dr First Last"
+fach = "Specialist in Internal Medicine"
+zeilen = ["Practice, Straße 1", "1010 Wien, Austria"]
+telefon = "+43 1 234 56 78"
+email = "practice@example.org"
+
+[patient]
+name = "Erika Sample"
+geburtsdatum = 1970-02-01

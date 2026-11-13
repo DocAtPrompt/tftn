@@ -307,3 +307,45 @@ fn leeren_behaelt_kommentar() {
     assert!(d.text().contains("# am Ende\n"), "{}", d.text());
     assert!(Daten::lesen(&d.text()).is_ok());
 }
+
+/// Ein UTF-8-BOM am Dateianfang bleibt beim Schreiben erhalten.
+#[test]
+fn bom_bleibt() {
+    let f = fachartikel();
+    let text = "\u{feff}titel = \"a\"\nfremd = 1\n";
+    let mut d = Daten::lesen(text).unwrap();
+    assert_eq!(d.werte()["titel"], "a");
+    d.setzen(&f, &p(&["titel"]), Some(json!("b")), &K).unwrap();
+    assert_eq!(d.text(), "\u{feff}titel = \"b\"\nfremd = 1\n");
+}
+
+/// Autoren als Inline-Array (`autoren = [{…}]`): Hinzufügen, Ändern, Verschieben, Entfernen gehen.
+#[test]
+fn eintraege_als_inline_array() {
+    let f = fachartikel();
+    let text = "titel = \"T\"\nautoren = [{ name = \"A\" }, { name = \"B\" }]\n";
+    let mut d = Daten::lesen(text).unwrap();
+    d.eintrag(&f, &p(&["autoren"]), EintragAktion::Hinzufuegen)
+        .unwrap();
+    assert_eq!(d.werte()["autoren"].as_array().unwrap().len(), 3);
+    d.setzen(&f, &p(&["autoren", "2", "name"]), Some(json!("C")), &K)
+        .unwrap();
+    d.eintrag(
+        &f,
+        &p(&["autoren"]),
+        EintragAktion::Verschieben { index: 2, nach: 0 },
+    )
+    .unwrap();
+    d.eintrag(&f, &p(&["autoren"]), EintragAktion::Entfernen { index: 1 })
+        .unwrap();
+    let namen: Vec<_> = d.werte()["autoren"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|a| a["name"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(namen, ["C", "B"]);
+    let neu = d.text();
+    assert!(neu.starts_with("titel = \"T\"\nautoren = ["), "{neu}");
+    assert!(Daten::lesen(&neu).is_ok(), "{neu}");
+}

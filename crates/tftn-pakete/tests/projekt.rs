@@ -340,3 +340,41 @@ fn entfernen_fehlendes_paket() {
     let (projekt, _, _) = aufbau("entfernen-fehlt");
     assert!(entfernen(&projekt, &s("@preview/gibtsnicht:1.0.0")).is_err());
 }
+
+/// `pakete = {}` (Inline-Tabelle, von Hand geschrieben): Übernehmen und Entfernen gehen.
+#[test]
+fn pakete_als_inline_tabelle() {
+    let (projekt, zs, pakete) = aufbau("inline-pakete");
+    let toml = projekt.join("tftn.toml");
+    let text = std::fs::read_to_string(&toml).unwrap();
+    assert!(!text.contains("[pakete]"), "{text}");
+    std::fs::write(&toml, format!("pakete = {{}}\n{text}")).unwrap();
+    uebernehmen(&projekt, &zs, &pakete).unwrap();
+    let p = tftn_core::Projekt::oeffnen(&projekt).unwrap();
+    assert_eq!(p.konfig.pakete.len(), 2);
+    entfernen(&projekt, &s("@preview/tftn-probe:0.1.0")).unwrap();
+    let p = tftn_core::Projekt::oeffnen(&projekt).unwrap();
+    assert!(p.konfig.pakete.is_empty());
+}
+
+/// Abschlussprüfung AP9: Zwei Fenster fügen zugleich Pakete hinzu; kein Eintrag in `[pakete]` geht
+/// verloren (Lesen–Ändern–Schreiben von `tftn.toml` ist gesperrt).
+#[test]
+fn gleichzeitig_uebernehmen_verliert_nichts() {
+    for runde in 0..30 {
+        let (projekt, zs, pakete) = aufbau(&format!("gleichzeitig-{runde}"));
+        let zs = std::sync::Arc::new(zs);
+        let faeden: Vec<_> = pakete
+            .into_iter()
+            .map(|p| {
+                let (projekt, zs) = (projekt.clone(), zs.clone());
+                std::thread::spawn(move || uebernehmen(&projekt, &zs, &[p]).unwrap())
+            })
+            .collect();
+        for f in faeden {
+            f.join().unwrap();
+        }
+        let p = tftn_core::Projekt::oeffnen(&projekt).unwrap();
+        assert_eq!(p.konfig.pakete.len(), 2, "Runde {runde}");
+    }
+}

@@ -5,6 +5,7 @@
 import { type Extension, StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView, WidgetType } from "@codemirror/view";
 import { dialogAnmelden, schliessenKnopf } from "./dialoge";
+import { anAnker } from "./platz";
 
 /** Eine Marke wie in Rust (`MarkeJs`); Positionen UTF-16 = CodeMirror-Positionen. */
 export interface MarkeJs {
@@ -102,10 +103,8 @@ export class Popover {
     kopf.append(titel, schliessenKnopf(() => this.schliessen()));
     this.huelle.replaceChildren(kopf, inhalt);
     this.huelle.hidden = false;
-    const r = anker instanceof HTMLElement ? anker.getBoundingClientRect() : { left: anker.x, bottom: anker.y };
-    const breite = 280;
-    this.huelle.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - breite - 8))}px`;
-    this.huelle.style.top = `${Math.min(r.bottom + 4, window.innerHeight - 40)}px`;
+    const r = anker instanceof HTMLElement ? anker.getBoundingClientRect() : { left: anker.x, top: anker.y, bottom: anker.y };
+    anAnker(this.huelle, { x: r.left, oben: r.top, unten: r.bottom });
     this.huelle.querySelector<HTMLElement>("input, textarea, select")?.focus();
     if (this.schliesser) document.removeEventListener("mousedown", this.schliesser, true);
     this.schliesser = (e: Event) => {
