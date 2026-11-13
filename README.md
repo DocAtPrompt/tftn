@@ -93,7 +93,7 @@ project). `npm run buendel` builds `target/release/bundle/macos/TFTN.app` (relea
 | `typen/` | bundled document types (Typst packages) |
 | `pakete/` | descriptions of Universe packages with helpers (cetz, fletcher, cetz-plot) |
 | `sprachen/` | interface language files (`en.toml`) |
-| `woerterbuecher/` | Hunspell dictionaries, each with its license |
+| `dictionaries/` | Hunspell dictionaries, each with its license |
 | `tests/korpus/` | test documents (synthetic), reference images, checksums |
 | `demo/` | sample project |
 | `xtask/` | build and check tasks |
@@ -124,5 +124,5 @@ Every visible text is written in German in the code (`tr!("â€¦")` in Rust, `t("â
 
 TFTN is licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
 Bundled third-party material keeps its own license, stored next to it: fonts (`LIZENZEN.txt` in the
-`fonts`/`schriften` folders), dictionaries (`woerterbuecher/*/license`), the Typst packages in the
+`fonts`/`schriften` folders), dictionaries (`dictionaries/*/license`), the Typst packages in the
 test corpus, and the typst CLI (Apache-2.0).

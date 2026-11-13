@@ -9,11 +9,11 @@ use tftn_sprachen::tr;
 
 pub const EIGENE: &str = "woerter.txt";
 
-/// Mitgelieferte Wörterbücher: im Entwicklungsbau `woerterbuecher/` im Repo, sonst im App-Bündel.
+/// Mitgelieferte Wörterbücher: im Entwicklungsbau `dictionaries/` im Repo, sonst im App-Bündel.
 pub fn ordner(resource_dir: Option<PathBuf>) -> PathBuf {
     match resource_dir {
-        Some(r) if !cfg!(debug_assertions) => r.join("woerterbuecher"),
-        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("../woerterbuecher"),
+        Some(r) if !cfg!(debug_assertions) => r.join("dictionaries"),
+        _ => Path::new(env!("CARGO_MANIFEST_DIR")).join("../dictionaries"),
     }
 }
 

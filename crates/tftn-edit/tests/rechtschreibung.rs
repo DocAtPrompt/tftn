@@ -1,4 +1,4 @@
-//! Rechtschreibung nach Dokumentsprache: nur Fließtext, Wörterbücher aus `woerterbuecher/`.
+//! Rechtschreibung nach Dokumentsprache: nur Fließtext, Wörterbücher aus `dictionaries/`.
 
 use std::path::Path;
 
@@ -8,7 +8,7 @@ use tftn_edit::rechtschreibung::{
 use typst_syntax::Source;
 
 fn pruefer(kennung: &str) -> Pruefer {
-    let ordner = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../woerterbuecher");
+    let ordner = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dictionaries");
     Pruefer::laden(&ordner, kennung).unwrap()
 }
 

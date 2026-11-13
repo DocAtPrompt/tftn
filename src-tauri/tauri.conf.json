@@ -41,7 +41,7 @@
       "../_lokal/typst-cli/0.15.1/LICENSE": "lizenzen/typst-LICENSE.txt",
       "../typen/": "typen/",
       "../pakete/": "beschreibungen/",
-      "../woerterbuecher/": "woerterbuecher/",
+      "../dictionaries/": "dictionaries/",
       "../sprachen/": "sprachen/"
     },
     "macOS": {

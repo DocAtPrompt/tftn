@@ -1,6 +1,6 @@
 //! Rechtschreibung nach Dokumentsprache: geprüft wird nur geschriebener Text (auch Überschriften,
 //! Unterschriften, Fußnoten), nie Befehle, Formeln, Code, Kommentare, Marken oder Verweise.
-//! Die Hunspell-Wörterbücher liegen unter `woerterbuecher/<kennung>/index.{aff,dic}`.
+//! Die Hunspell-Wörterbücher liegen unter `dictionaries/<kennung>/index.{aff,dic}`.
 
 use std::ops::Range;
 use std::path::Path;
@@ -8,7 +8,7 @@ use tftn_sprachen::tr;
 
 use typst_syntax::{LinkedNode, Source, SyntaxKind};
 
-/// Mitgelieferte Wörterbücher (Ordnernamen unter `woerterbuecher/`).
+/// Mitgelieferte Wörterbücher (Ordnernamen unter `dictionaries/`).
 pub const WOERTERBUECHER: [&str; 8] = ["de", "de-AT", "de-CH", "en", "en-GB", "fr", "it", "es"];
 
 /// Wörterbuch für Typsts `lang` und `region`; ohne passende Region das allgemeine der Sprache.
