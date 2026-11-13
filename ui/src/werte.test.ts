@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type WidgetArt, type Wert, eingabeZuWert, wertZuEingabe } from "./werte";
+import { type WidgetArt, type Wert, eingabeZuWert, wahlOptionen, wertZuEingabe } from "./werte";
 
 const zahl = (mit: object = {}): WidgetArt => ({ art: "zahl", mit: { min: null, max: null, ganzzahl: false, ...mit } });
 const laenge = (einheiten: string[] = []): WidgetArt => ({ art: "laenge", mit: { einheiten } });
@@ -158,4 +158,19 @@ describe("rueckweg", () => {
       }
     });
   }
+});
+
+describe("wahlOptionen", () => {
+  it("ein Wert außerhalb der Liste erscheint als eigene, gewählte Option statt der ersten", () => {
+    const o = wahlOptionen(["info", "warnung"], "hinweis", false);
+    expect(o.filter((x) => x.gewaehlt).map((x) => x.wert)).toEqual(["hinweis"]);
+    expect(o[0].text).toContain("hinweis");
+    expect(o.slice(1).map((x) => x.wert)).toEqual(["info", "warnung"]);
+  });
+  it("Wert in der Liste und fehlender Wert", () => {
+    expect(wahlOptionen(["a", "b"], "b", false).map((x) => [x.wert, x.gewaehlt])).toEqual([["a", false], ["b", true]]);
+    const leer = wahlOptionen(["a", "b"], undefined, true);
+    expect(leer[0]).toEqual({ wert: "", text: "—", gewaehlt: true });
+    expect(leer.filter((x) => x.gewaehlt)).toHaveLength(1);
+  });
 });

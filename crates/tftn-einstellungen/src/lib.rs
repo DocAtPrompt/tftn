@@ -210,7 +210,7 @@ pub fn umziehen(von: &Path, nach: &Path) -> io::Result<Vec<String>> {
     Ok(kopiert)
 }
 
-/// Atomar: erst `.<name>.tmp` im selben Ordner, dann umbenennen.
+/// Atomar: erst `.<name>.<pid>-<n>.tmp` im selben Ordner, dann umbenennen.
 fn schreiben(pfad: &Path, text: &str) -> io::Result<()> {
     schreiben_bytes(pfad, text.as_bytes())
 }
@@ -223,14 +223,24 @@ fn schreiben_bytes(pfad: &Path, daten: &[u8]) -> io::Result<()> {
     let name = pfad
         .file_name()
         .ok_or_else(|| io::Error::other("Pfad ohne Dateinamen"))?;
-    let tmp = ordner.join(format!(".{}.tmp", name.to_string_lossy()));
-    std::fs::write(&tmp, daten)?;
-    std::fs::rename(&tmp, pfad)
+    // Eigener Name je Vorgang (zwei Fenster, zwei Aufrufe); scheitert etwas, wird aufgeräumt.
+    static ZAEHLER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let n = ZAEHLER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let tmp = ordner.join(format!(
+        ".{}.{}-{n}.tmp",
+        name.to_string_lossy(),
+        std::process::id()
+    ));
+    let ergebnis = std::fs::write(&tmp, daten).and_then(|()| std::fs::rename(&tmp, pfad));
+    if ergebnis.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    ergebnis
 }
 
 /// Meldet Änderungen an `tasten.toml` und `einstellungen.toml` in `ordner` (nicht rekursiv), auch
 /// wenn ein Sync-Programm die Datei durch Umbenennen ersetzt. Andere Dateien, auch die eigenen
-/// temporären `.<name>.tmp`, lösen nichts aus.
+/// temporären `.<name>.<pid>-<n>.tmp`, lösen nichts aus.
 pub fn beobachten(
     ordner: &Path,
     bei_aenderung: impl Fn() + Send + 'static,
@@ -257,4 +267,33 @@ pub fn beobachten(
     // Rekursiv, damit auch `beschreibungen/` ankommt, wenn der Ordner erst später entsteht.
     w.watch(ordner, notify::RecursiveMode::Recursive)?;
     Ok(w)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Abschlussprüfung AP3: Scheitert das Umbenennen, bleibt keine temporäre Datei liegen.
+    #[test]
+    fn keine_temp_reste_bei_fehler() {
+        let o = std::env::temp_dir().join(format!("tftn-einst-tmp-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&o);
+        // Am Ziel liegt ein Ordner mit Inhalt: Umbenennen scheitert.
+        std::fs::create_dir_all(o.join("tasten.toml/x")).unwrap();
+        assert!(schreiben(&o.join("tasten.toml"), "a = 1").is_err());
+        let reste: Vec<_> = std::fs::read_dir(&o)
+            .unwrap()
+            .filter_map(Result::ok)
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.ends_with(".tmp"))
+            .collect();
+        assert!(reste.is_empty(), "{reste:?}");
+        // Normal geht es weiter.
+        schreiben(&o.join("einstellungen.toml"), "b = 2").unwrap();
+        assert_eq!(
+            std::fs::read_to_string(o.join("einstellungen.toml")).unwrap(),
+            "b = 2"
+        );
+        let _ = std::fs::remove_dir_all(&o);
+    }
 }

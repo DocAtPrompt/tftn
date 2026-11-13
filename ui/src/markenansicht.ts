@@ -76,7 +76,8 @@ export class Popover {
   private huelle: HTMLDivElement;
   private schliesser: ((e: Event) => void) | null = null;
 
-  constructor() {
+  /** `zurueck`: wohin der Fokus nach Esc geht (der Editor). */
+  constructor(private zurueck?: () => void) {
     this.huelle = document.createElement("div");
     this.huelle.className = "popover";
     this.huelle.hidden = true;
@@ -86,6 +87,7 @@ export class Popover {
       if (e.key === "Escape") {
         e.preventDefault();
         this.schliessen();
+        this.zurueck?.();
       }
     });
   }

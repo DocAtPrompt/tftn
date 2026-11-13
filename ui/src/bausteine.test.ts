@@ -66,7 +66,8 @@ describe("Quellen", () => {
     expect(r.from).toBe(1);
     expect(r.options.map((o) => o.label)).toEqual(["Abbildung"]);
     const apply = r.options[0].apply as (v: unknown, c: Completion, from: number, to: number) => void;
-    apply(undefined, r.options[0], 1, 4);
+    // Ersatz-Editor ohne offene Liste: apply schließt sie (closeCompletion) und setzt ein.
+    apply({ state: EditorState.create({ doc: "/abb" }), dispatch: () => {} }, r.options[0], 1, 4);
     expect(eingesetzt).toEqual([["typst/abbildung", 0, 4]]);
   });
 

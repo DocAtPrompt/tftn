@@ -122,3 +122,33 @@ fn leer_englisch() {
     assert!(!haupt.contains("\"de\""), "{haupt}");
     text(&p);
 }
+
+#[test]
+fn readme_nennt_fonts_nur_wenn_da() {
+    use tftn_manifest::anlegen::readme_schriften_abgleichen;
+    for (sprache, zeile) in [
+        (None, "- `fonts/`: frei lizenzierte"),
+        (Some("en"), "- `fonts/`: freely licensed"),
+    ] {
+        let p = anlegen(
+            &format!("readme-fonts-{sprache:?}"),
+            "tftn-fachartikel",
+            sprache,
+        );
+        let readme = || std::fs::read_to_string(p.wurzel.join("README.md")).unwrap();
+        assert!(readme().contains(zeile), "{}", readme());
+        std::fs::remove_dir_all(p.wurzel.join("fonts")).unwrap();
+        readme_schriften_abgleichen(&p.wurzel).unwrap();
+        assert!(!readme().contains("fonts/"), "{}", readme());
+        assert!(
+            readme().contains("packages/local/"),
+            "Rest bleibt: {}",
+            readme()
+        );
+        // Später eingebunden: die Zeile kommt zurück, einmal.
+        std::fs::create_dir_all(p.wurzel.join("fonts")).unwrap();
+        readme_schriften_abgleichen(&p.wurzel).unwrap();
+        readme_schriften_abgleichen(&p.wurzel).unwrap();
+        assert_eq!(readme().matches(zeile).count(), 1, "{}", readme());
+    }
+}

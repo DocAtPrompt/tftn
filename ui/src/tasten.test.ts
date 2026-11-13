@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import eingebautToml from "../../crates/tftn-katalog/eingebaut.toml?raw";
 import type { EintragJs } from "./bausteine";
 import type { ProfilJs } from "./export";
-import { STANDARD, aktionDerTaste, aktionen, belegen, leistenSchritt, fehlerHinweis, keymapAus, konflikte, kuerzelAusTaste, normalisieren } from "./tasten";
+import { STANDARD, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte, kuerzelAusTaste, normalisieren } from "./tasten";
 
 /** Die eingebauten Bausteine wie aus `katalog` (nur Id und Herkunft zählen hier). */
 function katalogAusEingebaut(): EintragJs[] {
@@ -275,5 +275,16 @@ describe("leistenSchritt", () => {
     });
     expect(aktionDerTaste(b, e({}), "mac")).toBe("helfer/seitenleiste");
     expect(aktionDerTaste(b, e({ metaKey: false }), "mac")).not.toBe("helfer/seitenleiste");
+  });
+});
+
+describe("einstellungenNotfall", () => {
+  it("ohne Einstellungen startet das Fenster offline mit Standardkürzeln und nennt den Grund", () => {
+    const e = einstellungenNotfall("einstellungen.toml: kaputt");
+    expect(e.ganz_offline).toBe(true);
+    expect(e.kuerzel).toEqual({});
+    expect(e.fehler).toContain("kaputt");
+    const b = belegen(aktionen([], []), e.kuerzel, "mac");
+    expect(b.meldungen).toEqual([]);
   });
 });

@@ -1278,3 +1278,49 @@ fn widget_tabelle_zeigt_auf_raster() {
         Some("Tabelle fehlt – im Text ergänzen")
     );
 }
+
+/// Abschlussprüfung AP5: Millionen Spalten oder Zeilen dürfen das Raster nicht aufblähen
+/// (Speicher, Absturz); solche Tabellen bearbeitet man im Text.
+#[test]
+fn riesige_tabelle_bleibt_im_text() {
+    for text in [
+        "#table(columns: 50000000, [a])",
+        "#table(columns: 2, table.cell(rowspan: 90000000)[a], [b])",
+        "#table(columns: 2, table.cell(colspan: 90000000)[a])",
+        "#table(columns: 1000, table.cell(rowspan: 1000)[a])",
+    ] {
+        let g = grund(text, "table");
+        assert!(g.contains("zu groß"), "{text}: {g}");
+    }
+    // Übliche Größen gehen weiter.
+    lesen(
+        "#table(columns: 12, table.cell(rowspan: 40)[a], [b])",
+        "table",
+    );
+}
+
+/// Abschlussprüfung AP5: Eine Stelle aus einem älteren Text darf nicht paniken, sondern wird abgelehnt.
+#[test]
+fn veraltete_stelle_wird_abgelehnt() {
+    let alt = "Vorher\n#table(columns: 2, [a], [b], [c], [d])\n";
+    let stelle = am(alt, "table").unwrap().unwrap();
+    for neu_text in [
+        "#table()",
+        "",
+        "Ganz anderer, kürzerer Text",
+        "Vorher\n#table(columns: 1, [a])\n",
+    ] {
+        let neu = Source::detached(neu_text.to_string());
+        for aktion in [
+            TabellenAktion::ZeileEinfuegen { vor: 0 },
+            TabellenAktion::Zelltext {
+                zeile: 0,
+                spalte: 0,
+                inhalt: "x".into(),
+            },
+        ] {
+            let e = std::panic::catch_unwind(|| tabelle_patch(&neu, &stelle, &aktion));
+            assert!(matches!(e, Ok(Err(_))), "{neu_text:?}: {e:?}");
+        }
+    }
+}

@@ -2,7 +2,7 @@
 // steht in `werte.ts` (geprüft); hier nur DOM. Gesetzt wird beim Bestätigen (Enter, Verlassen,
 // Auswahl), nie bei jedem Tastendruck; nur der Farbwähler meldet Zwischenwerte beim Ziehen.
 
-import { type FeldJs, type Wert, eingabeZuWert, wertZuEingabe } from "./werte";
+import { type FeldJs, type Wert, eingabeZuWert, wahlOptionen, wertZuEingabe } from "./werte";
 import { t } from "./sprache";
 
 export type Setzen = (w: Wert, ende: boolean) => void;
@@ -52,8 +52,7 @@ export function editor(feld: FeldJs, setzen: Setzen): HTMLElement {
       const werte: string[] = mit.werte ?? [];
       if (werte.length) {
         const auswahl = el("select");
-        if (feld.fehlt) auswahl.append(new Option("—", "", true, true));
-        for (const w of werte) auswahl.append(new Option(w, w, false, feld.wert?.wert === w));
+        for (const o of wahlOptionen(werte, feld.wert?.wert, feld.fehlt)) auswahl.append(new Option(o.text, o.wert, o.gewaehlt, o.gewaehlt));
         auswahl.addEventListener("change", () => auswahl.value && versuchen(auswahl.value));
         huelle.append(auswahl);
         break;

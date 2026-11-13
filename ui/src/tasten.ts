@@ -4,6 +4,7 @@
 
 import type { KeyBinding } from "@codemirror/view";
 import type { EintragJs } from "./bausteine";
+import type { EinstellungenJs } from "./einstellungen";
 import type { ProfilJs } from "./export";
 import { t } from "./sprache";
 import { type Plattform, RESERVIERT, befehlsname, editorKeymaps, musterKonflikt } from "./reserviert";
@@ -302,6 +303,21 @@ export function aktionDerTaste(
 }
 
 /** Hinweis, wenn `tasten.toml` fehlerhaft wird oder wieder in Ordnung ist; sonst `null`. */
+/**
+ * Ersatz, wenn die Einstellungen beim Start nicht zu lesen sind: Das Fenster startet trotzdem, mit
+ * den Standardkürzeln und vorsichtshalber „ganz offline“; `fehler` erklärt, warum.
+ */
+export function einstellungenNotfall(fehler: string): EinstellungenJs {
+  return {
+    ordner: "",
+    synchronisiert: false,
+    hinweis: null,
+    ganz_offline: true,
+    kuerzel: {},
+    fehler: t("Einstellungen nicht gelesen ({fehler}); es gelten die Standardkürzel, das Netz bleibt aus.", { fehler }),
+  };
+}
+
 export function fehlerHinweis(vorher: string | null, jetzt: string | null): string | null {
   if (jetzt && jetzt !== vorher) return t("{fehler} – Umbelegen ist gesperrt, Details in den Einstellungen.", { fehler: jetzt });
   if (!jetzt && vorher) return t("tasten.toml ist wieder in Ordnung; die eigenen Kürzel gelten.");

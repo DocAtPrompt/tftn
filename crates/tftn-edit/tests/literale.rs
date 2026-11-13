@@ -271,3 +271,33 @@ fn inhalt_liest_und_schreibt_markup() {
         "[Text *fett*]"
     );
 }
+
+/// Abschlussprüfung AP4: Zeilentrenner U+2028/U+2029 sind auch Umbrüche; Typst kennt Jahre bis 9999.
+#[test]
+fn zeilentrenner_und_jahr_ueber_9999() {
+    let ungueltig = |art: WidgetArt, wert: Wert| {
+        assert!(
+            matches!(schreiben(&art, &wert), Err(PatchFehler::UngueltigerWert(_))),
+            "{wert:?} gilt als gültig"
+        );
+    };
+    for t in ["a\u{2028}b", "a\u{2029}b", "a\u{85}b"] {
+        ungueltig(WidgetArt::Text { mehrzeilig: false }, Wert::Text(t.into()));
+    }
+    ungueltig(
+        WidgetArt::Datum,
+        Wert::Datum {
+            jahr: 10000,
+            monat: 1,
+            tag: 1,
+        },
+    );
+    ungueltig(
+        WidgetArt::Datum,
+        Wert::Datum {
+            jahr: -1,
+            monat: 1,
+            tag: 1,
+        },
+    );
+}

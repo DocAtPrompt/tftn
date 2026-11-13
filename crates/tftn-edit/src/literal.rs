@@ -201,7 +201,7 @@ pub fn schreiben(art: &WidgetArt, wert: &Wert) -> Result<String, PatchFehler> {
             return Err(PatchFehler::Gesperrt(tr!("unbekannte Widget-Art {n}", n)));
         }
         (WidgetArt::Text { mehrzeilig }, Wert::Text(t)) => {
-            if !mehrzeilig && t.contains(['\n', '\r']) {
+            if !mehrzeilig && t.contains(['\n', '\r', '\u{85}', '\u{2028}', '\u{2029}']) {
                 return ungueltig(tr!("Zeilenumbruch in einzeiligem Text"));
             }
             text_literal(t)
@@ -279,6 +279,9 @@ pub fn schreiben(art: &WidgetArt, wert: &Wert) -> Result<String, PatchFehler> {
             }
         },
         (WidgetArt::Datum, Wert::Datum { jahr, monat, tag }) => {
+            if !(0..=9999).contains(jahr) {
+                return ungueltig(tr!("Jahr {jahr} – Typst kennt Jahre von 0 bis 9999", jahr));
+            }
             if !gueltiger_tag(*jahr, *monat, *tag) {
                 return ungueltig(tr!(
                     "{jahr}-{monat}-{tag} ist kein Kalendertag",

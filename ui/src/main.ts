@@ -37,10 +37,11 @@ import {
 } from "./bausteine";
 import { einsetzenSpec, felder } from "./felder";
 import { BausteinPalette } from "./bausteinpalette";
-import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
+import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
 import { EinstellDialog, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { t, texteUebersetzen } from "./sprache";
+import { auszeichnungEntfernen } from "./auszeichnung";
 import { type Fach, type HierJs, type MarkupAktion, Seitenleiste } from "./seitenleiste";
 import { DokumentFach } from "./dokumentfach";
 import { FormelFach, type FormelBildJs, type FormelStandJs, type PaletteJs } from "./formelfach";
@@ -570,6 +571,17 @@ function ausfuehren(id: string): boolean {
 /** Baustein über sein Kürzel: nur, wenn er an der Stelle passt; die Markierung wandert mit. */
 async function bausteinPerKuerzel(e: EintragJs) {
   const { from, to } = view.state.selection.main;
+  // ⌘B/⌘I auf schon ausgezeichnetem Text: Auszeichnung entfernen (umschalten).
+  const art = e.id === "typst/fett" ? "fett" : e.id === "typst/kursiv" ? "kursiv" : null;
+  const weg = art && auszeichnungEntfernen(view.state.doc.toString(), from, to, art);
+  if (weg) {
+    view.dispatch({
+      changes: { from: weg.von, to: weg.bis, insert: weg.einsetzen },
+      selection: { anchor: weg.auswahlVon, head: weg.auswahlBis },
+      userEvent: "input.tftn-auszeichnung",
+    });
+    return;
+  }
   const m = await modusAn(from);
   if (m === null || !e.modus.includes(m)) {
     const wo = m === null ? t("Kommentar oder Raw-Text") : m === "code" ? t("Code") : m === "mathe" ? t("Formel") : t("Text");
@@ -1516,7 +1528,8 @@ async function start() {
   } catch {
     profile = [];
   }
-  einstellungenSetzen(await invoke<EinstellungenJs>("einstellungen"));
+  // Scheitert das Lesen, startet das Fenster trotzdem (sonst bliebe es leer).
+  einstellungenSetzen(await invoke<EinstellungenJs>("einstellungen").catch((f) => einstellungenNotfall(String(f))));
   if (!einstellungen!.fehler && belegung!.meldungen.length) hinweis(belegung!.meldungen[0]);
   const [editorStandard, verlaufTasten, suchTasten, vervollstaendigenTasten, tabTaste] = editorKeymaps();
   view = new EditorView({
@@ -1577,7 +1590,7 @@ async function start() {
       ],
     }),
   });
-  popover = new Popover();
+  popover = new Popover(() => view.focus());
   markenTasten();
   // Erste Hervorhebung: leere Änderung über neusync vermeiden, einfach anfragen.
   const h = await invoke<Bereich[] | null>("hervorheben", { rev, sichtbar: sichtbar() });

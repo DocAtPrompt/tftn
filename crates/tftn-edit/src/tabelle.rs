@@ -424,6 +424,15 @@ impl Tabelle {
     }
 }
 
+/// Obergrenzen fürs Raster (Abschlussprüfung AP5): darüber würde das Modell riesig, und die
+/// Tabelle bearbeitet man im Text.
+const MAX_SPALTEN: usize = 1_000;
+const MAX_FELDER: usize = 100_000;
+
+fn zu_gross() -> String {
+    tr!("Tabelle zu groß für das Raster – im Text bearbeiten")
+}
+
 fn berechnet() -> String {
     tr!("berechnet – im Text bearbeiten")
 }
@@ -578,6 +587,7 @@ fn spalten_lesen(
     match wert.kind() {
         SyntaxKind::Auto => Ok((1, None, SpaltenForm::Auto)),
         SyntaxKind::Int => match wert.cast::<ast::Int>().map(|i| i.get()) {
+            Some(n) if n as u64 > MAX_SPALTEN as u64 => Err(zu_gross()),
             Some(n) if n >= 1 => Ok((n as usize, None, SpaltenForm::Zahl)),
             _ => Err(berechnet()),
         },
@@ -596,6 +606,9 @@ fn spalten_lesen(
             }
             if spuren.is_empty() {
                 return Err(berechnet());
+            }
+            if spuren.len() > MAX_SPALTEN {
+                return Err(zu_gross());
             }
             Ok((spuren.len(), Some(spuren), SpaltenForm::Spuren))
         }
@@ -662,6 +675,9 @@ fn zelle_lesen(text: &str, aufruf: &LinkedNode) -> Result<Roh, String> {
                             return Err(kommentar());
                         }
                         let n = match named.expr() {
+                            ast::Expr::Int(i) if i.get() as u64 > MAX_FELDER as u64 => {
+                                return Err(zu_gross());
+                            }
                             ast::Expr::Int(i) if i.get() >= 1 => i.get() as usize,
                             _ => return Err(berechnet()),
                         };
@@ -757,6 +773,9 @@ fn platzieren(
             i += 1;
         }
         let (zeile, spalte) = (i / spalten, i % spalten);
+        if (zeile + r.zeilen).saturating_mul(spalten) > MAX_FELDER {
+            return Err(zu_gross());
+        }
         if r.spalten > spalten - spalte {
             return Err(zellfehler());
         }
@@ -821,6 +840,15 @@ pub fn tabelle_patch(
     stelle: &TabellenStelle,
     aktion: &TabellenAktion,
 ) -> Result<Patch, PatchFehler> {
+    // Die Stelle muss zu diesem Text gehören (sonst zeigen ihre Bereiche ins Leere).
+    match tabelle_am(quelle, stelle.aufruf.start) {
+        Some(Ok(s)) if s.aufruf == stelle.aufruf && s.tabelle == stelle.tabelle => {}
+        _ => {
+            return Err(PatchFehler::Gesperrt(tr!(
+                "Die Tabelle hat sich inzwischen geändert"
+            )));
+        }
+    }
     let erwartet = stelle.tabelle.aendern(aktion)?;
     let minimal = match aktion {
         TabellenAktion::Zelltext {

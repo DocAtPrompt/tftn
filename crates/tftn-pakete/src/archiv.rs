@@ -226,10 +226,37 @@ fn pfad_pruefen(roh: &[u8]) -> Result<PathBuf, String> {
             "" | "." => {}
             ".." => return Err(falsch()),
             t if t.contains('\\') || t.contains(':') => return Err(falsch()),
+            t if !unter_windows_gueltig(t) => return Err(falsch()),
             t => pfad.push(t),
         }
     }
     Ok(pfad)
+}
+
+/// Ein Namensteil, den auch Windows anlegen kann: keine Zeichen `<>"|?*` und keine
+/// Steuerzeichen, kein Punkt oder Leerzeichen am Ende, kein reservierter Gerätename wie `CON` oder
+/// `nul.typ` (auch nicht mit Endung).
+fn unter_windows_gueltig(teil: &str) -> bool {
+    if teil
+        .chars()
+        .any(|c| matches!(c, '<' | '>' | '"' | '|' | '?' | '*') || c.is_control())
+    {
+        return false;
+    }
+    if teil.ends_with('.') || teil.ends_with(' ') {
+        return false;
+    }
+    let stamm = teil
+        .split('.')
+        .next()
+        .unwrap_or(teil)
+        .trim_end()
+        .to_ascii_uppercase();
+    let reserviert = matches!(stamm.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+        || ((stamm.starts_with("COM") || stamm.starts_with("LPT"))
+            && stamm.len() == 4
+            && stamm.as_bytes()[3].is_ascii_digit());
+    !reserviert
 }
 
 /// `typst.toml` vorhanden, `[package]` `name` und `version` wie verlangt.

@@ -210,3 +210,22 @@ export function wertZuEingabe(art: WidgetArt, w: Wert | null): string {
   }
   return "";
 }
+
+/**
+ * Optionen eines Auswahlfelds. Steht im Text ein Wert, den die Liste nicht kennt, erscheint er als
+ * eigene, gewählte Option – sonst zeigte das Feld fälschlich die erste Option als gewählt.
+ */
+export function wahlOptionen(
+  werte: string[],
+  wert: unknown,
+  fehlt: boolean,
+): { wert: string; text: string; gewaehlt: boolean }[] {
+  const aktuell = typeof wert === "string" ? wert : null;
+  const aus: { wert: string; text: string; gewaehlt: boolean }[] = [];
+  if (fehlt) aus.push({ wert: "", text: "—", gewaehlt: true });
+  else if (aktuell !== null && !werte.includes(aktuell)) {
+    aus.push({ wert: aktuell, text: t("{wert} (nicht in der Liste)", { wert: aktuell }), gewaehlt: true });
+  }
+  for (const w of werte) aus.push({ wert: w, text: w, gewaehlt: !fehlt && w === aktuell });
+  return aus;
+}

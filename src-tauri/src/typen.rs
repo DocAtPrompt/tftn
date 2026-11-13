@@ -198,6 +198,7 @@ pub fn entwurf_sichern_in(
             .map_err(|e| e.to_string())?;
         // Schriften erst beim Speichern auf Wunsch; bis dahin die der App.
         let _ = std::fs::remove_dir_all(ordner.join("fonts"));
+        let _ = tftn_manifest::anlegen::readme_schriften_abgleichen(ordner);
     }
     Ok(ordner.to_path_buf())
 }
@@ -247,9 +248,8 @@ pub fn schriften_nachreichen(ziel: &Path) -> Result<(), String> {
     let doc = k
         .dokument
         .ok_or_else(|| tr!("Das Dokument übersetzt noch nicht; Schriften nicht eingebunden."))?;
-    tftn_core::schriften::einbinden(&p, &doc)
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+    tftn_core::schriften::einbinden(&p, &doc).map_err(|e| e.to_string())?;
+    tftn_manifest::anlegen::readme_schriften_abgleichen(ziel).map_err(|e| e.to_string())
 }
 
 /// Macht aus dem Entwurf `<dokumente>/<name>`.
@@ -325,6 +325,8 @@ pub fn anlegen(
     let _ = std::fs::remove_dir_all(wurzel.join("fonts"));
     if schriften {
         schriften_nachreichen(&wurzel)?;
+    } else {
+        let _ = tftn_manifest::anlegen::readme_schriften_abgleichen(&wurzel);
     }
     Ok(wurzel)
 }
@@ -696,6 +698,8 @@ mod tests {
         assert!(!ziel.join("fonts").exists());
         schriften_nachreichen(&ziel).unwrap();
         assert!(ziel.join("fonts/LibertinusSerif-Regular.otf").is_file());
+        let readme = std::fs::read_to_string(ziel.join("README.md")).unwrap();
+        assert_eq!(readme.matches("`fonts/`").count(), 1, "{readme}");
         assert!(
             !ziel.join("fonts/SourceSerif4-Regular.otf").exists(),
             "nur Benutztes"
@@ -763,6 +767,8 @@ mod tests {
         assert!(entwurf_benennen(&e, &dok, "a/b", false).is_err());
         let ohne = entwurf_benennen(&e, &dok, "Ohne", false).unwrap();
         assert!(!ohne.join("fonts").exists(), "nicht eingebunden");
+        let readme = std::fs::read_to_string(ohne.join("README.md")).unwrap();
+        assert!(!readme.contains("fonts/"), "{readme}");
         let _ = std::fs::remove_dir_all(&o);
     }
 

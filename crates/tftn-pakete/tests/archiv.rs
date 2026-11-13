@@ -237,3 +237,55 @@ fn bombe_im_erweiterungskopf() {
         assert!(!ziel.exists());
     }
 }
+
+/// Abschlussprüfung AP9: Namen, die unter Windows nicht gehen, lehnt TFTN überall ab – ein Paket
+/// soll auf beiden Rechnern gleich entpacken.
+#[test]
+fn windows_namen_abgelehnt() {
+    let gut = || typst_toml("tftn-probe", "0.1.0");
+    for (i, name) in [
+        "a<b.typ",
+        "a>b",
+        "a\"b",
+        "a|b",
+        "a?b",
+        "a*b",
+        "CON",
+        "nul.typ",
+        "aux.txt",
+        "com1",
+        "LPT9.typ",
+        "ende.",
+        "ende ",
+        "ordner./x.typ",
+    ]
+    .iter()
+    .enumerate()
+    {
+        let o = testordner(&format!("windows-{i}"));
+        let fehler = entpacken(
+            &archiv(&[gut(), datei(name, "x")]),
+            &spec(),
+            &o.join("ziel"),
+            &Grenzen::default(),
+        )
+        .expect_err(name)
+        .to_string();
+        assert!(fehler.contains("Pfad"), "{name}: {fehler}");
+        assert!(!o.join("ziel").exists(), "{name}");
+    }
+    // Ähnliche, erlaubte Namen
+    for (i, name) in ["console.typ", "nullen.typ", "a.b.typ", "com10.typ"]
+        .iter()
+        .enumerate()
+    {
+        let o = testordner(&format!("windows-gut-{i}"));
+        entpacken(
+            &archiv(&[gut(), datei(name, "x")]),
+            &spec(),
+            &o.join("ziel"),
+            &Grenzen::default(),
+        )
+        .unwrap_or_else(|e| panic!("{name}: {e}"));
+    }
+}

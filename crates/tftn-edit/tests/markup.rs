@@ -45,6 +45,11 @@ fn ebene_plus_minus_und_grenzen() {
         helfer("====== A", "A", MarkupAktion::EbenePlus),
         Err(PatchFehler::UngueltigerWert(_))
     ));
+    // Abschlussprüfung AP4: Eine tiefere Überschrift aus dem Text lässt sich zurückstufen.
+    assert_eq!(
+        helfer("======== A", "A", MarkupAktion::EbeneMinus).unwrap(),
+        "======= A"
+    );
 }
 
 #[test]

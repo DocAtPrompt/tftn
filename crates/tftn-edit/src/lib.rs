@@ -555,6 +555,14 @@ pub fn pruefen(
 /// nach dem Bereich unverändert. Liefert die neue Quelle für die Prüfung der Stelle selbst.
 pub(crate) fn aussen_pruefen(quelle: &Source, patch: &Patch) -> Result<Source, PatchFehler> {
     let alt = quelle.text();
+    let b = &patch.bereich;
+    if b.start > b.end
+        || b.end > alt.len()
+        || !alt.is_char_boundary(b.start)
+        || !alt.is_char_boundary(b.end)
+    {
+        return Err(PatchFehler::Invariante("Bereich liegt nicht im Text"));
+    }
     let neu_text = anwenden(alt, patch);
     let ende_neu = patch.bereich.start + patch.text.len();
 

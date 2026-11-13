@@ -1,9 +1,6 @@
-# CI nach PLAN-M1 4.6, sparsam (2026-11-12): Bei privaten Repos gibt es nur ein Freikontingent, und
-# macOS-Minuten zählen zehnfach, Windows doppelt. Daher:
-# - Push auf main: nur Linux (Tests, fmt, clippy, Netzfreiheit); reine Doku-Commits gar nicht.
-#   macOS deckt `cargo xtask ci` auf dem Mac ab.
-# - Von Hand (Actions → CI → Run workflow): wahlweise alle Plattformen samt Plattformvergleich,
-#   und nur auf Wunsch zusätzlich das App-Bündel. Vor einem Release oder nach größeren Umbauten.
+# CI nach PLAN-M1 4.6. Seit 2026-11-13 ist das Repo öffentlich und die Minuten sind frei:
+# Jeder Push auf main prüft alle drei Plattformen samt Plattformvergleich; reine Doku-Commits nicht.
+# Von Hand (Actions → CI → Run workflow) zusätzlich auf Wunsch das macOS-App-Bündel.
 name: CI
 
 on:
@@ -14,13 +11,8 @@ on:
       - "docs/**"
   workflow_dispatch:
     inputs:
-      plattformen:
-        description: "Plattformen"
-        type: choice
-        options: [nur Linux, alle]
-        default: alle
       buendel:
-        description: "App-Bündel bauen (macOS, kostet viele Minuten)"
+        description: "App-Bündel bauen (macOS)"
         type: boolean
         default: false
 
@@ -42,14 +34,11 @@ jobs:
     timeout-minutes: 90
     strategy:
       fail-fast: false
-      # Ganze Matrix als JSON: `include`-Einträge ließen sich sonst nicht abwählen.
-      matrix: >-
-        ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.plattformen == 'alle' && '{"include":[
-        {"name":"macOS arm64","os":"macos-15","ziel":"aarch64-apple-darwin","exe":"","app":true},
-        {"name":"Windows x64","os":"windows-2022","ziel":"x86_64-pc-windows-msvc","exe":".exe","app":true},
-        {"name":"Linux x64","os":"ubuntu-24.04","ziel":"x86_64-unknown-linux-musl","exe":"","app":false}]}'
-        || '{"include":[
-        {"name":"Linux x64","os":"ubuntu-24.04","ziel":"x86_64-unknown-linux-musl","exe":"","app":false}]}') }}
+      matrix:
+        include:
+          - { name: "macOS arm64", os: macos-15, ziel: aarch64-apple-darwin, exe: "", app: true }
+          - { name: "Windows x64", os: windows-2022, ziel: x86_64-pc-windows-msvc, exe: ".exe", app: true }
+          - { name: "Linux x64", os: ubuntu-24.04, ziel: x86_64-unknown-linux-musl, exe: "", app: false }
     steps:
       - uses: actions/checkout@v4
 
@@ -104,7 +93,7 @@ jobs:
       - name: tftn bauen
         run: cargo build --workspace --bins --exclude xtask ${{ !matrix.app && '--exclude tftn-app' || '' }}
 
-      # Release-Bau dauert; daher nur von Hand und nur auf Wunsch (macOS-Minuten zählen zehnfach).
+      # Release-Bau dauert; daher nur von Hand und nur auf Wunsch.
       - name: App-Bündel bauen (Tauri-Bundler, PLAN-M1 4.7)
         if: github.event_name == 'workflow_dispatch' && inputs.buendel && matrix.ziel == 'aarch64-apple-darwin'
         timeout-minutes: 40
@@ -158,8 +147,6 @@ jobs:
   plattformvergleich:
     name: Plattformvergleich (A8)
     needs: test
-    # Braucht alle drei Plattformen, also nur beim Start von Hand mit „alle“.
-    if: github.event_name == 'workflow_dispatch' && inputs.plattformen == 'alle'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4

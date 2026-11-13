@@ -191,7 +191,7 @@ fn anlegen_innen(
              ```bash\nmkdir -p _renders\n{zeile}\n```\n\n\
              ## Origin\n\n\
              - `packages/local/`: document type and its dependencies, copied from TFTN `types/`.\n\
-             - `fonts/`: freely licensed fonts, licenses in `fonts/LIZENZEN.txt`.\n",
+             {FONTS_EN}\n",
             titel = tftn_sprachen::uebersetzen(&manifest.titel),
             typname = tftn_sprachen::uebersetzen(&manifest.titel),
             spec = paket.spec(),
@@ -204,7 +204,7 @@ fn anlegen_innen(
              ```bash\nmkdir -p _renders\n{zeile}\n```\n\n\
              ## Herkunft\n\n\
              - `packages/local/`: Dokumenttyp und seine Abhängigkeiten, kopiert aus TFTN `types/`.\n\
-             - `fonts/`: frei lizenzierte Schriften, Lizenzen in `fonts/LIZENZEN.txt`.\n",
+             {FONTS_DE}\n",
             titel = manifest.titel,
             typname = manifest.titel,
             spec = paket.spec(),
@@ -216,6 +216,44 @@ fn anlegen_innen(
         projekt,
         pakete: erledigt,
     })
+}
+
+const FONTS_DE: &str = "- `fonts/`: frei lizenzierte Schriften, Lizenzen in `fonts/LIZENZEN.txt`.";
+const FONTS_EN: &str = "- `fonts/`: freely licensed fonts, licenses in `fonts/LIZENZEN.txt`.";
+
+/// Gleicht das README des Projekts an `fonts/` an: Die Zeile dazu steht nur, wenn Schriften
+/// eingebunden sind. Ein README ohne die Abschnitte von TFTN bleibt, wie es ist.
+pub fn readme_schriften_abgleichen(wurzel: &Path) -> Result<(), ManifestFehler> {
+    let datei = wurzel.join("README.md");
+    let Ok(text) = std::fs::read_to_string(&datei) else {
+        return Ok(());
+    };
+    let englisch = text.contains("## Origin");
+    let zeile = if englisch { FONTS_EN } else { FONTS_DE };
+    let da = wurzel.join("fonts").is_dir();
+    let ohne: String = text
+        .lines()
+        .filter(|z| *z != FONTS_DE && *z != FONTS_EN)
+        .map(|z| format!("{z}\n"))
+        .collect();
+    let neu = if da {
+        let anker = if englisch {
+            "- `packages/local/`: document type"
+        } else {
+            "- `packages/local/`: Dokumenttyp"
+        };
+        let Some(i) = ohne.find(anker) else {
+            return Ok(());
+        };
+        let ende = ohne[i..].find('\n').map_or(ohne.len(), |e| i + e + 1);
+        format!("{}{zeile}\n{}", &ohne[..ende], &ohne[ende..])
+    } else {
+        ohne
+    };
+    if neu != text {
+        schreiben(&datei, &neu)?;
+    }
+    Ok(())
 }
 
 /// Vendort `paket` und alles, was es (oder `zusatz`) per `@local` importiert, nach
@@ -290,15 +328,25 @@ fn importe(ordner: &Path) -> Result<BTreeSet<(String, String)>, ManifestFehler> 
     Ok(gefunden)
 }
 
-/// Alle Dateien unter `ordner`, sortiert.
+/// Alle Dateien unter `ordner`, sortiert; ohne Verknüpfungen und ohne `.`-Ordner, `_renders`, `_lokal`.
 pub(crate) fn dateien(ordner: &Path) -> Result<Vec<PathBuf>, ManifestFehler> {
     let mut alle = Vec::new();
     let mut stapel = vec![ordner.to_path_buf()];
     while let Some(o) = stapel.pop() {
         for eintrag in std::fs::read_dir(&o).map_err(io(&o))? {
-            let pfad = eintrag.map_err(io(&o))?.path();
-            if pfad.is_dir() {
-                stapel.push(pfad);
+            let eintrag = eintrag.map_err(io(&o))?;
+            let pfad = eintrag.path();
+            // Verknüpfungen nie folgen (ein Kreis liefe endlos), Erzeugtes und `.git` überspringen.
+            let art = eintrag.file_type().map_err(io(&pfad))?;
+            if art.is_symlink() {
+                continue;
+            }
+            if art.is_dir() {
+                let name = eintrag.file_name();
+                let name = name.to_string_lossy();
+                if !(name.starts_with('.') || name == "_renders" || name == "_lokal") {
+                    stapel.push(pfad);
+                }
             } else {
                 alle.push(pfad);
             }
@@ -366,5 +414,27 @@ mod tests {
             spec_lesen("@local/tftn-kern:0.1.0"),
             ("tftn-kern", Some("0.1.0"))
         );
+    }
+
+    /// Abschlussprüfung AP8: kein `.git`/`_renders`, keine Verknüpfungen; ein Kreis endet.
+    #[cfg(unix)]
+    #[test]
+    fn dateien_ohne_erzeugtes_und_ohne_verknuepfungen() {
+        let o = std::env::temp_dir().join(format!("tftn-dateien-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&o);
+        for d in ["a", ".git", "_renders", "_lokal"] {
+            std::fs::create_dir_all(o.join(d)).unwrap();
+            std::fs::write(o.join(d).join("x.typ"), "").unwrap();
+        }
+        std::fs::write(o.join("main.typ"), "").unwrap();
+        std::os::unix::fs::symlink(&o, o.join("a/kreis")).unwrap();
+        std::os::unix::fs::symlink(o.join("main.typ"), o.join("a/link.typ")).unwrap();
+        let namen: Vec<String> = dateien(&o)
+            .unwrap()
+            .iter()
+            .map(|p| p.strip_prefix(&o).unwrap().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(namen, ["a/x.typ", "main.typ"]);
+        let _ = std::fs::remove_dir_all(&o);
     }
 }

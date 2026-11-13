@@ -2,6 +2,7 @@
 // Palette und Vervollständigung mit Strg+Leertaste. Reine Logik und Quellen für @codemirror/autocomplete;
 // alles mit Typst-Wissen (Modus, Schnipsel, Vorschläge) kommt aus Rust.
 
+import { closeCompletion } from "@codemirror/autocomplete";
 import type { Completion, CompletionContext, CompletionResult, CompletionSection, CompletionSource } from "@codemirror/autocomplete";
 import { t } from "./sprache";
 
@@ -118,7 +119,12 @@ export function slashQuelle(d: {
       label: e.titel,
       detail: e.kuerzel ? kuerzelText(e.kuerzel) : undefined,
       section: ABSCHNITTE[e.herkunft],
-      apply: (_view, _c, from, to) => d.einsetzen(e.id, from - 1, to),
+      // Liste sofort schließen: Das Einsetzen läuft asynchron, ein zweites Enter träfe sonst die
+      // noch offene Liste (Abschlussprüfung AP2).
+      apply: (view, _c, from, to) => {
+        closeCompletion(view);
+        d.einsetzen(e.id, from - 1, to);
+      },
     }));
     // filter: false – gefiltert wird mit `menue`, damit Menü und Palette gleich suchen. `update`
     // filtert beim Weitertippen sofort neu (der Modus am „/“ ändert sich dadurch nicht); ohne würde
@@ -162,7 +168,10 @@ export function typstQuelle(d: {
               label: v.titel,
               detail: v.detail ?? undefined,
               type: v.art,
-              apply: (_view, _c, from, to) => d.einsetzen(from, to, v),
+              apply: (view, _c, from, to) => {
+                closeCompletion(view);
+                d.einsetzen(from, to, v);
+              },
             })),
             validFor: /^[\p{L}\p{N}_-]*$/u,
           }

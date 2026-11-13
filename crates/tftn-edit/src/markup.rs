@@ -186,7 +186,9 @@ pub fn markup_patch(
                 MarkupAktion::EbenePlus => ebene + 1,
                 _ => ebene.saturating_sub(1),
             };
-            if !(1..=EBENE_MAX).contains(&neu) {
+            // Hinauf nur bis EBENE_MAX; zurückstufen geht auch von tieferen Ebenen aus dem Text.
+            let zu_tief = matches!(aktion, MarkupAktion::EbenePlus) && neu > EBENE_MAX;
+            if neu < 1 || zu_tief {
                 return Err(PatchFehler::UngueltigerWert(tr!(
                     "Ebene {neu} außerhalb von 1..={max}",
                     neu,
