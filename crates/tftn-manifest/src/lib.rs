@@ -88,7 +88,7 @@ pub struct LiteraturManifest {
 }
 
 /// `[[tool.tftn.baustein]]` (KONZEPT 5.4).
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Baustein {
     pub id: String,
     pub funktion: String,
@@ -119,7 +119,7 @@ fn nur_markup() -> Vec<Modus> {
 }
 
 /// Widget eines benannten Arguments (KONZEPT 5.4, Tabelle der Widget-Arten).
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Parameter {
     pub widget: String,
     pub titel: Option<String>,

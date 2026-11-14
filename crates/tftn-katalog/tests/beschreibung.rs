@@ -46,7 +46,7 @@ fn pakete_im_projekt() {
     .unwrap();
     std::fs::create_dir_all(p.join("packages/preview/ohne-toml/1.0.0")).unwrap();
     assert_eq!(
-        projektpakete(&p),
+        projektpakete(&p.join("packages")),
         vec![("demo".to_string(), semver::Version::new(0, 1, 3))]
     );
 }

@@ -33,9 +33,17 @@ pub struct Feld {
     pub bereich: Range<usize>,
 }
 
-/// Eingesetzter Text mit Feldern in Tab-Reihenfolge.
+/// Eingesetzter Text mit Feldern in Tab-Reihenfolge; Stellen in Bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Eingesetzt {
+    pub text: String,
+    pub felder: Vec<Feld>,
+    pub cursor: Option<usize>,
+}
+
+/// Wie [`Eingesetzt`], Stellen aber in UTF-16-Einheiten (für CodeMirror).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EingesetztUtf16 {
     pub text: String,
     pub felder: Vec<Feld>,
     pub cursor: Option<usize>,
@@ -275,9 +283,9 @@ fn als_liste(auswahl: &str, praefix: &str) -> String {
 
 impl Eingesetzt {
     /// Dieselben Bereiche in UTF-16-Einheiten (für CodeMirror).
-    pub fn utf16(&self) -> Eingesetzt {
+    pub fn utf16(&self) -> EingesetztUtf16 {
         let u = |byte: usize| self.text[..byte].encode_utf16().count();
-        Eingesetzt {
+        EingesetztUtf16 {
             text: self.text.clone(),
             felder: self
                 .felder
@@ -347,7 +355,8 @@ mod tests {
             .einsetzen("");
         assert_eq!(e.felder[0].bereich, 7..12); // Bytes: Ä=2, 😀=4, Leerzeichen=1
         assert_eq!(e.cursor, Some(12));
-        let u = e.utf16();
+        // Eigener Typ: Byte- und UTF-16-Stellen lassen sich nicht verwechseln.
+        let u: EingesetztUtf16 = e.utf16();
         assert_eq!(u.felder[0].bereich, 4..9); // UTF-16: Ä=1, 😀=2, Leerzeichen=1
         assert_eq!(u.cursor, Some(9));
     }

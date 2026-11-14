@@ -19,7 +19,7 @@ pub use einfuegen::{Einfuegung, import_fuer, importzeile};
 pub use mathe::{Symbol, SymbolGruppe, symbole};
 pub use ort::modus_an;
 pub use pruefen::{Befund, obere_importe, pruefen};
-pub use schnipsel::{Eingesetzt, Feld, Schnipsel, SchnipselFehler, Teil};
+pub use schnipsel::{Eingesetzt, EingesetztUtf16, Feld, Schnipsel, SchnipselFehler, Teil};
 
 /// Woher ein Baustein stammt; bestimmt den Namensraum seiner Id.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,6 +37,17 @@ pub enum Herkunft {
         /// Weitere nötige Importe: Paketname und fertige Zeile
         auch: Vec<(String, String)>,
     },
+}
+
+impl Herkunft {
+    /// Kurzname für CLI und Oberfläche: `typst`, `dokumenttyp` oder `paket`.
+    pub fn art(&self) -> &'static str {
+        match self {
+            Herkunft::Typst => "typst",
+            Herkunft::Dokumenttyp { .. } => "dokumenttyp",
+            Herkunft::Paket { .. } => "paket",
+        }
+    }
 }
 
 /// Ein Baustein im Katalog.
@@ -338,7 +349,7 @@ fn alle_beschreibungen(
 
 /// Je Paket ohne Version im Projekt die erste Beschreibung mit `titel` und `empfohlen`.
 fn holbare(projekt: &tftn_core::Projekt, alle: &[Beschreibung]) -> Vec<Holbar> {
-    let da = projektpakete(&projekt.wurzel);
+    let da = projektpakete(&projekt.pakete());
     let direkt = tftn_pakete::projektimporte(&projekt.wurzel);
     let mut aus: Vec<Holbar> = Vec::new();
     for b in alle {
@@ -419,7 +430,7 @@ fn pakete_einlesen(
     warnungen: &mut Vec<String>,
 ) {
     // Neueste Version zuerst: Liegen mehrere im Projekt, zählt je Paket nur sie.
-    let mut pakete = projektpakete(&projekt.wurzel);
+    let mut pakete = projektpakete(&projekt.pakete());
     pakete.sort_by(|a, b| a.0.cmp(&b.0).then(b.1.cmp(&a.1)));
     let vorhanden = pakete.clone();
     let mut beschrieben: Vec<String> = Vec::new();
@@ -475,6 +486,22 @@ fn pakete_einlesen(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn herkunft_als_text() {
+        assert_eq!(Herkunft::Typst.art(), "typst");
+        let d = Herkunft::Dokumenttyp {
+            spec: "@local/tftn-brief:0.1.0".into(),
+        };
+        assert_eq!(d.art(), "dokumenttyp");
+        let p = Herkunft::Paket {
+            name: "cetz".into(),
+            version: semver::Version::new(0, 4, 2),
+            import: String::new(),
+            auch: Vec::new(),
+        };
+        assert_eq!(p.art(), "paket");
+    }
 
     #[test]
     fn eingebaute_ids_eindeutig_und_vollstaendig() {

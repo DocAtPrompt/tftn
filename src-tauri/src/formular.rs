@@ -364,7 +364,7 @@ pub fn projekt_js(
         typ: name.to_string(),
         version: version.to_string(),
         typst: projekt.konfig.typst.clone(),
-        pakete: tftn_katalog::projektpakete(&projekt.wurzel)
+        pakete: tftn_katalog::projektpakete(&projekt.pakete())
             .into_iter()
             .map(|(n, v)| (n, v.to_string()))
             .collect(),

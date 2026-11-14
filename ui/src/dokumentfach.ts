@@ -299,7 +299,6 @@ export class DokumentFach {
     const eingabe = this.eingabe(f, art, pfad, wertAn(werte, pfad), meldung);
     eingabe.id = id;
     eingabe.classList.add("dok-eingabe");
-    if (this.js!.dateifehler) eingabe.disabled = true;
     zeile.append(titel, eingabe, meldung);
     if (f.hilfe) zeile.append(el("div", "leiste-hilfe", f.hilfe));
     return zeile;

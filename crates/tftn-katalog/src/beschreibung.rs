@@ -138,10 +138,11 @@ fn import_pruefen(import: &str, paket: &str) -> Result<(), String> {
     }
 }
 
-/// Universe-Pakete im Projekt: `packages/preview/<name>/<version>/typst.toml`.
-pub fn projektpakete(projekt: &Path) -> Vec<(String, semver::Version)> {
+/// Universe-Pakete im Paketordner des Projekts (`Projekt::pakete()`):
+/// `preview/<name>/<version>/typst.toml`.
+pub fn projektpakete(pakete: &Path) -> Vec<(String, semver::Version)> {
     let mut aus = Vec::new();
-    let Ok(namen) = std::fs::read_dir(projekt.join("packages/preview")) else {
+    let Ok(namen) = std::fs::read_dir(pakete.join("preview")) else {
         return aus;
     };
     for name in namen.filter_map(Result::ok) {

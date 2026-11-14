@@ -2040,12 +2040,7 @@ fn katalog(zustand: State<'_, Zustand>) -> Result<Vec<EintragJs>, String> {
             id: e.id.clone(),
             titel: e.titel.clone(),
             gruppe: e.gruppe.clone(),
-            herkunft: match e.herkunft {
-                tftn_katalog::Herkunft::Typst => "typst",
-                tftn_katalog::Herkunft::Dokumenttyp { .. } => "dokumenttyp",
-                tftn_katalog::Herkunft::Paket { .. } => "paket",
-            }
-            .into(),
+            herkunft: e.herkunft.art().into(),
             modus: e.modus.clone(),
             kuerzel: e.kuerzel.clone(),
         })

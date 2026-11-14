@@ -259,12 +259,7 @@ fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {
                 beschreibungen: &aufruf.beschreibungen,
             });
             for e in katalog.eintraege() {
-                let herkunft = match e.herkunft {
-                    tftn_katalog::Herkunft::Typst => "typst",
-                    tftn_katalog::Herkunft::Dokumenttyp { .. } => "dokumenttyp",
-                    tftn_katalog::Herkunft::Paket { .. } => "paket",
-                };
-                println!("{}\t{}\t{herkunft}", e.id, e.titel);
+                println!("{}\t{}\t{}", e.id, e.titel, e.herkunft.art());
             }
             for w in warnungen {
                 eprintln!("Warnung: {w}");
