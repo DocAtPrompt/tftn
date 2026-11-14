@@ -18,6 +18,7 @@ import {
   eingabeZeigen,
   gruppen,
   historieTaste,
+  knopfNachEintrag,
   pfadText,
   wertAn,
   zustandUebertragen,
@@ -138,15 +139,23 @@ export class DokumentFach {
       this.js = await p;
       this.darstellen();
       // Abgelehnt: Die Eingabe bleibt im Feld stehen, die Meldung steht darunter.
-      if (this.js.abgelehnt && eingabe && gleich(this.js.abgelehnt.pfad, eingabe.pfad)) {
-        const f = this.huelle.querySelector<Eingabe>(`[data-pfad="${CSS.escape(pfadText(eingabe.pfad))}"] .dok-eingabe`);
-        if (f && !(f instanceof HTMLSelectElement)) f.value = eingabe.roh;
-      }
+      if (this.js.abgelehnt && eingabe && gleich(this.js.abgelehnt.pfad, eingabe.pfad)) this.eingabeZurueck(eingabe);
     } catch (fehler) {
-      if (String(fehler) === "veraltet") this.a.hinweis(t("dokument.toml wurde inzwischen geändert – neu geladen."));
+      const veraltet = String(fehler) === "veraltet";
+      if (veraltet && eingabe)
+        this.a.hinweis(t("dokument.toml wurde inzwischen geändert – neu geladen. Deine Eingabe steht noch im Feld; bitte erneut bestätigen."));
+      else if (veraltet) this.a.hinweis(t("dokument.toml wurde inzwischen geändert – neu geladen."));
       else this.a.hinweis(String(fehler));
       await this.zeichnen();
+      // Neu geladen: Die Eingabe nicht verwerfen, sondern ungeschrieben im Feld lassen.
+      if (veraltet && eingabe) this.eingabeZurueck(eingabe);
     }
+  }
+
+  /** Setzt eine ungeschriebene Eingabe wieder ins Feld; sie gilt dann als geändert. */
+  private eingabeZurueck(eingabe: { pfad: Pfad; roh: string }) {
+    const f = this.huelle.querySelector<Eingabe>(`[data-pfad="${CSS.escape(pfadText(eingabe.pfad))}"] .dok-eingabe`);
+    if (f && !(f instanceof HTMLSelectElement)) f.value = eingabe.roh;
   }
 
   private schreiben(feld: Feld, pfad: Pfad, roh: string | boolean, meldung: HTMLElement) {
@@ -162,7 +171,25 @@ export class DokumentFach {
   }
 
   private eintrag(pfad: Pfad, aktion: EintragAktion) {
-    if (this.js) void this.reihe.einreihen((stand) => this.antwort(this.a.eintrag(stand, pfad, aktion)));
+    if (!this.js) return;
+    void this.reihe.einreihen(async (stand) => {
+      await this.antwort(this.a.eintrag(stand, pfad, aktion));
+      this.eintragFokus(pfad, aktion);
+    });
+  }
+
+  /** Nach ↑/↓/Entfernen bleibt der Fokus auf den Knöpfen, nach „+ Eintrag“ im neuen Eintrag. */
+  private eintragFokus(pfad: Pfad, aktion: EintragAktion) {
+    const fs = this.huelle.querySelector<HTMLElement>(`fieldset.dok-eintraege[data-pfad="${CSS.escape(pfadText(pfad))}"]`);
+    if (!fs) return;
+    const eintraege = [...fs.querySelectorAll<HTMLElement>(":scope > .dok-eintrag")];
+    const z = knopfNachEintrag(aktion, eintraege.length);
+    const ort = z.index === null ? fs : eintraege[z.index];
+    const ziel =
+      z.knopf === "feld"
+        ? ort?.querySelector<HTMLElement>("input, textarea, select")
+        : ort?.querySelector<HTMLElement>(`button[data-knopf="${z.knopf}"]`);
+    ziel?.focus();
   }
 
   private historie(was: "rueck" | "vor"): Promise<void> {
@@ -271,8 +298,10 @@ export class DokumentFach {
       eintraege.forEach((_, i) => {
         const d = el("div", "dok-eintrag");
         const kopf = el("div", "dok-eintrag-kopf", `${i + 1}.`);
+        d.dataset.eintrag = String(i);
         const knopf = (text: string, titel: string, aktion: EintragAktion, aus = false) => {
           const b = el("button", "", text);
+          b.dataset.knopf = aktion.art === "verschieben" ? (aktion.nach < i ? "hoch" : "runter") : "entfernen";
           b.title = titel;
           b.disabled = aus;
           b.addEventListener("click", () => this.eintrag(pfad, aktion));
@@ -286,6 +315,7 @@ export class DokumentFach {
         fs.append(d);
       });
       const neu = el("button", "dok-neu", t("+ Eintrag"));
+      neu.dataset.knopf = "neu";
       neu.addEventListener("click", () => this.eintrag(pfad, { art: "hinzufuegen" }));
       fs.append(neu, this.meldungZeile(pfad));
       return fs;

@@ -7,6 +7,7 @@ import {
   eingabeZeigen,
   gruppen,
   historieTaste,
+  knopfNachEintrag,
   Reihe,
   zustandUebertragen,
   pfadText,
@@ -194,5 +195,25 @@ describe("abschlusspruefung", () => {
     zustandUebertragen(alt, neu);
     expect(neu.value).toBe("Neu");
     expect([neu.selectionStart, neu.selectionEnd]).toEqual([0, 0]);
+  });
+});
+
+describe("knopfNachEintrag", () => {
+  // Abschlussprüfung AP7: Nach ↑/↓/Entfernen landete der Fokus im ersten Feld statt auf dem Knopf.
+  it("verschieben: derselbe Knopf am neuen Platz, am Rand der andere Pfeil", () => {
+    expect(knopfNachEintrag({ art: "verschieben", index: 2, nach: 1 }, 3)).toEqual({ index: 1, knopf: "hoch" });
+    expect(knopfNachEintrag({ art: "verschieben", index: 1, nach: 0 }, 3)).toEqual({ index: 0, knopf: "runter" });
+    expect(knopfNachEintrag({ art: "verschieben", index: 0, nach: 1 }, 3)).toEqual({ index: 1, knopf: "runter" });
+    expect(knopfNachEintrag({ art: "verschieben", index: 1, nach: 2 }, 3)).toEqual({ index: 2, knopf: "hoch" });
+  });
+
+  it("entfernen: Entfernen des nächsten Eintrags, sonst „+ Eintrag“", () => {
+    expect(knopfNachEintrag({ art: "entfernen", index: 1 }, 3)).toEqual({ index: 1, knopf: "entfernen" });
+    expect(knopfNachEintrag({ art: "entfernen", index: 2 }, 2)).toEqual({ index: 1, knopf: "entfernen" });
+    expect(knopfNachEintrag({ art: "entfernen", index: 0 }, 0)).toEqual({ index: null, knopf: "neu" });
+  });
+
+  it("hinzufügen: das erste Feld des neuen Eintrags", () => {
+    expect(knopfNachEintrag({ art: "hinzufuegen" }, 3)).toEqual({ index: 2, knopf: "feld" });
   });
 });

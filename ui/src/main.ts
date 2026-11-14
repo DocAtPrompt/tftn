@@ -690,13 +690,16 @@ function wertSetzen(hrev: number, aufruf: number, parameter: string, wert: Wert,
 }
 
 /** Aktion im Tabellenraster (JSON wie `TabellenAktion`) an der Tabelle, die bei `aufruf` (Revision `hrev`) beginnt. */
-function tabelleAktion(hrev: number, aufruf: number, aktion: object) {
-  void abfragen(async () => {
+/** Ändert die Tabelle; `false`, wenn die Änderung abgelehnt wurde (die Meldung kommt hier). */
+function tabelleAktion(hrev: number, aufruf: number, aktion: object): Promise<boolean> {
+  return abfragen(async () => {
     try {
       const p = await invoke<PatchJs>("tabelle_aktion", { rev: hrev, aufruf, aktion });
       patchAnwenden(p, "input.tftn-tabelle");
+      return true;
     } catch (fehler) {
       fehlerMelden(fehler, t("Tabelle nicht geändert"));
+      return false;
     }
   });
 }
@@ -759,7 +762,13 @@ function markenLaden() {
 }
 
 async function markeGeklickt(m: MarkeJs, dom: HTMLElement) {
-  const h = await hierAbfragen(m.aufruf);
+  let h: HierJs | null;
+  try {
+    h = await hierAbfragen(m.aufruf);
+  } catch (fehler) {
+    fehlerMelden(fehler, t("Werte nicht geladen"));
+    return;
+  }
   const feld = h?.ebenen.find((e) => e.von === m.aufruf)?.felder.find((f) => f.parameter === m.parameter);
   if (!feld) {
     hinweis(VERALTET);

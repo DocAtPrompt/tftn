@@ -15,11 +15,13 @@ use tftn_sprachen::tr;
 use tftn_manifest::{Modus, Parameter};
 
 pub use beschreibung::{Beschreibung, beschreibungen_lesen, projektpakete};
-pub use einfuegen::{Einfuegung, import_fuer, importzeile};
+pub use einfuegen::{Einfuegung, import_fuer, import_fuer_an, importzeile};
 pub use mathe::{Symbol, SymbolGruppe, symbole};
 pub use ort::modus_an;
 pub use pruefen::{Befund, obere_importe, pruefen};
-pub use schnipsel::{Eingesetzt, EingesetztUtf16, Feld, Schnipsel, SchnipselFehler, Teil};
+pub use schnipsel::{
+    Eingesetzt, EingesetztUtf16, Feld, Schnipsel, SchnipselFehler, Teil, einzug_fuer,
+};
 
 /// Woher ein Baustein stammt; bestimmt den Namensraum seiner Id.
 #[derive(Debug, Clone, PartialEq, Eq)]

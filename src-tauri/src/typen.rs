@@ -932,7 +932,10 @@ mod tests {
     /// Kopie des Testartikels (Fachartikel 0.1.0) in einem eigenen Temp-Ordner.
     fn testartikel(name: &str) -> (tftn_core::Projekt, PathBuf) {
         let o = ordner(name);
-        let p = tftn_core::Projekt::oeffnen(&typen().join("../tests/korpus/testartikel")).unwrap();
+        let p = tftn_core::Projekt::oeffnen(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join("../tests/korpus/testartikel"),
+        )
+        .unwrap();
         let k = tftn_manifest::aktualisieren::probekopie(&p, &o.join("projekt")).unwrap();
         (k, o)
     }

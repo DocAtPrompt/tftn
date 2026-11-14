@@ -15,8 +15,14 @@ pub struct Einfuegung {
 
 /// Die nötigen Importzeilen für `eintrag` in `quelle`, falls er aus einem Paket stammt: alle, deren
 /// Namen die Datei noch nicht bindet. Importiert die Datei das Paket schon in anderer Form, nimmt
-/// die neue Zeile dieselbe Version.
+/// die neue Zeile dieselbe Version. Platz: hinter dem letzten Import (Einfügestelle am Dateiende).
 pub fn import_fuer(quelle: &Source, eintrag: &Eintrag) -> Option<Einfuegung> {
+    import_fuer_an(quelle, eintrag, usize::MAX)
+}
+
+/// Wie [`import_fuer`] für einen Baustein an Byte `stelle`: Liegt sie vor dem Ende des letzten
+/// Imports, kommt der neue Import an den Dateianfang, damit er vor dem Baustein steht.
+pub fn import_fuer_an(quelle: &Source, eintrag: &Eintrag, stelle: usize) -> Option<Einfuegung> {
     let Herkunft::Paket {
         name, import, auch, ..
     } = &eintrag.herkunft
@@ -30,16 +36,18 @@ pub fn import_fuer(quelle: &Source, eintrag: &Eintrag) -> Option<Einfuegung> {
     if zeilen.is_empty() {
         return None;
     }
-    Some(match letzte_importzeile(quelle) {
-        Some(byte) => Einfuegung {
-            byte,
-            text: format!("\n{}", zeilen.join("\n")),
+    Some(
+        match letzte_importzeile(quelle).filter(|&byte| stelle >= byte) {
+            Some(byte) => Einfuegung {
+                byte,
+                text: format!("\n{}", zeilen.join("\n")),
+            },
+            None => Einfuegung {
+                byte: 0,
+                text: format!("{}\n", zeilen.join("\n")),
+            },
         },
-        None => Einfuegung {
-            byte: 0,
-            text: format!("{}\n", zeilen.join("\n")),
-        },
-    })
+    )
 }
 
 /// Was eine Importanweisung bindet.
@@ -224,6 +232,31 @@ mod tests {
             eingefuegt(text, &e),
             format!("// k\n#import \"@local/x:0.1.0\": *\n{IMPORT}\n#show: x\n")
         );
+    }
+
+    /// Abschlussprüfung AP2: Liegt die Einfügestelle über dem letzten Import, muss der neue Import
+    /// davor stehen, sonst benutzt der Baustein das Paket vor dem Import.
+    #[test]
+    fn einfuegestelle_ueber_den_importen() {
+        let text = "Oben\n#import \"@local/x:0.1.0\": *\nUnten\n";
+        let e = import_fuer_an(&Source::detached(text), &paket(), 2).unwrap();
+        assert_eq!(
+            e,
+            Einfuegung {
+                byte: 0,
+                text: format!("{IMPORT}\n")
+            }
+        );
+        eingefuegt(text, &e);
+        // Darunter bleibt es beim Platz hinter dem letzten Import.
+        let unten = import_fuer_an(
+            &Source::detached(text),
+            &paket(),
+            text.find("Unten").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(unten.byte, text.find("\nUnten").unwrap());
+        assert_eq!(import_fuer(&Source::detached(text), &paket()), Some(unten));
     }
 
     #[test]

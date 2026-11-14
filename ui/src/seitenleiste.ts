@@ -52,7 +52,8 @@ export interface SeitenleisteAktionen {
   hier(pos: number): Promise<HierJs | null>;
   /** `rev` ist die Revision, zu der `aufruf` gehört (aus `HierJs`); Rust lehnt eine veraltete ab. */
   setzen(rev: number, aufruf: number, parameter: string, w: Wert, ende: boolean): void;
-  tabelle(rev: number, aufruf: number, aktion: object): void;
+  /** `false`: abgelehnt, die Meldung ist schon gezeigt. */
+  tabelle(rev: number, aufruf: number, aktion: object): Promise<boolean>;
   markup(aktion: MarkupAktion): void;
   /** Zitat am Cursor (PLAN-M2 AP11): Seitenangabe `null` = keine, Quelle `null` = bleibt. */
   zitat(rev: number, seite: string | null, schluessel: string | null): void;
@@ -415,7 +416,7 @@ export class Seitenleiste {
         const aktion = a ? aktionFuer(k, a, tab) : null;
         if (!a || !aktion) return;
         this.auswahl = auswahlNach(aktion, a);
-        this.a.tabelle(rev, tj.von, aktion);
+        void this.a.tabelle(rev, tj.von, aktion);
       });
       knoepfe.push([b, k]);
       leiste.append(b);
@@ -432,8 +433,13 @@ export class Seitenleiste {
     const ende = (setzen: boolean) => {
       if (fertig) return;
       fertig = true;
-      if (setzen && e.value !== text) this.a.tabelle(rev, aufruf, { art: "zelltext", zeile, spalte, inhalt: e.value });
-      zelle.textContent = (setzen ? e.value : text) || " ";
+      const neu = setzen && e.value !== text;
+      zelle.textContent = (neu ? e.value : text) || " ";
+      // Abgelehnt: wieder der alte Text, nicht bis zur nächsten Cursorbewegung der abgelehnte.
+      if (neu)
+        void this.a.tabelle(rev, aufruf, { art: "zelltext", zeile, spalte, inhalt: e.value }).then((ok) => {
+          if (!ok) zelle.textContent = text || " ";
+        });
     };
     e.addEventListener("keydown", (ev) => {
       ev.stopPropagation();

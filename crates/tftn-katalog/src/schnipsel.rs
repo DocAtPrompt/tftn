@@ -151,6 +151,13 @@ impl Schnipsel {
     /// des Schnipsels länger als die längste Backtick-Folge der Auswahl. Ohne `${auswahl}` füllt die
     /// Auswahl das erste Feld bzw. bleibt vor dem Schnipsel stehen.
     pub fn einsetzen(&self, auswahl: &str) -> Eingesetzt {
+        self.einsetzen_eingerueckt(auswahl, "")
+    }
+
+    /// Wie [`Schnipsel::einsetzen`] in einer Zeile mit Einzug `einzug` (siehe [`einzug_fuer`]): Jede
+    /// neue Zeile des Schnipsels bekommt ihn. Die Auswahl steht schon im Dokument und behält ihre
+    /// eigene Einrückung.
+    pub fn einsetzen_eingerueckt(&self, auswahl: &str, einzug: &str) -> Eingesetzt {
         let mut aus = Eingesetzt {
             text: String::new(),
             felder: Vec::new(),
@@ -173,10 +180,13 @@ impl Schnipsel {
         }
         for teil in &self.teile {
             match teil {
-                Teil::Text(t) => match &zaun {
-                    Some(z) => aus.text.push_str(&zaeune_ersetzen(t, z)),
-                    None => aus.text.push_str(t),
-                },
+                Teil::Text(t) => {
+                    let t = match &zaun {
+                        Some(z) => zaeune_ersetzen(t, z),
+                        None => t.clone(),
+                    };
+                    aus.text.push_str(&t.replace('\n', &format!("\n{einzug}")));
+                }
                 Teil::Feld { name, vorgabe } => {
                     let von = aus.text.len();
                     let wert = fuer_feld.take().or(vorgabe.as_deref()).unwrap_or(name);
@@ -191,9 +201,13 @@ impl Schnipsel {
                     bereich: aus.text.len()..aus.text.len(),
                 }),
                 Teil::Auswahl => {
-                    let zeile = &aus.text[aus.text.rfind('\n').map_or(0, |i| i + 1)..];
-                    let eingesetzt = match ist_listenmarke(zeile) {
-                        true => als_liste(auswahl, zeile),
+                    // In der ersten Zeile steht der Einzug schon im Dokument vor dem Schnipsel.
+                    let zeile = match aus.text.rfind('\n') {
+                        Some(i) => aus.text[i + 1..].to_string(),
+                        None => format!("{einzug}{}", aus.text),
+                    };
+                    let eingesetzt = match ist_listenmarke(&zeile) {
+                        true => als_liste(auswahl, &zeile),
                         false => auswahl.to_string(),
                     };
                     aus.text.push_str(&eingesetzt);
@@ -245,6 +259,17 @@ fn marke_laenge(text: &str) -> Option<usize> {
     nach.starts_with(' ').then(|| text.len() - nach.len() + 1)
 }
 
+/// Einzug für neue Zeilen eines Bausteins, der hinter `vor` (Zeilenanfang bis Einfügestelle)
+/// eingesetzt wird: die Einrückung der Zeile, in einem Listenpunkt bis zum Text hinter der Marke.
+pub fn einzug_fuer(vor: &str) -> String {
+    let rest = vor.trim_start_matches([' ', '\t']);
+    let ws = &vor[..vor.len() - rest.len()];
+    match marke_laenge(rest) {
+        Some(n) => format!("{ws}{}", " ".repeat(n)),
+        None => ws.to_string(),
+    }
+}
+
 /// `zeile` besteht nur aus Einrückung und einer Listenmarke.
 fn ist_listenmarke(zeile: &str) -> bool {
     let ohne = zeile.trim_start_matches([' ', '\t']);
@@ -252,7 +277,9 @@ fn ist_listenmarke(zeile: &str) -> bool {
 }
 
 /// Jede nicht leere Zeile wird ein Punkt mit dem Präfix `praefix` (die erste hat ihn schon im
-/// Schnipsel); gemeinsame Einrückung fällt weg, vorhandene Marken werden ersetzt.
+/// Schnipsel); gemeinsame Einrückung fällt weg, vorhandene Marken werden ersetzt. Ist die Auswahl
+/// schon eine Liste, bleiben Zeilen ohne Marke, die tiefer stehen als die Marke davor, Folgezeilen
+/// ihres Punkts.
 fn als_liste(auswahl: &str, praefix: &str) -> String {
     let einrueckung = |z: &str| z.len() - z.trim_start_matches([' ', '\t']).len();
     let gemeinsam = auswahl
@@ -261,6 +288,10 @@ fn als_liste(auswahl: &str, praefix: &str) -> String {
         .map(einrueckung)
         .min()
         .unwrap_or(0);
+    let hat_marken = auswahl
+        .lines()
+        .any(|z| marke_laenge(z.trim_start_matches([' ', '\t'])).is_some());
+    let mut letzte_marke: Option<usize> = None;
     auswahl
         .split('\n')
         .enumerate()
@@ -270,7 +301,13 @@ fn als_liste(auswahl: &str, praefix: &str) -> String {
             }
             let z = &z[gemeinsam..];
             let (ws, rest) = z.split_at(einrueckung(z));
-            let rest = &rest[marke_laenge(rest).unwrap_or(0)..];
+            let marke = marke_laenge(rest);
+            if marke.is_some() {
+                letzte_marke = Some(ws.len());
+            } else if hat_marken && letzte_marke.is_some_and(|m| ws.len() > m) {
+                return z.to_string();
+            }
+            let rest = &rest[marke.unwrap_or(0)..];
             if i == 0 {
                 rest.to_string()
             } else {
@@ -405,6 +442,51 @@ mod tests {
     fn aufzaehlung_ersetzt_vorhandene_marken() {
         assert_eq!(ein("+ ${auswahl}", "- a\n- b"), "+ a\n+ b");
         assert_eq!(ein("+ ${auswahl}", "1. a\n2. b"), "+ a\n+ b");
+    }
+
+    /// Abschlussprüfung AP2: Folgezeilen eines markierten Listenpunkts wurden eigene Punkte.
+    #[test]
+    fn folgezeilen_bleiben_beim_punkt() {
+        assert_eq!(
+            ein("+ ${auswahl}", "- eins\n  weiter\n- zwei"),
+            "+ eins\n  weiter\n+ zwei"
+        );
+        assert_eq!(
+            ein(
+                "- ${auswahl}",
+                "1. eins\n   noch\n   mehr\n2. zwei\n   - unter"
+            ),
+            "- eins\n   noch\n   mehr\n- zwei\n   - unter"
+        );
+    }
+
+    /// Abschlussprüfung AP2: Mehrzeilige Bausteine wurden in eingerückten Zeilen nicht mit eingerückt.
+    #[test]
+    fn mehrzeilig_mit_einzug() {
+        let s = Schnipsel::lesen("#figure(\n  ${feld:Bild},\n)").unwrap();
+        let e = s.einsetzen_eingerueckt("", "   ");
+        assert_eq!(e.text, "#figure(\n     Bild,\n   )");
+        assert_eq!(&e.text[e.felder[0].bereich.clone()], "Bild");
+        // Die Auswahl steht schon im Dokument und behält ihre eigene Einrückung.
+        let f = Schnipsel::lesen("#block[\n${auswahl}\n]").unwrap();
+        assert_eq!(
+            f.einsetzen_eingerueckt("a\n  b", "  ").text,
+            "#block[\n  a\n  b\n  ]"
+        );
+        // Listenpunkte bekommen die Einrückung samt Marke.
+        let l = Schnipsel::lesen("- ${auswahl}").unwrap();
+        assert_eq!(l.einsetzen_eingerueckt("a\nb", "  ").text, "- a\n  - b");
+    }
+
+    #[test]
+    fn einzug_aus_der_zeile() {
+        assert_eq!(einzug_fuer(""), "");
+        assert_eq!(einzug_fuer("    "), "    ");
+        assert_eq!(einzug_fuer("\t"), "\t");
+        assert_eq!(einzug_fuer("- "), "  ");
+        assert_eq!(einzug_fuer("  - Text "), "    ");
+        assert_eq!(einzug_fuer("10. "), "    ");
+        assert_eq!(einzug_fuer("  Text "), "  ");
     }
 
     #[test]

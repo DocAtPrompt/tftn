@@ -91,6 +91,25 @@ export type EintragAktion =
   | { art: "entfernen"; index: number }
   | { art: "verschieben"; index: number; nach: number };
 
+/** Wohin der Fokus nach einer Eintragsaktion geht; `anzahl` ist die Zahl der Einträge danach. */
+export function knopfNachEintrag(
+  aktion: EintragAktion,
+  anzahl: number,
+): { index: number | null; knopf: "hoch" | "runter" | "entfernen" | "neu" | "feld" } {
+  switch (aktion.art) {
+    case "hinzufuegen":
+      return { index: anzahl - 1, knopf: "feld" };
+    case "entfernen":
+      return anzahl === 0 ? { index: null, knopf: "neu" } : { index: Math.min(aktion.index, anzahl - 1), knopf: "entfernen" };
+    case "verschieben": {
+      const hoch = aktion.nach < aktion.index;
+      // Am Rand ist derselbe Pfeil gesperrt: dann der andere.
+      if (hoch) return { index: aktion.nach, knopf: aktion.nach === 0 ? "runter" : "hoch" };
+      return { index: aktion.nach, knopf: aktion.nach === anzahl - 1 ? "hoch" : "runter" };
+    }
+  }
+}
+
 export type Gelesen = { wert: unknown | null } | { fehler: string };
 
 const DATUM_DE = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;

@@ -2100,7 +2100,7 @@ fn baustein_text(
         return Err("veraltet".into());
     }
     let quelle = s.spiegel.quelle();
-    quelle
+    let stelle = quelle
         .lines()
         .utf16_to_byte(pos)
         .ok_or_else(|| tr!("Position außerhalb"))?;
@@ -2108,7 +2108,7 @@ fn baustein_text(
         .katalog
         .finden(&id)
         .ok_or_else(|| tr!("unbekannter Baustein: {id}", id))?;
-    let import = match tftn_katalog::import_fuer(quelle, eintrag) {
+    let import = match tftn_katalog::import_fuer_an(quelle, eintrag, stelle) {
         Some(i) => Some(ImportJs {
             pos: quelle
                 .lines()
@@ -2118,7 +2118,13 @@ fn baustein_text(
         }),
         None => None,
     };
-    let e = eintrag.schnipsel.einsetzen(&auswahl).utf16();
+    // Mehrzeilige Bausteine bekommen den Einzug der Zeile (im Listenpunkt bis hinter die Marke).
+    let text = quelle.text();
+    let vor = &text[text[..stelle].rfind('\n').map_or(0, |i| i + 1)..stelle];
+    let e = eintrag
+        .schnipsel
+        .einsetzen_eingerueckt(&auswahl, &tftn_katalog::einzug_fuer(vor))
+        .utf16();
     Ok(EingesetztJs {
         text: e.text,
         felder: e
