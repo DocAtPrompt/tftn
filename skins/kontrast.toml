@@ -1,0 +1,35 @@
+# TFTN-Skin. Kopieren, als <name>.toml in den Ordner „skins“ im Einstellungsordner legen und ändern;
+# Einstellungen → Aussehen bietet ihn dann an. Farben als #rgb, #rrggbb oder #rrggbbaa.
+# Fehlt ein Wert, gilt der Standard von TFTN. Die Vorschau bleibt weiß wie das gedruckte Dokument.
+
+name = "Hoher Kontrast"
+# hell oder dunkel: für Bildlaufleisten und Bedienelemente des Systems
+art = "dunkel"
+
+[farben]
+grund = "#000000"
+text = "#ffffff"
+leise = "#c8c8c8"
+linie = "#808080"
+akzent = "#ffd700"
+warn = "#ff8080"
+flaeche = "#1a1a1a"
+
+# Syntaxhervorhebung: marker = Listenmarken, Escapes und Operatoren; link = Links, Verweise und
+# Labels; raw = Rohtext; key = Schlüsselwörter (set, show, let, …); zahl, text = Zahlen und Strings;
+# funktion = Funktionsnamen; pol = eingebettete Ausdrücke (#…)
+[syntax]
+marker = "#ffb04d"
+link = "#4dffc3"
+raw = "#e0b0ff"
+key = "#ff8fd0"
+zahl = "#8fc8ff"
+text = "#a8ff8f"
+funktion = "#8fc8ff"
+pol = "#ffe07a"
+
+# Editor: Schriftliste wie in CSS, Größe in Pixeln (8–40), Zeilenabstand (1–3)
+[editor]
+schrift = "SF Mono, Menlo, Consolas, DejaVu Sans Mono, monospace"
+groesse = 15
+zeilenabstand = 1.6

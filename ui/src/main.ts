@@ -40,6 +40,7 @@ import { einsetzenSpec, felder } from "./felder";
 import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
+import { type SkinsJs, skinAnwenden } from "./skin";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
@@ -1232,8 +1233,17 @@ async function projektOeffnen(): Promise<Geoeffnet> {
   }
 }
 
+/** CSS-Variablen, die der geltende Skin gesetzt hat (für den nächsten Wechsel). */
+let skinVariablen: string[] = [];
+
+function skinsSetzen(s: SkinsJs) {
+  skinVariablen = skinAnwenden(document.documentElement.style, skinVariablen, s.aktiv);
+}
+
 async function start() {
   escAktivieren();
+  // Skin zuerst, damit das Fenster nicht erst in den Standardfarben erscheint.
+  await invoke<SkinsJs>("skins_lesen").then(skinsSetzen, () => {});
   palette = new ZitatPalette(
     (anfrage) => invoke<ZitatSuche>("zitate_suchen", { anfrage }),
     zitatEinfuegen,
@@ -1445,6 +1455,13 @@ async function start() {
       }
     },
     sprachvorlage: () => invoke<string>("sprachvorlage_anlegen"),
+    skinsLesen: () => invoke<SkinsJs>("skins_lesen"),
+    skinSetzen: async (kennung) => {
+      const s = await invoke<SkinsJs>("skin_setzen", { kennung });
+      skinsSetzen(s);
+      return s;
+    },
+    skinvorlage: () => invoke<string>("skinvorlage_anlegen"),
     geschlossen: () => view?.focus(),
   });
   document.getElementById("einstellungen-knopf")!.addEventListener("click", () => einstellDialog.oeffnen());

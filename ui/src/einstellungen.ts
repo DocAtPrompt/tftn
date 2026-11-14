@@ -6,6 +6,7 @@
 import { kuerzelText } from "./bausteine";
 import { type Aktion, type Belegung, type Konflikt, type Plattform, PLATTFORM, kuerzelAusTaste } from "./tasten";
 import { dialogAnmelden } from "./dialoge";
+import { type SkinsJs, skinOptionen } from "./skin";
 import { t } from "./sprache";
 
 export interface EinstellungenJs {
@@ -37,6 +38,11 @@ export interface EinstellAktionen {
   spracheSetzen(kennung: string | null): Promise<void>;
   /** Legt die Vorlage für eine neue Sprache an und zeigt sie; gibt den Pfad zurück. */
   sprachvorlage(): Promise<string>;
+  skinsLesen(): Promise<SkinsJs>;
+  /** `null`: wie das System. Gilt sofort. */
+  skinSetzen(kennung: string | null): Promise<SkinsJs>;
+  /** Legt die Vorlage für einen eigenen Skin an und zeigt sie; gibt den Pfad zurück. */
+  skinvorlage(): Promise<string>;
   geschlossen(): void;
 }
 
@@ -109,6 +115,8 @@ export class EinstellDialog {
   private offline: HTMLInputElement;
   private sprache: HTMLSelectElement;
   private spracheText: HTMLSpanElement;
+  private skin: HTMLSelectElement;
+  private skinText: HTMLSpanElement;
   private daten: EinstellDaten | null = null;
   /** Aktion, für die gerade ein Kürzel aufgenommen wird */
   private aufnahme: string | null = null;
@@ -129,6 +137,7 @@ export class EinstellDialog {
         </div>
         <div class="einst-zeile einst-updates"><button class="einst-updates-knopf" title="${t("Fragt GitHub nach den neuesten Versionen von TFTN und typst – nur auf Klick")}">${t("Nach Updates suchen")}</button><span class="einst-updates-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-sprache"><label>${t("Sprache der Oberfläche")} <select class="einst-sprache-wahl"></select></label><button class="einst-sprachvorlage" title="${t("Legt eine Vorlage zum Übersetzen an und zeigt sie; übersetzt als <kennung>.toml speichern, etwa fr.toml")}">${t("Weitere Sprache …")}</button><span class="einst-sprache-text leiste-hilfe"></span></div>
+        <div class="einst-zeile einst-skin"><label>${t("Aussehen")} <select class="einst-skin-wahl"></select></label><button class="einst-skinvorlage" title="${t("Legt eine Vorlage für einen eigenen Skin an und zeigt sie; Farben und Editorschrift lassen sich darin ändern")}">${t("Eigener Skin …")}</button><span class="einst-skin-text leiste-hilfe"></span></div>
         <label class="einst-offline"><input type="checkbox" /> ${t("Ganz offline (nur dieser Rechner): TFTN holt keine Pakete aus dem Netz")}</label>
       </div>
       <div class="palette-felder palette-einzeln">
@@ -171,6 +180,24 @@ export class EinstellDialog {
         this.spracheText.textContent = String(fehler);
       }
     });
+    this.skin = q(".einst-skin-wahl");
+    this.skinText = q(".einst-skin-text");
+    this.skin.addEventListener("change", async () => {
+      try {
+        this.skinZeigen(await this.a.skinSetzen(this.skin.value || null));
+      } catch (fehler) {
+        this.skinText.textContent = String(fehler);
+      }
+    });
+    q(".einst-skinvorlage").addEventListener("click", async () => {
+      try {
+        const pfad = await this.a.skinvorlage();
+        this.skinText.textContent = t("Vorlage: {pfad} – nach dem Ändern hier wählen.", { pfad });
+        this.skinZeigen(await this.a.skinsLesen(), false);
+      } catch (fehler) {
+        this.skinText.textContent = String(fehler);
+      }
+    });
     this.kopf = q(".einst-zustand");
     this.pfad = q(".einst-pfad");
     this.offline = q(".einst-offline input");
@@ -211,6 +238,27 @@ export class EinstellDialog {
     this.zeichnen();
     this.suche.focus();
     void this.sprachenZeichnen();
+    void this.a.skinsLesen().then(
+      (s) => this.skinZeigen(s),
+      (fehler) => (this.skinText.textContent = String(fehler)),
+    );
+  }
+
+  /** Auswahl „Aussehen“ und darunter Warnungen des Skins bzw. der Ordner für eigene. */
+  private skinZeigen(s: SkinsJs, text = true) {
+    this.skin.replaceChildren(
+      ...skinOptionen(s.liste, s.gewaehlt).map((o) => {
+        const el = document.createElement("option");
+        el.value = o.wert;
+        el.textContent = o.text;
+        el.selected = o.gewaehlt;
+        return el;
+      }),
+    );
+    if (text)
+      this.skinText.textContent = s.aktiv?.warnungen.length
+        ? s.aktiv.warnungen.join(" · ")
+        : t("Eigene Skins: {ordner}", { ordner: s.ordner });
   }
 
   private async sprachenZeichnen() {

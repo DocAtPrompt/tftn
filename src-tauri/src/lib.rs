@@ -43,6 +43,7 @@ mod helfer;
 mod import;
 mod pakete;
 mod rechtschreibung;
+mod skins;
 mod sprachen;
 mod typen;
 mod word;
@@ -2923,6 +2924,67 @@ fn sprache_setzen(app: tauri::AppHandle, kennung: Option<String>) -> Result<(), 
     rechner.speichern(&konfig).map_err(|e| e.to_string())
 }
 
+// --- Skins ---------------------------------------------------------------------------------
+
+/// Ordner der mitgelieferten und der eigenen Skins.
+fn skinordner(app: &tauri::AppHandle) -> Result<(PathBuf, PathBuf), String> {
+    let konfig = app_konfig(app)?;
+    let ort = tftn_einstellungen::ort(&konfig, &tftn_einstellungen::Rechner::laden(&konfig));
+    Ok((
+        skins::mitgeliefert(app.path().resource_dir().ok()),
+        skins::eigene(&ort.ordner),
+    ))
+}
+
+#[derive(Serialize)]
+struct SkinsJs {
+    /// gewählter Skin; `None` = hell/dunkel wie das System
+    gewaehlt: Option<String>,
+    /// der geltende Skin (`None` auch, wenn der gewählte fehlt)
+    aktiv: Option<skins::Skin>,
+    liste: Vec<skins::SkinEintrag>,
+    /// Ordner für eigene Skins
+    ordner: String,
+}
+
+fn skins_js(app: &tauri::AppHandle) -> Result<SkinsJs, String> {
+    let (mit, eigene) = skinordner(app)?;
+    let gewaehlt = tftn_einstellungen::Rechner::laden(&app_konfig(app)?).skin;
+    Ok(SkinsJs {
+        aktiv: gewaehlt
+            .as_deref()
+            .and_then(|k| skins::laden(&mit, &eigene, k)),
+        gewaehlt,
+        liste: skins::verfuegbar(&mit, &eigene),
+        ordner: eigene.display().to_string(),
+    })
+}
+
+/// Skins und der geltende; beim Start und für die Einstellungen.
+#[tauri::command]
+fn skins_lesen(app: tauri::AppHandle) -> Result<SkinsJs, String> {
+    skins_js(&app)
+}
+
+/// Skin für diesen Rechner; `None` = wie das System. Gilt sofort.
+#[tauri::command]
+fn skin_setzen(app: tauri::AppHandle, kennung: Option<String>) -> Result<SkinsJs, String> {
+    let konfig = app_konfig(&app)?;
+    let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
+    rechner.skin = kennung.filter(|k| !k.is_empty());
+    rechner.speichern(&konfig).map_err(|e| e.to_string())?;
+    skins_js(&app)
+}
+
+/// Legt die Vorlage für einen eigenen Skin an und zeigt sie im Finder bzw. Explorer.
+#[tauri::command]
+fn skinvorlage_anlegen(app: tauri::AppHandle) -> Result<String, String> {
+    let (mit, eigene) = skinordner(&app)?;
+    let p = skins::vorlage_anlegen(&mit, &eigene)?;
+    word::im_ordner_zeigen(&p)?;
+    Ok(p.display().to_string())
+}
+
 /// Legt die Vorlage für eine neue Sprache an und zeigt sie im Finder bzw. Explorer.
 #[tauri::command]
 fn sprachvorlage_anlegen(app: tauri::AppHandle) -> Result<String, String> {
@@ -3027,6 +3089,9 @@ pub fn run() {
             sprachen_lesen,
             sprache_setzen,
             sprachvorlage_anlegen,
+            skins_lesen,
+            skin_setzen,
+            skinvorlage_anlegen,
             oeffnen,
             aendern,
             neusync,
@@ -3208,7 +3273,7 @@ mod tests {
         tftn_einstellungen::Rechner {
             ordner: Some(tresor.clone()),
             ganz_offline: true,
-            sprache: None,
+            ..Default::default()
         }
         .speichern(&app)
         .unwrap();

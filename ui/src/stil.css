@@ -6,6 +6,18 @@
   --akzent: #264653;
   --warn: #b3261e;
   --flaeche: #e9e7e2;
+  /* Syntaxhervorhebung und Editorschrift; Skins setzen sie am :root-Element (ui/src/skin.ts). */
+  --syntax-marker: #b35c00;
+  --syntax-link: #1a7f64;
+  --syntax-raw: #7a4d9c;
+  --syntax-key: #a1265f;
+  --syntax-zahl: #0b6bcb;
+  --syntax-text: #2f7d32;
+  --syntax-funktion: #0b6bcb;
+  --syntax-pol: #8a5a00;
+  --editor-schrift: "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --editor-groesse: 14px;
+  --editor-zeilenabstand: 1.55;
   color-scheme: light dark;
 }
 
@@ -18,6 +30,14 @@
     --akzent: #8ab4c4;
     --warn: #f2b8b5;
     --flaeche: #2a2c2f;
+    --syntax-marker: #f0a35e;
+    --syntax-link: #5cc8a8;
+    --syntax-raw: #c5a3e0;
+    --syntax-key: #f08cb8;
+    --syntax-zahl: #79b8ff;
+    --syntax-text: #8fd694;
+    --syntax-funktion: #79b8ff;
+    --syntax-pol: #e0b866;
   }
 }
 
@@ -154,9 +174,9 @@ body {
 }
 
 #editor .cm-scroller {
-  font-family: "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
-  font-size: 14px;
-  line-height: 1.55;
+  font-family: var(--editor-schrift);
+  font-size: var(--editor-groesse);
+  line-height: var(--editor-zeilenabstand);
 }
 
 #editor .cm-content {
@@ -166,19 +186,19 @@ body {
 /* Klassen aus typst-syntax (Tag::css_class) */
 .typ-comment { color: var(--leise); font-style: italic; }
 .typ-punct, .typ-math-delim { color: var(--leise); }
-.typ-escape, .typ-marker { color: #b35c00; }
+.typ-escape, .typ-marker { color: var(--syntax-marker); }
 .typ-strong { font-weight: 700; }
 .typ-emph { font-style: italic; }
-.typ-link, .typ-ref, .typ-label { color: #1a7f64; }
-.typ-raw { color: #7a4d9c; }
+.typ-link, .typ-ref, .typ-label { color: var(--syntax-link); }
+.typ-raw { color: var(--syntax-raw); }
 .typ-heading { color: var(--akzent); font-weight: 700; }
 .typ-term { font-weight: 600; }
-.typ-math-op, .typ-op { color: #b35c00; }
-.typ-key { color: #a1265f; }
-.typ-num { color: #0b6bcb; }
-.typ-str { color: #2f7d32; }
-.typ-func { color: #0b6bcb; }
-.typ-pol { color: #8a5a00; }
+.typ-math-op, .typ-op { color: var(--syntax-marker); }
+.typ-key { color: var(--syntax-key); }
+.typ-num { color: var(--syntax-zahl); }
+.typ-str { color: var(--syntax-text); }
+.typ-func { color: var(--syntax-funktion); }
+.typ-pol { color: var(--syntax-pol); }
 
 #baustein-knopf {
   margin-left: auto;
@@ -1359,7 +1379,7 @@ body.schreibansicht #schreiben {
 }
 
 body.schreibansicht #editor .cm-scroller {
-  font-size: 16px;
+  font-size: calc(var(--editor-groesse) + 2px);
   line-height: 1.7;
 }
 

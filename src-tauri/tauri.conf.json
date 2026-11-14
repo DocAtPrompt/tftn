@@ -42,7 +42,8 @@
       "../types/": "types/",
       "../package-descriptions/": "package-descriptions/",
       "../dictionaries/": "dictionaries/",
-      "../languages/": "languages/"
+      "../languages/": "languages/",
+      "../skins/": "skins/"
     },
     "macOS": {
       "signingIdentity": "-",

@@ -36,6 +36,9 @@ pub struct Rechner {
     /// Sprache der Oberfläche (`de`, `en`, …); fehlt sie, gilt die des Systems.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sprache: Option<String>,
+    /// Skin der Oberfläche (Dateiname ohne `.toml`); fehlt er, folgt TFTN hell/dunkel des Systems.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skin: Option<String>,
 }
 
 impl Rechner {

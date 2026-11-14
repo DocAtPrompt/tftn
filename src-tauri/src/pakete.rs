@@ -626,7 +626,7 @@ mod tests {
         Rechner {
             ordner: None,
             ganz_offline: true,
-            sprache: None,
+            ..Rechner::default()
         }
     }
 

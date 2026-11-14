@@ -232,6 +232,13 @@ immediately.
 **Interface language:** English and German are included; “Same as system” is the default. “Another language …” creates a template for translating: German on the left, your translation on the right;
 save it as `<code>.toml` (for example `fr.toml`) in the `sprachen/` folder – no new build needed.
 
+**Appearance (skins):** Light, Dark, Paper and High contrast are included; “Same as system” follows
+the system's light or dark mode. A skin sets the interface colours, the syntax highlighting colours
+and the editor's font, size and line spacing; the preview stays white like the printed document.
+“Custom skin …” creates a template in the `skins/` folder; after editing it, choose it under
+“Appearance”. Values that don't fit are listed in the dialog and skipped. The choice applies per
+computer.
+
 ## 11. Network, updates, privacy
 
 TFTN only reads and writes your files. Only the bundled helper `tftn-holer` goes online, only when

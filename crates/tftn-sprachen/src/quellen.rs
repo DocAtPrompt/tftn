@@ -302,6 +302,16 @@ pub fn bestand(wurzel: &Path) -> Bestand {
         }
     }
     dateien(&wurzel.join("package-descriptions"), ".toml", &mut daten);
+    // Mitgelieferte Skins: ihr `name` steht in der Auswahl „Aussehen“.
+    let mut skins = Vec::new();
+    dateien(&wurzel.join("skins"), ".toml", &mut skins);
+    for p in skins {
+        let name = std::fs::read_to_string(&p)
+            .ok()
+            .and_then(|t| toml::from_str::<toml::Table>(&t).ok())
+            .and_then(|t| t.get("name").and_then(|n| n.as_str()).map(String::from));
+        eintragen(rel(&p), name.into_iter().collect());
+    }
     for p in daten {
         let Ok(text) = std::fs::read_to_string(&p) else {
             continue;

@@ -447,6 +447,10 @@ name = "English"
 "„{lang}“: kein Wörterbuch" = "“{lang}”: no dictionary"
 "„{wort}“ ist kein einzelnes Wort." = "“{wort}” is not a single word."
 
+# src-tauri/src/skins.rs
+"Skin {kennung}: {fehler}" = "Skin {kennung}: {fehler}"
+"Skin {kennung}: {was} – übersprungen" = "Skin {kennung}: {was} – skipped"
+
 # src-tauri/src/typen.rs
 "Das Dokument übersetzt noch nicht; Schriften nicht eingebunden." = "The document does not compile yet; fonts not embedded."
 "Der Name darf kein / oder \\ enthalten" = "The name must not contain / or \\"
@@ -577,9 +581,12 @@ name = "English"
 # ui/src/einstellungen.ts
 "Aktion" = "Action"
 "Aktion oder Kürzel suchen …" = "Search action or shortcut …"
+"Aussehen" = "Appearance"
 "Eigene Belegung entfernen" = "Remove custom binding"
 "Eigene Dokumenttypen: {ordner} (haben Vorrang vor den mitgelieferten)" = "Custom document types: {ordner} (they take precedence over the bundled ones)"
+"Eigene Skins: {ordner}" = "Custom skins: {ordner}"
 "Eigene Sprachen: {ordner}" = "Your own languages: {ordner}"
+"Eigener Skin …" = "Custom skin …"
 "Einstellungen" = "Settings"
 "Frage nach …" = "Checking …"
 "Fragt GitHub nach den neuesten Versionen von TFTN und typst – nur auf Klick" = "Asks GitHub for the latest versions of TFTN and typst – only on click"
@@ -587,6 +594,7 @@ name = "English"
 "Herkunft" = "Source"
 "Hinweis" = "Note"
 "Kürzel" = "Shortcut"
+"Legt eine Vorlage für einen eigenen Skin an und zeigt sie; Farben und Editorschrift lassen sich darin ändern" = "Creates a template for a custom skin and shows it; colours and editor font can be changed in it"
 "Legt eine Vorlage zum Übersetzen an und zeigt sie; übersetzt als <kennung>.toml speichern, etwa fr.toml" = "Creates a template for translating and shows it; save the translation as <code>.toml, e.g. fr.toml"
 "Nach Updates suchen" = "Check for updates"
 "Ordner im Tresor für tasten.toml und einstellungen.toml" = "Synced folder for tasten.toml and einstellungen.toml"
@@ -599,6 +607,7 @@ name = "English"
 "TFTN {version} ist aktuell." = "TFTN {version} is up to date."
 "Taste drücken …" = "Press a key …"
 "Vorlage: {pfad}" = "Template: {pfad}"
+"Vorlage: {pfad} – nach dem Ändern hier wählen." = "Template: {pfad} – choose it here after editing."
 "Weitere Sprache …" = "Another language …"
 "Wie das System" = "Same as system"
 "Wieder nur auf diesem Rechner speichern" = "Save on this computer only again"
@@ -967,6 +976,10 @@ name = "English"
 "＋ Zeile oben" = "+ Row above"
 "＋ Zeile unten" = "+ Row below"
 
+# ui/src/skin.ts
+"Wie das System (hell/dunkel)" = "Same as system (light/dark)"
+"{kennung} (nicht gefunden)" = "{kennung} (not found)"
+
 # ui/src/tasten.ts
 "Auszeichnung" = "Markup"
 "Bausteine" = "Blocks"
@@ -1057,6 +1070,15 @@ name = "English"
 "{titel}. In: {quelle}" = "{titel}. In: {quelle}"
 "{treffer} von {anzahl} Einträgen · Suche {ms} ms · Enter fügt ein" = "{treffer} of {anzahl} entries · search {ms} ms · Enter inserts"
 "{treffer} von {anzahl} Einträgen · Suche {ms} ms · Enter übernimmt die Quelle" = "{treffer} of {anzahl} entries · search {ms} ms · Enter uses this source"
+
+# skins/dunkel.toml
+"Dunkel" = "Dark"
+
+# skins/hell.toml
+"Hell" = "Light"
+
+# skins/kontrast.toml
+"Hoher Kontrast" = "High contrast"
 
 # types/tftn-befund/typst.toml
 "Befund / Arztbrief" = "Medical report / letter"
@@ -1186,7 +1208,6 @@ name = "English"
 "A0 (84 × 119 cm)" = "A0 (84 × 119 cm)"
 "A1 (59 × 84 cm)" = "A1 (59 × 84 cm)"
 "A2 (42 × 59 cm)" = "A2 (42 × 59 cm)"
-"Aussehen" = "Appearance"
 "Farbe" = "Colour"
 "Farbe von Kopfband und Überschriften als #RRGGBB" = "Colour of the header band and headings as #RRGGBB"
 "Plakat" = "Poster"

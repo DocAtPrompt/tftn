@@ -229,6 +229,13 @@ außen wirken sofort.
 „Weitere Sprache …“ legt eine Vorlage zum Übersetzen an: links Deutsch, rechts die Übersetzung, als
 `<kennung>.toml` (etwa `fr.toml`) im Ordner `sprachen/` speichern – ohne neues Programm.
 
+**Aussehen (Skins):** Dabei sind Hell, Dunkel, Papier und Hoher Kontrast; „Wie das System“ wechselt
+mit dem System zwischen hell und dunkel. Ein Skin legt die Farben der Oberfläche, die Farben der
+Syntaxhervorhebung und Schrift, Größe und Zeilenabstand des Editors fest; die Vorschau bleibt weiß wie
+das gedruckte Dokument. „Eigener Skin …“ legt im Ordner `skins/` eine Vorlage an; nach dem Ändern
+wählt man sie unter „Aussehen“. Werte, die nicht passen, nennt der Dialog und überspringt sie. Die
+Wahl gilt je Rechner.
+
 ## 11. Netz, Updates, Datenschutz
 
 TFTN liest und schreibt nur Ihre Dateien. Ins Netz geht nur das beigelegte Hilfsprogramm
