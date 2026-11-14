@@ -58,7 +58,10 @@ fn ort_ohne_wahl_ist_app_ordner() {
     let o = ort(t.p(), &Rechner::default());
     assert_eq!(o.ordner, t.p());
     assert!(!o.synchronisiert);
-    assert!(o.hinweis.unwrap().contains("nicht synchronisiert"));
+    assert_eq!(
+        o.hinweis, None,
+        "ohne Wahl ist das der Normalfall, keine Warnung"
+    );
 }
 
 #[test]

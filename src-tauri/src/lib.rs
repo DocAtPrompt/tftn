@@ -2801,7 +2801,7 @@ fn einstellungsordner_setzen(
     let konfig = app_konfig(&app)?;
     let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
     let neu = if waehlen {
-        match ordner_waehlen(&tr!("Ordner im Tresor für die TFTN-Einstellungen wählen")) {
+        match ordner_waehlen(&tr!("Gemeinsamen Ordner für die TFTN-Einstellungen wählen")) {
             Some(p) => Some(p),
             None if cfg!(target_os = "macos") => return Ok(einstellungen_js(&konfig)),
             None => {
@@ -3269,7 +3269,7 @@ mod tests {
         let e = einstellungen_js(&app);
         assert!(!e.synchronisiert);
         assert!(e.kuerzel.is_empty());
-        assert!(e.hinweis.is_some());
+        assert_eq!(e.hinweis, None, "ohne gemeinsamen Ordner keine Warnung");
         tftn_einstellungen::Rechner {
             ordner: Some(tresor.clone()),
             ganz_offline: true,

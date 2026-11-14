@@ -7,13 +7,13 @@ name = "Papier"
 art = "hell"
 
 [farben]
-grund = "#f4ecd8"
-text = "#3b2f1e"
-leise = "#6e5f48"
-linie = "#dccfb4"
-akzent = "#6b3e1f"
+grund = "#f8f6f1"
+text = "#2b2823"
+leise = "#6b665c"
+linie = "#e4dfd5"
+akzent = "#5b4a36"
 warn = "#a12a1a"
-flaeche = "#e8dcc2"
+flaeche = "#eeeae1"
 
 # Syntaxhervorhebung: marker = Listenmarken, Escapes und Operatoren; link = Links, Verweise und
 # Labels; raw = Rohtext; key = Schlüsselwörter (set, show, let, …); zahl, text = Zahlen und Strings;

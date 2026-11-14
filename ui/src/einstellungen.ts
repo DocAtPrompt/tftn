@@ -1,4 +1,4 @@
-// Einstellungen (PLAN-M2 AP3, Entwurf 7): Ordner im Tresor, „ganz offline“ für diesen Rechner und die
+// Einstellungen (PLAN-M2 AP3, Entwurf 7): gemeinsamer Ordner (optional), „ganz offline“ für diesen Rechner und die
 // Tabelle der Tastenkürzel mit Suchfeld. Zeile anklicken, neues Kürzel drücken: Esc bricht ab,
 // Entf/Rücktaste heißt „keine Belegung“, „Standard“ nimmt die eigene Belegung zurück. Konflikte beider
 // Plattformen stehen sofort in der Zeile; gespeichert wird trotzdem (bewusst gesetzt).
@@ -130,7 +130,7 @@ export class EinstellDialog {
       <div class="einst-ordner">
         <div class="einst-zustand"></div>
         <div class="einst-zeile">
-          <input class="einst-pfad" placeholder="${t("Ordner im Tresor für tasten.toml und einstellungen.toml")}" spellcheck="false" />
+          <input class="einst-pfad" placeholder="${t("Gemeinsamer Ordner für mehrere Rechner (optional), etwa ein Sync-Ordner")}" spellcheck="false" />
           <button class="einst-uebernehmen">${t("Übernehmen")}</button>
           <button class="einst-waehlen">${t("Ordner wählen …")}</button>
           <button class="einst-zuruecksetzen" title="${t("Wieder nur auf diesem Rechner speichern")}">${t("Zurücksetzen")}</button>
@@ -332,8 +332,10 @@ export class EinstellDialog {
     const e = d.einstellungen;
     this.kopf.replaceChildren();
     const ort = document.createElement("div");
-    ort.textContent = e.synchronisiert ? t("Synchronisiert über {ordner}", { ordner: e.ordner }) : (e.hinweis ?? "");
-    ort.className = e.synchronisiert ? "" : "einst-warnung";
+    ort.textContent = e.synchronisiert
+      ? t("Einstellungen aus {ordner}", { ordner: e.ordner })
+      : (e.hinweis ?? t("Die Einstellungen liegen auf diesem Rechner."));
+    ort.className = e.hinweis ? "einst-warnung" : "leiste-hilfe";
     this.kopf.append(ort);
     const typen = document.createElement("div");
     typen.className = "leiste-hilfe";

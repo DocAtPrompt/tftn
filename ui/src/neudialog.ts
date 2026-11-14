@@ -259,7 +259,7 @@ export class PfadDialog {
       const feld = el("input", "neu-eltern");
       feld.type = "text";
       feld.value = vorgabe;
-      feld.placeholder = mit?.platzhalter ?? t("z. B. C:\\Users\\…\\Tresorit\\Büro\\Artikel");
+      feld.placeholder = mit?.platzhalter ?? t("z. B. C:\\Users\\…\\Dokumente\\Artikel");
       const ok = el("button", "", mit?.knopf ?? t("Öffnen"));
       const ab = el("button", "", t("Abbrechen"));
       const ende = (wert: string | null) => {

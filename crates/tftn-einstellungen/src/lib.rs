@@ -27,7 +27,7 @@ const KOPF: &str =
 /// Was nur auf diesem Rechner gilt.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Rechner {
-    /// Ordner im Tresor für `tasten.toml` und `einstellungen.toml`
+    /// Gemeinsamer Ordner für `tasten.toml` und `einstellungen.toml` (etwa ein Sync-Ordner)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ordner: Option<PathBuf>,
     /// Keine Verbindung ins Netz, auch nicht auf Klick (Entwurf 8.2)
@@ -80,12 +80,11 @@ pub fn ort(app_konfig: &Path, rechner: &Rechner) -> Ort {
                 ordner = o.display()
             )),
         },
+        // Normalfall: Die Einstellungen liegen auf diesem Rechner.
         None => Ort {
             ordner: app_konfig.to_path_buf(),
             synchronisiert: false,
-            hinweis: Some(tr!(
-                "Kein Ordner im Tresor gewählt – Kürzel werden nicht synchronisiert."
-            )),
+            hinweis: None,
         },
     }
 }
