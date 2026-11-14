@@ -40,7 +40,7 @@ import { einsetzenSpec, felder } from "./felder";
 import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
-import { EinstellDialog, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
+import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
 import { type Fach, type HierJs, type MarkupAktion, Seitenleiste } from "./seitenleiste";
@@ -502,7 +502,7 @@ function katalogAnzeige(): EintragJs[] {
 }
 
 function einstellungenSetzen(e: EinstellungenJs) {
-  const h = fehlerHinweis(einstellungen?.fehler ?? null, e.fehler);
+  const h = fehlerHinweis(einstellungen?.fehler ?? null, e.fehler) ?? (e.warnung && e.warnung !== einstellungen?.warnung ? e.warnung : null);
   einstellungen = e;
   tastenNeu();
   if (h) hinweis(h);
@@ -1532,7 +1532,8 @@ async function start() {
   }
   // Scheitert das Lesen, startet das Fenster trotzdem (sonst bliebe es leer).
   einstellungenSetzen(await invoke<EinstellungenJs>("einstellungen").catch((f) => einstellungenNotfall(String(f))));
-  if (!einstellungen!.fehler && belegung!.meldungen.length) hinweis(belegung!.meldungen[0]);
+  const warnungen = einstellHinweise(einstellungen!, belegung!.meldungen).warnungen;
+  if (warnungen.length) hinweis(warnungen[0]);
   const [editorStandard, verlaufTasten, suchTasten, vervollstaendigenTasten, tabTaste] = editorKeymaps();
   view = new EditorView({
     parent: document.getElementById("editor")!,

@@ -71,10 +71,17 @@ export const STANDARD: Record<string, Partial<Record<Plattform, string[]>>> = {
 
 const MODIFIKATOREN = ["Ctrl", "Alt", "Shift", "Meta"] as const;
 
+/** Benannte Tasten, die ein Kürzel tragen dürfen (Namen wie `KeyboardEvent.key`), dazu F1–F24. */
+const BENANNT = new Set([
+  "Space", "Enter", "Escape", "Tab", "Backspace", "Delete", "Insert", "Home", "End", "PageUp", "PageDown",
+  "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+  ...Array.from({ length: 24 }, (_, i) => `F${i + 1}`),
+]);
+
 /**
  * Kürzel für Plattform `p` in fester Form: `Mod` aufgelöst, Modifikatoren als `Ctrl-Alt-Shift-Meta-`,
  * einzelne Zeichen klein (ein Großbuchstabe heißt Shift). `null`, wenn ungültig: ohne Strg, Alt,
- * Meta bzw. Mod und keine F-Taste.
+ * Meta bzw. Mod und keine F-Taste, oder ein unbekannter Tastenname.
  */
 export function normalisieren(k: string, p: Plattform): string | null {
   const teile = k.split(/-(?!$)/);
@@ -91,6 +98,7 @@ export function normalisieren(k: string, p: Plattform): string | null {
     taste = taste.toLowerCase();
   }
   if (taste === " ") taste = "Space";
+  if ([...taste].length > 1 && !BENANNT.has(taste)) return null;
   const fTaste = /^F([1-9]|1[0-2])$/.test(taste);
   if (!fTaste && !mods.has("Ctrl") && !mods.has("Alt") && !mods.has("Meta")) return null;
   return [...MODIFIKATOREN.filter((m) => mods.has(m)), taste].join("-");
@@ -314,6 +322,7 @@ export function einstellungenNotfall(fehler: string): EinstellungenJs {
     hinweis: null,
     ganz_offline: true,
     kuerzel: {},
+    warnung: null,
     fehler: t("Einstellungen nicht gelesen ({fehler}); es gelten die Standardkürzel, das Netz bleibt aus.", { fehler }),
   };
 }

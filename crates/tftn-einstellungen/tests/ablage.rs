@@ -147,7 +147,11 @@ fn falscher_werttyp_wird_genannt() {
     fs::write(o.join(TASTEN), "[kuerzel]\n\"a\" = 3\n\"b\" = \"Mod-b\"\n").unwrap();
     let l = tasten_lesen(o);
     assert_eq!(l.kuerzel.len(), 1);
-    assert!(l.fehler.unwrap().contains("a"));
+    assert!(l.warnung.unwrap().contains("a"));
+    // Ein einzelner falscher Wert sperrt das Umbelegen nicht.
+    assert_eq!(l.fehler, None);
+    kuerzel_setzen(o, "b", Some("Mod-k")).unwrap();
+    assert_eq!(tasten_lesen(o).kuerzel["b"], "Mod-k");
 }
 
 #[test]

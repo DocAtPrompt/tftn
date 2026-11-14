@@ -305,6 +305,19 @@ pub(crate) fn kopieren(von: &Path, nach: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
+/// Pfad aus einem Eingabefeld: Leerraum am Rand weg, dazu ein Paar gleicher Anführungszeichen
+/// (Windows „Als Pfad kopieren“ liefert `"C:\…"`). Leer: `None`.
+pub fn pfad_aus_eingabe(text: &str) -> Option<PathBuf> {
+    let t = text.trim();
+    let t = ['"', '\'']
+        .iter()
+        .find_map(|&z| {
+            (t.len() >= 2 && t.starts_with(z) && t.ends_with(z)).then(|| t[1..t.len() - 1].trim())
+        })
+        .unwrap_or(t);
+    (!t.is_empty()).then(|| PathBuf::from(t))
+}
+
 /// Legt `<eltern>/<name>` aus dem Typ `typ` an und gibt den Pfad zurück.
 pub fn anlegen(
     quellen: &[Typquelle],
@@ -553,6 +566,28 @@ mod tests {
     use super::*;
     use std::path::Path;
     use tftn_core::Projekt;
+
+    #[test]
+    fn pfad_aus_eingabe_ohne_anfuehrungszeichen() {
+        // Windows „Als Pfad kopieren“ setzt Anführungszeichen; Leerzeichen am Rand kommen beim Kopieren mit.
+        assert_eq!(
+            pfad_aus_eingabe(r#"  "C:\Users\a b\Dokumente"  "#),
+            Some(PathBuf::from(r"C:\Users\a b\Dokumente"))
+        );
+        assert_eq!(pfad_aus_eingabe("'/tmp/x'"), Some(PathBuf::from("/tmp/x")));
+        assert_eq!(pfad_aus_eingabe("/tmp/x\n"), Some(PathBuf::from("/tmp/x")));
+        // Nur ein Zeichen am Rand oder ungleiche Paare bleiben, wie sie sind.
+        assert_eq!(
+            pfad_aus_eingabe("\"/tmp/x"),
+            Some(PathBuf::from("\"/tmp/x"))
+        );
+        assert_eq!(
+            pfad_aus_eingabe("\"/tmp/x'"),
+            Some(PathBuf::from("\"/tmp/x'"))
+        );
+        assert_eq!(pfad_aus_eingabe("   "), None);
+        assert_eq!(pfad_aus_eingabe("\"\""), None);
+    }
 
     /// Die Typen aus dem Repo; mit `TFTN_TEST_TYPEN` die eines gebauten Bündels.
     fn typen() -> PathBuf {

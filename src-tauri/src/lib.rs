@@ -871,7 +871,7 @@ fn projekt_anlegen(
     let ziel = typen::anlegen(
         &quellen,
         &typ,
-        Path::new(&eltern),
+        &typen::pfad_aus_eingabe(&eltern).ok_or_else(|| tr!("Kein Ordner angegeben."))?,
         &name,
         schriften,
         Some(&tftn_sprachen::kennung()),
@@ -915,7 +915,7 @@ fn entwurf_benennen(
 #[tauri::command(async)]
 fn projekt_wechseln(zustand: State<'_, Zustand>, ordner: Option<String>) -> Result<(), String> {
     let ordner = match ordner {
-        Some(o) => PathBuf::from(o),
+        Some(o) => typen::pfad_aus_eingabe(&o).ok_or_else(|| tr!("Kein Projekt gewählt."))?,
         None => ordner_waehlen(&tr!("TFTN-Projektordner wählen (mit tftn.toml)"))
             .ok_or_else(|| tr!("Kein Projekt gewählt."))?,
     };
@@ -2708,6 +2708,8 @@ struct EinstellungenJs {
     kuerzel: std::collections::BTreeMap<String, String>,
     /// `tasten.toml` fehlerhaft: Umbelegen ist gesperrt
     fehler: Option<String>,
+    /// einzelne Einträge in `tasten.toml` übersprungen; Umbelegen geht weiter
+    warnung: Option<String>,
 }
 
 fn einstellungen_js(app_konfig: &Path) -> EinstellungenJs {
@@ -2721,6 +2723,7 @@ fn einstellungen_js(app_konfig: &Path) -> EinstellungenJs {
         ganz_offline: rechner.ganz_offline,
         kuerzel: tasten.kuerzel,
         fehler: tasten.fehler,
+        warnung: tasten.warnung,
     }
 }
 
@@ -2806,9 +2809,7 @@ fn einstellungsordner_setzen(
             }
         }
     } else {
-        ordner
-            .filter(|o| !o.trim().is_empty())
-            .map(|o| PathBuf::from(o.trim()))
+        ordner.as_deref().and_then(typen::pfad_aus_eingabe)
     };
     if let Some(n) = &neu {
         if !n.is_dir() {

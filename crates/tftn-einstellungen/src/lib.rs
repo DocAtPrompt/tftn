@@ -91,7 +91,10 @@ pub fn ort(app_konfig: &Path, rechner: &Rechner) -> Ort {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Tasten {
     pub kuerzel: BTreeMap<String, String>,
+    /// Datei nicht lesbar: Umbelegen gesperrt, damit sie nicht überschrieben wird.
     pub fehler: Option<String>,
+    /// Einzelne Einträge übersprungen; Umbelegen geht weiter.
+    pub warnung: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -109,8 +112,8 @@ pub fn tasten_lesen(ordner: &Path) -> Tasten {
         Ok(d) => d,
         Err(e) => {
             return Tasten {
-                kuerzel: BTreeMap::new(),
                 fehler: Some(fehlertext(&text, &e)),
+                ..Tasten::default()
             };
         }
     };
@@ -126,7 +129,8 @@ pub fn tasten_lesen(ordner: &Path) -> Tasten {
     }
     Tasten {
         kuerzel,
-        fehler: (!falsch.is_empty()).then(|| {
+        fehler: None,
+        warnung: (!falsch.is_empty()).then(|| {
             tr!(
                 "{datei}: kein Text bei {aktionen} – übersprungen",
                 datei = TASTEN,

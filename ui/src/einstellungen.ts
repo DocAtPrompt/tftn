@@ -14,7 +14,10 @@ export interface EinstellungenJs {
   hinweis: string | null;
   ganz_offline: boolean;
   kuerzel: Record<string, string>;
+  /** `tasten.toml` nicht lesbar: Umbelegen ist gesperrt */
   fehler: string | null;
+  /** einzelne Einträge übersprungen; Umbelegen geht weiter */
+  warnung: string | null;
 }
 
 export interface EinstellDaten {
@@ -77,6 +80,25 @@ export function updatesText(u: UpdatesJs): string[] {
 
 const HERKUNFT: Record<string, string> = { eigene: t("eigene"), vorschlag: "", standard: "TFTN", keine: "" };
 const PLATTFORM_NAME: Record<Plattform, string> = { mac: "Mac", win: "Windows" };
+
+/** Was der Dialog über `tasten.toml` sagt: Nur eine unlesbare Datei sperrt das Umbelegen. */
+export function einstellHinweise(
+  e: EinstellungenJs,
+  meldungen: string[],
+): { gesperrt: boolean; fehler: string | null; warnungen: string[] } {
+  return {
+    gesperrt: e.fehler !== null,
+    fehler: e.fehler,
+    warnungen: e.fehler ? [] : [...(e.warnung ? [e.warnung] : []), ...meldungen],
+  };
+}
+
+/** Ein Eingabefeld bekommt seine Tasten, auch während ein Kürzel aufgenommen wird. */
+export function tasteDurchlassen(ziel: { tagName: string; type?: string } | null): boolean {
+  if (!ziel) return false;
+  if (ziel.tagName === "TEXTAREA") return true;
+  return ziel.tagName === "INPUT" && !["checkbox", "radio", "button"].includes(ziel.type ?? "text");
+}
 
 export class EinstellDialog {
   private huelle: HTMLDivElement;
@@ -170,6 +192,8 @@ export class EinstellDialog {
         return;
       }
       this.aufnahme = this.aufnahme === id ? null : id;
+      // Fokus aus Such- oder Pfadfeld nehmen, sonst landet die Taste dort statt in der Aufnahme.
+      if (this.aufnahme !== null) (document.activeElement as HTMLElement | null)?.blur();
       this.zeichnen();
     });
     // In der Aufnahme fängt der Dialog jede Taste ab, bevor Editor oder System sie sehen.
@@ -229,6 +253,12 @@ export class EinstellDialog {
       }
       return;
     }
+    if (tasteDurchlassen(e.target as HTMLInputElement | null)) {
+      // Ins Suchfeld oder Pfadfeld getippt: Aufnahme beenden, die Taste gehört dem Feld.
+      this.aufnahme = null;
+      this.zeichnen();
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     const id = this.aufnahme;
@@ -261,10 +291,17 @@ export class EinstellDialog {
     typen.className = "leiste-hilfe";
     typen.textContent = t("Eigene Dokumenttypen: {ordner} (haben Vorrang vor den mitgelieferten)", { ordner: `${e.ordner}${e.ordner.includes("\\") && !e.ordner.includes("/") ? "\\" : "/"}typen` });
     this.kopf.append(typen);
-    if (e.fehler) {
+    const befund = einstellHinweise(e, d.belegung.meldungen);
+    if (befund.fehler) {
       const f = document.createElement("div");
       f.className = "einst-fehler";
-      f.textContent = t("{fehler} – Umbelegen ist gesperrt, bis die Datei repariert ist.", { fehler: e.fehler });
+      f.textContent = t("{fehler} – Umbelegen ist gesperrt, bis die Datei repariert ist.", { fehler: befund.fehler });
+      this.kopf.append(f);
+    }
+    for (const w of befund.warnungen) {
+      const f = document.createElement("div");
+      f.className = "einst-warnung";
+      f.textContent = w;
       this.kopf.append(f);
     }
     if (document.activeElement !== this.pfad) this.pfad.value = e.synchronisiert ? e.ordner : "";

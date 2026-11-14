@@ -96,6 +96,16 @@ describe("normalisieren", () => {
     expect(normalisieren("Mod-", "win")).toBeNull();
     expect(normalisieren("Hyper-a", "win")).toBeNull();
   });
+
+  it("lehnt unbekannte Tastennamen ab", () => {
+    // Von Hand in tasten.toml geschrieben: Tippfehler und deutsche Namen gelten nicht still.
+    expect(normalisieren("Mod-Enterr", "win")).toBeNull();
+    expect(normalisieren("Mod-Pfeil", "mac")).toBeNull();
+    expect(normalisieren("Mod-ab", "mac")).toBeNull();
+    expect(normalisieren("F13", "win")).toBeNull();
+    for (const k of ["Mod-Enter", "Mod-ArrowUp", "Mod-Backspace", "Mod-PageDown", "Mod-Home", "Mod-F13", "Alt-`", "Mod-Shift-.", "Mod-ö", "Mod-Alt-Escape", "Mod-Space"])
+      expect(normalisieren(k, "win"), k).not.toBeNull();
+  });
 });
 
 describe("kuerzelAusTaste", () => {
@@ -162,6 +172,13 @@ describe("Vorrang", () => {
     const b = belegen(a, { "typst/link": "k" }, "mac");
     expect(b.zeilen.find((x) => x.aktion.id === "typst/link")!.quelle).toBe("keine");
     expect(b.meldungen.join(" ")).toContain("typst/link");
+  });
+
+  it("unbekannter Tastenname wird gemeldet", () => {
+    const { a } = alle();
+    const b = belegen(a, { "typst/link": "Mod-Strg" }, "win");
+    expect(b.zeilen.find((x) => x.aktion.id === "typst/link")!.quelle).toBe("keine");
+    expect(b.meldungen.join(" ")).toContain("Mod-Strg");
   });
 });
 
