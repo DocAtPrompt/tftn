@@ -27,6 +27,16 @@
   str(d.day()) + ". " + monat + " " + str(d.year())
 }
 
+/// Schreibt ein Datum in der Sprache `sprache` aus: Deutsch österreichisch („15. Jänner 2026“),
+/// sonst englisch („15 January 2026“).
+///
+/// - d (datetime): das Datum
+/// - sprache (str): Sprachkennung wie `"de"` oder `"en"`
+/// -> str
+#let datum-text(d, sprache) = if sprache == "de" { datum-at(d) } else {
+  d.display("[day padding:none] [month repr:long] [year]")
+}
+
 /// Liest eine Liste von Trennausnahmen. Ein Wort je Zeile, erlaubte Trennstellen mit `-`
 /// markiert, z. B. `Sozial-versicherungs-träger`. Leere Zeilen und Zeilen mit `#` werden übersprungen.
 ///
@@ -52,7 +62,13 @@
 
 #let hinweis-titel = (info: "Hinweis", warnung: "Achtung", merke: "Merke")
 
-/// Hinweiskasten mit Überschrift und farbigem Hintergrund.
+/// Überschriften des Hinweiskastens je Sprache; andere Sprachen als Deutsch bekommen Englisch.
+#let hinweis-titel-sprachen = (
+  de: hinweis-titel,
+  en: (info: "Note", warnung: "Warning", merke: "Remember"),
+)
+
+/// Hinweiskasten mit Überschrift (in der Sprache des Texts) und farbigem Hintergrund.
 ///
 /// - farbe (color): Hintergrundfarbe
 /// - art (str): `"info"`, `"warnung"` oder `"merke"`; bestimmt die Überschrift
@@ -61,6 +77,6 @@
 #let hinweis(farbe: luma(230), art: "info", body) = {
   assert(art in hinweis-titel, message: "hinweis: art muss info, warnung oder merke sein")
   block(fill: farbe, inset: 8pt, radius: 3pt, width: 100%, breakable: false)[
-    *#hinweis-titel.at(art):* #body
+    *#context hinweis-titel-sprachen.at(text.lang, default: hinweis-titel-sprachen.en).at(art):* #body
   ]
 }

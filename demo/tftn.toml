@@ -1,5 +1,5 @@
 tftn = 1
 typst = "0.15.1"
-typ = "@local/tftn-fachartikel:0.2.0"
+typ = "@local/tftn-fachartikel:0.3.0"
 haupt = "main.typ"
 zeitstempel = 2026-11-12T00:00:00Z

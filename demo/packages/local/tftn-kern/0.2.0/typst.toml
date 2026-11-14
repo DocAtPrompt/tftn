@@ -1,0 +1,7 @@
+[package]
+name = "tftn-kern"
+version = "0.2.0"
+entrypoint = "lib.typ"
+compiler = "0.15.1"
+authors = ["TFTN"]
+description = "Gemeinsame Bausteine der TFTN-Dokumenttypen: Datum (deutsch und englisch), Trennausnahmen, Hinweiskasten"
