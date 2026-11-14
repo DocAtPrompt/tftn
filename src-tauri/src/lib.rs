@@ -2801,7 +2801,7 @@ fn einstellungsordner_setzen(
     let konfig = app_konfig(&app)?;
     let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
     let neu = if waehlen {
-        match ordner_waehlen(&tr!("Gemeinsamen Ordner für die TFTN-Einstellungen wählen")) {
+        match ordner_waehlen(&tr!("Ordner für eigene Anpassungen wählen")) {
             Some(p) => Some(p),
             None if cfg!(target_os = "macos") => return Ok(einstellungen_js(&konfig)),
             None => {
@@ -2829,6 +2829,14 @@ fn einstellungsordner_setzen(
     rechner.speichern(&konfig).map_err(|e| e.to_string())?;
     einstellungen_beobachten(&app)?;
     Ok(einstellungen_js(&konfig))
+}
+
+/// Zeigt den Ordner für eigene Anpassungen (gewählt oder Standard) im Finder bzw. Explorer.
+#[tauri::command]
+fn einstellungsordner_zeigen(app: tauri::AppHandle) -> Result<(), String> {
+    let konfig = app_konfig(&app)?;
+    let ort = tftn_einstellungen::ort(&konfig, &tftn_einstellungen::Rechner::laden(&konfig));
+    word::im_ordner_zeigen(&ort.ordner)
 }
 
 /// Text für ein AppleScript-Literal: `\\` und `"` maskiert (Aufforderungen kommen aus Sprachdateien).
@@ -3114,6 +3122,7 @@ pub fn run() {
             einstellungen,
             kuerzel_setzen,
             einstellungsordner_setzen,
+            einstellungsordner_zeigen,
             offline_setzen,
             markup_aktion,
             zitat_aendern,

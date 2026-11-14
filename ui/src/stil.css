@@ -381,6 +381,15 @@ body {
   border-bottom: 1px solid var(--linie);
 }
 
+.einst-anpassungen {
+  border-bottom: none;
+  border-top: 1px solid var(--linie);
+}
+
+.einst-titel {
+  font-weight: 600;
+}
+
 .einst-zeile {
   display: flex;
   gap: 6px;

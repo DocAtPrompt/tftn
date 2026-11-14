@@ -224,10 +224,12 @@ shortcuts are shown for Mac **and** Windows.
 | Heading down / up | Mod+Shift+. / Mod+Shift+, |
 | Footnote, Figure, Equation | Mod+Shift+F, +A, +E |
 
-**Settings folder:** shortcuts (`tasten.toml`), options, your dictionary, your own document types,
-package descriptions and language files live in a folder you choose in the settings – for example a
-synced folder, so all your computers share the same setup. Changes made outside TFTN take effect
-immediately.
+**Folder for your own customisations:** shortcuts (`tasten.toml`), your dictionary, your own
+document types (`typen/`), skins (`skins/`), language files (`sprachen/`) and package descriptions
+live in one folder, at the bottom of the settings; “Show in folder” opens it. By default it is a
+folder on this computer. If you use several computers, you can choose another folder, for example
+inside a sync folder, and all computers share the same customisations. Changes made outside TFTN
+take effect immediately.
 
 **Interface language:** English and German are included; “Same as system” is the default. “Another language …” creates a template for translating: German on the left, your translation on the right;
 save it as `<code>.toml` (for example `fr.toml`) in the `sprachen/` folder – no new build needed.

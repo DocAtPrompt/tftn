@@ -1,4 +1,4 @@
-// Einstellungen (PLAN-M2 AP3, Entwurf 7): gemeinsamer Ordner (optional), „ganz offline“ für diesen Rechner und die
+// Einstellungen (PLAN-M2 AP3, Entwurf 7): Ordner für eigene Anpassungen (unten), „ganz offline“ für diesen Rechner und die
 // Tabelle der Tastenkürzel mit Suchfeld. Zeile anklicken, neues Kürzel drücken: Esc bricht ab,
 // Entf/Rücktaste heißt „keine Belegung“, „Standard“ nimmt die eigene Belegung zurück. Konflikte beider
 // Plattformen stehen sofort in der Zeile; gespeichert wird trotzdem (bewusst gesetzt).
@@ -31,6 +31,8 @@ export interface EinstellDaten {
 export interface EinstellAktionen {
   kuerzelSetzen(aktion: string, kuerzel: string | null): Promise<void>;
   ordnerSetzen(ordner: string | null, waehlen: boolean): Promise<void>;
+  /** Zeigt den Ordner für eigene Anpassungen im Finder bzw. Explorer. */
+  ordnerZeigen(): Promise<void>;
   offlineSetzen(an: boolean): Promise<void>;
   updatesPruefen(): Promise<UpdatesJs>;
   sprachenLesen(): Promise<SprachenJs>;
@@ -111,6 +113,8 @@ export class EinstellDialog {
   private suche: HTMLInputElement;
   private liste: HTMLTableSectionElement;
   private kopf: HTMLDivElement;
+  /** Fehler und Warnungen zu tasten.toml, direkt über der Tabelle */
+  private befundOrt: HTMLDivElement;
   private pfad: HTMLInputElement;
   private offline: HTMLInputElement;
   private sprache: HTMLSelectElement;
@@ -128,18 +132,12 @@ export class EinstellDialog {
     this.huelle.innerHTML = `
       <div class="neu-kopf einst-kopf"><div class="palette-kopf">${t("Einstellungen")}</div><button class="neu-zu einst-zu" title="${t("Schließen (Esc)")}">×</button></div>
       <div class="einst-ordner">
-        <div class="einst-zustand"></div>
-        <div class="einst-zeile">
-          <input class="einst-pfad" placeholder="${t("Gemeinsamer Ordner für mehrere Rechner (optional), etwa ein Sync-Ordner")}" spellcheck="false" />
-          <button class="einst-uebernehmen">${t("Übernehmen")}</button>
-          <button class="einst-waehlen">${t("Ordner wählen …")}</button>
-          <button class="einst-zuruecksetzen" title="${t("Wieder nur auf diesem Rechner speichern")}">${t("Zurücksetzen")}</button>
-        </div>
         <div class="einst-zeile einst-updates"><button class="einst-updates-knopf" title="${t("Fragt GitHub nach den neuesten Versionen von TFTN und typst – nur auf Klick")}">${t("Nach Updates suchen")}</button><span class="einst-updates-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-sprache"><label>${t("Sprache der Oberfläche")} <select class="einst-sprache-wahl"></select></label><button class="einst-sprachvorlage" title="${t("Legt eine Vorlage zum Übersetzen an und zeigt sie; übersetzt als <kennung>.toml speichern, etwa fr.toml")}">${t("Weitere Sprache …")}</button><span class="einst-sprache-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-skin"><label>${t("Aussehen")} <select class="einst-skin-wahl"></select></label><button class="einst-skinvorlage" title="${t("Legt eine Vorlage für einen eigenen Skin an und zeigt sie; Farben und Editorschrift lassen sich darin ändern")}">${t("Eigener Skin …")}</button><span class="einst-skin-text leiste-hilfe"></span></div>
         <label class="einst-offline"><input type="checkbox" /> ${t("Ganz offline (nur dieser Rechner): TFTN holt keine Pakete aus dem Netz")}</label>
       </div>
+      <div class="einst-befund"></div>
       <div class="palette-felder palette-einzeln">
         <input class="palette-suche" placeholder="${t("Aktion oder Kürzel suchen …")}" spellcheck="false" />
       </div>
@@ -148,6 +146,17 @@ export class EinstellDialog {
           <thead><tr><th>${t("Aktion")}</th><th>${t("Herkunft")}</th><th>${t("Kürzel")}</th><th>${t("Hinweis")}</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
+      </div>
+      <div class="einst-ordner einst-anpassungen">
+        <div class="einst-titel">${t("Ordner für eigene Anpassungen (Kürzel, Typen, Skins, Sprachen)")}</div>
+        <div class="einst-zustand"></div>
+        <div class="einst-zeile">
+          <input class="einst-pfad" placeholder="${t("Anderer Ordner (optional), etwa ein Sync-Ordner für mehrere Rechner")}" spellcheck="false" />
+          <button class="einst-uebernehmen">${t("Übernehmen")}</button>
+          <button class="einst-waehlen">${t("Ordner wählen …")}</button>
+          <button class="einst-zuruecksetzen" title="${t("Wieder den Standardordner dieses Rechners nehmen")}">${t("Zurücksetzen")}</button>
+          <button class="einst-zeigen">${t("Im Ordner zeigen")}</button>
+        </div>
       </div>
       <div class="palette-fuss">${t("Zeile anklicken und das neue Kürzel drücken (Esc bricht ab, Entf = keine Belegung) · Esc schließt die Einstellungen")}</div>`;
     document.body.append(this.huelle);
@@ -199,6 +208,7 @@ export class EinstellDialog {
       }
     });
     this.kopf = q(".einst-zustand");
+    this.befundOrt = q(".einst-befund");
     this.pfad = q(".einst-pfad");
     this.offline = q(".einst-offline input");
     this.suche = q(".palette-suche");
@@ -207,6 +217,7 @@ export class EinstellDialog {
     q(".einst-uebernehmen").addEventListener("click", () => void this.a.ordnerSetzen(this.pfad.value, false));
     q(".einst-waehlen").addEventListener("click", () => void this.a.ordnerSetzen(null, true));
     q(".einst-zuruecksetzen").addEventListener("click", () => void this.a.ordnerSetzen(null, false));
+    q(".einst-zeigen").addEventListener("click", () => void this.a.ordnerZeigen());
     this.offline.addEventListener("change", () => void this.a.offlineSetzen(this.offline.checked));
     this.liste.addEventListener("click", (e) => {
       const ziel = e.target as HTMLElement;
@@ -332,27 +343,28 @@ export class EinstellDialog {
     const e = d.einstellungen;
     this.kopf.replaceChildren();
     const ort = document.createElement("div");
-    ort.textContent = e.synchronisiert
-      ? t("Einstellungen aus {ordner}", { ordner: e.ordner })
-      : (e.hinweis ?? t("Die Einstellungen liegen auf diesem Rechner."));
+    ort.textContent =
+      e.hinweis ??
+      (e.synchronisiert ? t("Gewählter Ordner: {ordner}", { ordner: e.ordner }) : t("Standardordner: {ordner}", { ordner: e.ordner }));
     ort.className = e.hinweis ? "einst-warnung" : "leiste-hilfe";
     this.kopf.append(ort);
     const typen = document.createElement("div");
     typen.className = "leiste-hilfe";
     typen.textContent = t("Eigene Dokumenttypen: {ordner} (haben Vorrang vor den mitgelieferten)", { ordner: `${e.ordner}${e.ordner.includes("\\") && !e.ordner.includes("/") ? "\\" : "/"}typen` });
     this.kopf.append(typen);
+    this.befundOrt.replaceChildren();
     const befund = einstellHinweise(e, d.belegung.meldungen);
     if (befund.fehler) {
       const f = document.createElement("div");
       f.className = "einst-fehler";
       f.textContent = t("{fehler} – Umbelegen ist gesperrt, bis die Datei repariert ist.", { fehler: befund.fehler });
-      this.kopf.append(f);
+      this.befundOrt.append(f);
     }
     for (const w of befund.warnungen) {
       const f = document.createElement("div");
       f.className = "einst-warnung";
       f.textContent = w;
-      this.kopf.append(f);
+      this.befundOrt.append(f);
     }
     if (document.activeElement !== this.pfad) this.pfad.value = e.synchronisiert ? e.ordner : "";
     this.offline.checked = e.ganz_offline;

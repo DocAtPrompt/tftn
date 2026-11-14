@@ -220,10 +220,11 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Überschrift tiefer / höher | Mod+Umschalt+. / Mod+Umschalt+, |
 | Fußnote, Abbildung, Formel | Mod+Umschalt+F, +A, +E |
 
-**Einstellungsordner:** Kürzel (`tasten.toml`), Optionen, eigenes Wörterbuch, eigene Dokumenttypen,
-Paketbeschreibungen und Sprachdateien liegen in einem Ordner, den Sie in den Einstellungen wählen –
-etwa in einem synchronisierten Ordner, damit alle Rechner dieselbe Belegung haben. Änderungen von
-außen wirken sofort.
+**Ordner für eigene Anpassungen:** Kürzel (`tasten.toml`), eigenes Wörterbuch, eigene Dokumenttypen
+(`typen/`), Skins (`skins/`), Sprachdateien (`sprachen/`) und Paketbeschreibungen liegen in einem
+Ordner, unten in den Einstellungen; „Im Ordner zeigen“ öffnet ihn. Ohne Wahl ist es ein Ordner dieses
+Rechners. Wer mehrere Rechner nutzt, kann einen anderen Ordner wählen, etwa in einem Sync-Ordner;
+dann haben alle Rechner dieselben Anpassungen. Änderungen von außen wirken sofort.
 
 **Sprache der Oberfläche:** Deutsch und Englisch sind dabei; „Wie das System“ ist der Standard.
 „Weitere Sprache …“ legt eine Vorlage zum Übersetzen an: links Deutsch, rechts die Übersetzung, als

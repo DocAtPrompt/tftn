@@ -1440,6 +1440,7 @@ async function start() {
   einstellDialog = new EinstellDialog({
     kuerzelSetzen: (aktion, kuerzel) => mitHinweis(() => invoke("kuerzel_setzen", { aktion, kuerzel })),
     ordnerSetzen: (ordner, waehlen) => mitHinweis(() => invoke("einstellungsordner_setzen", { ordner, waehlen })),
+    ordnerZeigen: () => invoke<void>("einstellungsordner_zeigen").catch((fehler) => hinweis(String(fehler))),
     offlineSetzen: (an) => mitHinweis(() => invoke("offline_setzen", { an })),
     updatesPruefen: () => invoke<UpdatesJs>("updates_pruefen"),
     sprachenLesen: () => invoke<SprachenJs>("sprachen_lesen"),
