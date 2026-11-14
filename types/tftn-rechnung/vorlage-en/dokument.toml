@@ -1,0 +1,27 @@
+sprache = "en"
+# You assign the invoice number yourself, consecutive and without gaps; TFTN does not count.
+nummer = "2026-001"
+datum = 2026-01-31
+leistung = "January 2026"
+empfaenger = ["Ms Erika Sample", "1 Sample Street", "London SW1A 1AA", "United Kingdom"]
+ust = 20
+zahlungsziel = 14
+gruss = "Kind regards"
+
+posten = [
+  { text = "Consulting", menge = 2, einheit = "h", preis = 120 },
+  { text = "Written statement", menge = 1, preis = 250 },
+  { text = "Travel", menge = 36, einheit = "km", preis = 0.5 },
+]
+
+[absender]
+name = "First Last"
+zeilen = ["Straße 1", "1010 Wien", "Austria"]
+telefon = "+43 1 234 56 78"
+email = "name@example.org"
+uid = "ATU00000000"
+
+[bank]
+institut = "Sample Bank"
+iban = "AT00 0000 0000 0000 0000"
+bic = "MUSTATWW"

@@ -67,7 +67,7 @@ fn mein_typ(eigen: &Path) -> PathBuf {
 
 /// Mitgelieferte Typen mit Vorlage: Befund, Bericht, Brief, Fachartikel, Fachbuch, Lebenslauf,
 /// Leer, Plakat.
-const ANZAHL: usize = 8;
+const ANZAHL: usize = 9;
 
 fn name<'a>(
     liste: &'a [tftn_manifest::typen::TypEintrag],

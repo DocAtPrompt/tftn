@@ -1,0 +1,27 @@
+sprache = "de"
+# Die Rechnungsnummer vergibst du selbst, fortlaufend und ohne Lücken; TFTN zählt nicht mit.
+nummer = "2026-001"
+datum = 2026-01-31
+leistung = "Jänner 2026"
+empfaenger = ["Frau", "Mag. Erika Muster", "Musterstraße 1", "1010 Wien"]
+ust = 20
+zahlungsziel = 14
+gruss = "Mit freundlichen Grüßen"
+
+posten = [
+  { text = "Beratung", menge = 2, einheit = "Std.", preis = 120 },
+  { text = "Schriftliche Stellungnahme", menge = 1, preis = 250 },
+  { text = "Fahrtkosten", menge = 36, einheit = "km", preis = 0.5 },
+]
+
+[absender]
+name = "Vorname Nachname"
+zeilen = ["Straße 1", "1010 Wien"]
+telefon = "+43 1 234 56 78"
+email = "name@example.org"
+uid = "ATU00000000"
+
+[bank]
+institut = "Musterbank"
+iban = "AT00 0000 0000 0000 0000"
+bic = "MUSTATWW"

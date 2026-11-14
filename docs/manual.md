@@ -11,8 +11,8 @@ Your text stays plain Typst. Every document can be compiled without TFTN using t
 yields the same PDF.
 
 The interface is available in English and German. The document types that ship with TFTN come in
-both languages too: blank document, letter, medical report (doctor's letter), report, journal
-article, book, poster and CV.
+both languages too: blank document, letter, invoice, medical report (doctor's letter), report,
+journal article, book, poster and CV.
 
 ## Contents
 
@@ -54,6 +54,11 @@ later: “Document” tab → “Language”.
 **Medical reports** contain health data. Keep such documents outside any Git repository; TFTN
 shows a warning in the “Document” tab if the folder lies inside one. Everything stays on your
 computer – TFTN never sends text anywhere.
+
+**Invoices** compute items, VAT and the total themselves (each line rounded to the cent). You
+assign the invoice number yourself, consecutive and without gaps; TFTN does not count, not even
+across several computers. Whether the invoice contains every detail required for you is yours to
+check.
 
 **What is a project?** A folder with `tftn.toml`, the main file (usually `main.typ`), and for
 templates also `dokument.toml` (front matter), the bibliography file, the fonts (`fonts/`) and the

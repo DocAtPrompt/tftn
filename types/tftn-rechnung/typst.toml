@@ -1,0 +1,48 @@
+[package]
+name = "tftn-rechnung"
+version = "0.1.0"
+entrypoint = "lib.typ"
+compiler = "0.15.1"
+authors = ["TFTN"]
+description = "Rechnung (TFTN)"
+
+[template]
+path = "vorlage"
+entrypoint = "main.typ"
+
+# Manifest für TFTN (KONZEPT 5); Typst ignoriert diesen Abschnitt.
+[tool.tftn]
+schema-version = 1
+titel = "Rechnung"
+achse = "publikation"
+formular = "tftn/formular.schema.json"
+daten = "dokument.toml"
+sprache = { lang = "de", region = "AT" }
+vorlagen = { en = "vorlage-en" }
+schriften = [
+  "../tftn-leer/schriften/SourceSans3-Regular.otf",
+  "../tftn-leer/schriften/SourceSans3-It.otf",
+  "../tftn-leer/schriften/SourceSans3-Bold.otf",
+  "../tftn-leer/schriften/SourceSans3-BoldIt.otf",
+  "../tftn-leer/schriften/LIZENZEN-Source.txt",
+  "../tftn-fachartikel/schriften/NewCMMath-Regular.otf",
+  "../tftn-fachartikel/schriften/NewCMMath-Book.otf",
+  "../tftn-fachartikel/schriften/NewCMMath-Bold.otf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-Bold.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-Oblique.ttf",
+  "../tftn-fachartikel/schriften/DejaVuSansMono-BoldOblique.ttf",
+  "../tftn-fachartikel/schriften/LIZENZEN.txt",
+]
+
+braucht = [
+  "Rechnungsnummer, Empfänger und Posten: trägst du gleich danach im Fach „Dokument“ ein.",
+  "Die Rechnungsnummer vergibst du selbst; TFTN zählt nicht mit.",
+]
+
+[tool.tftn.export.vorschau]
+art = "pdf"
+
+[tool.tftn.export.archiv]
+art = "pdf"
+pdf-standards = ["a-2b"]

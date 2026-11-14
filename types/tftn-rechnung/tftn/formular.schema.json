@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rechnung",
+  "type": "object",
+  "required": ["nummer", "datum", "empfaenger", "posten"],
+  "x-tftn-reihenfolge": ["nummer", "datum", "leistung", "absender", "empfaenger", "posten", "ust", "steuerhinweis", "waehrung", "zahlungsziel", "bank", "gruss", "sprache"],
+  "properties": {
+    "nummer": { "type": "string", "title": "Rechnungsnummer", "description": "Vergibst du selbst, fortlaufend und ohne Lücken; TFTN zählt nicht mit", "minLength": 1 },
+    "datum": { "type": "string", "title": "Rechnungsdatum", "format": "date" },
+    "leistung": { "type": "string", "title": "Leistungszeitraum", "description": "Datum oder Zeitraum der Leistung, z. B. Jänner 2026" },
+    "absender": {
+      "type": "object",
+      "title": "Absender",
+      "x-tftn-gruppe": "Absender",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "title": "Name" },
+        "zeilen": { "type": "array", "title": "Anschrift", "description": "Straße, Postleitzahl und Ort, je Zeile ein Eintrag", "items": { "type": "string" } },
+        "telefon": { "type": "string", "title": "Telefon" },
+        "email": { "type": "string", "title": "E-Mail", "format": "email" },
+        "uid": { "type": "string", "title": "UID-Nummer", "description": "Steht im Fuß; leer: weggelassen" }
+      }
+    },
+    "empfaenger": {
+      "type": "array",
+      "title": "Empfänger",
+      "description": "Anschrift im Fenster, je Zeile ein Eintrag",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": { "type": "string" }
+    },
+    "posten": {
+      "type": "array",
+      "title": "Posten",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["text", "preis"],
+        "properties": {
+          "text": { "type": "string", "title": "Bezeichnung" },
+          "menge": { "type": "number", "title": "Menge", "default": 1 },
+          "einheit": { "type": "string", "title": "Einheit", "description": "z. B. Std. oder km; leer: keine" },
+          "preis": { "type": "number", "title": "Einzelpreis", "description": "netto, ohne Umsatzsteuer" }
+        }
+      }
+    },
+    "ust": { "type": "number", "title": "Umsatzsteuer in Prozent", "description": "0: keine Umsatzsteuer, dann nur der Gesamtbetrag", "minimum": 0, "maximum": 100, "default": 20, "x-tftn-gruppe": "Summe und Zahlung" },
+    "steuerhinweis": { "type": "string", "title": "Steuerhinweis", "description": "Steht unter der Summe, z. B. ein Hinweis auf eine Steuerbefreiung", "x-tftn-gruppe": "Summe und Zahlung" },
+    "waehrung": { "type": "string", "title": "Währung", "default": "€", "x-tftn-gruppe": "Summe und Zahlung" },
+    "zahlungsziel": { "type": "integer", "title": "Zahlungsziel in Tagen", "description": "Leer: kein Zahlungsziel", "minimum": 0, "maximum": 365, "x-tftn-gruppe": "Summe und Zahlung" },
+    "bank": {
+      "type": "object",
+      "title": "Bankverbindung",
+      "x-tftn-gruppe": "Summe und Zahlung",
+      "properties": {
+        "institut": { "type": "string", "title": "Bank" },
+        "iban": { "type": "string", "title": "IBAN" },
+        "bic": { "type": "string", "title": "BIC" }
+      }
+    },
+    "gruss": { "type": "string", "title": "Grußformel", "default": "Mit freundlichen Grüßen" },
+    "sprache": {
+      "type": "string",
+      "title": "Sprache",
+      "description": "Sprache der Rechnung: Silbentrennung, Rechtschreibung, Datum, Beträge und Beschriftungen",
+      "default": "de",
+      "oneOf": [
+        { "const": "de", "title": "Deutsch" },
+        { "const": "en", "title": "Englisch" }
+      ]
+    }
+  }
+}

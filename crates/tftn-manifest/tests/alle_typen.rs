@@ -54,6 +54,7 @@ fn neue_typen_sind_da() {
         "tftn-lebenslauf",
         "tftn-leer",
         "tftn-plakat",
+        "tftn-rechnung",
     ] {
         assert!(alle.iter().any(|t| t == typ), "{typ} fehlt in {alle:?}");
     }
@@ -119,4 +120,79 @@ fn jeder_typ_deutsch_und_englisch() {
             let _ = std::fs::remove_dir_all(&ordner);
         }
     }
+}
+
+/// Legt eine Rechnung mit eigener `dokument.toml` an und gibt ihren Text zurück.
+fn rechnung(name: &str, dokument: Option<&str>, sprache: Option<&str>) -> String {
+    let ordner = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("rechnung-{name}"));
+    let _ = std::fs::remove_dir_all(&ordner);
+    let p = projekt_anlegen_sprache(
+        &typen(),
+        "tftn-rechnung",
+        &ordner,
+        Some(ZEITSTEMPEL),
+        sprache,
+    )
+    .unwrap()
+    .projekt;
+    if let Some(d) = dokument {
+        std::fs::write(p.wurzel.join("dokument.toml"), d).unwrap();
+    }
+    let t = text(&p);
+    let _ = std::fs::remove_dir_all(&ordner);
+    t
+}
+
+#[test]
+fn rechnung_rechnet() {
+    // Vorlage: 2 × 120 + 250 + 36 × 0,50 = 508,00 netto, 20 % USt 101,60, gesamt 609,60.
+    let t = rechnung("vorlage", None, None);
+    for s in [
+        "2026-001",
+        "508,00 €",
+        "USt 20 %",
+        "101,60 €",
+        "609,60 €",
+        "14. Februar 2026",
+    ] {
+        assert!(t.contains(s), "„{s}“ fehlt:\n{t}");
+    }
+    let en = rechnung("vorlage-en", None, Some("en"));
+    for s in [
+        "Invoice",
+        "508.00 €",
+        "VAT 20 %",
+        "609.60 €",
+        "14 February 2026",
+    ] {
+        assert!(en.contains(s), "„{s}“ fehlt:\n{en}");
+    }
+}
+
+#[test]
+fn rechnung_rundet_je_zeile_und_ohne_ust() {
+    // 3 × 0,335 = 1,005 → 1,01; 1 × 1234,5 → 1.234,50; ohne USt nur der Gesamtbetrag.
+    let t = rechnung(
+        "runden",
+        Some(
+            "nummer = \"R-7\"\ndatum = 2026-03-01\nempfaenger = [\"A\"]\nust = 0\n\
+             steuerhinweis = \"Ohne Umsatzsteuer.\"\n\
+             posten = [{ text = \"x\", menge = 3, preis = 0.335 }, { text = \"y\", preis = 1234.5 }]\n",
+        ),
+        None,
+    );
+    for s in [
+        "R-7",
+        "1,01",
+        "1.234,50",
+        "1.235,51 €",
+        "Ohne Umsatzsteuer.",
+    ] {
+        assert!(t.contains(s), "„{s}“ fehlt:\n{t}");
+    }
+    assert!(!t.contains("USt"), "{t}");
+    assert!(
+        !t.contains("Zahlbar"),
+        "ohne Zahlungsziel keine Frist:\n{t}"
+    );
 }

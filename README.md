@@ -14,7 +14,7 @@ with Typst without handing them to a third party.
   line.
 - **Change values without code:** markers, a context sidebar, a table grid and an equation palette.
 - **Document types** as Typst packages, with a form for the front matter. TFTN ships a blank
-  document, letter, medical report, report, journal article, book, poster and CV.
+  document, letter, invoice, medical report, report, journal article, book, poster and CV.
 - **Citations** from your BibTeX/BibLaTeX file, or straight from a DOI (Crossref, DataCite).
 - **Typst Universe packages** vendored into the project with checksums – documents build offline,
   on any machine.

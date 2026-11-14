@@ -915,7 +915,7 @@ mod tests {
     fn typen_js_mit_herkunft() {
         let o = ordner("liste");
         let js = typen_js(&quellen(&typen(), &o), &o.join("typen"), Some(&o));
-        assert_eq!(js.typen.len(), 8);
+        assert_eq!(js.typen.len(), 9);
         let i = js
             .typen
             .iter()
