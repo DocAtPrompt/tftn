@@ -33,6 +33,7 @@ import {
   type VervollstaendigungJs,
   kuerzelText,
   menue,
+  nurSlashFehler,
   slashQuelle,
   typstQuelle, type EingesetztJs,
 } from "./bausteine";
@@ -1712,6 +1713,8 @@ async function start() {
     formular: (feld) => dokumentOeffnen(feld),
   });
   await listen<VorschauEreignis>("vorschau", (e) => {
+    // Nur „/“ für das Bausteinmenü getippt: kein Fehlerband, die Vorschau bleibt, wie sie ist.
+    if (view && e.payload.rev === rev && nurSlashFehler(view.state.doc.toString(), e.payload)) return;
     vorschau.aktualisieren(e.payload);
     letzteDauer = e.payload.dauer_ms;
     dauerZeigen();

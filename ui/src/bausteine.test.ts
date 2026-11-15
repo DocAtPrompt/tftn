@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EditorState } from "@codemirror/state";
 import { type Completion, CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
-import { type EintragJs, type Modus, abschnitt, kuerzelText, menue, slashAnfang, slashQuelle, typstQuelle } from "./bausteine";
+import { type EintragJs, type Modus, abschnitt, kuerzelText, menue, nurSlashFehler, slashAnfang, slashQuelle, typstQuelle } from "./bausteine";
 
 const eintrag = (id: string, herkunft: EintragJs["herkunft"], modus: Modus[], titel = id): EintragJs => ({
   id,
@@ -145,5 +145,25 @@ describe("Pakete holen im Menü", () => {
     const m = menue([e("holen/x", "holen"), e("p", "paket"), e("t", "typst")], "markup", "");
     expect(m.map((x) => x.id)).toEqual(["t", "p", "holen/x"]);
     expect(abschnitt("holen").name).toBe("Pakete holen");
+  });
+});
+
+describe("nurSlashFehler", () => {
+  const text = "Absatz\n/\n= Methode\n  /abb\n/ Begriff\n";
+  const fehler = (von: number | null) => ({ fehler: true, von, bis: von === null ? null : von + 1 });
+  const lauf = (meldungen: { fehler: boolean; von: number | null; bis: number | null }[]) => ({ gelungen: false, meldungen });
+  it("ein Fehler nur wegen eines „/“ am Zeilenanfang (Bausteinmenü) zählt nicht", () => {
+    expect(nurSlashFehler(text, lauf([fehler(7)]))).toBe(true);
+    expect(nurSlashFehler(text, lauf([fehler(text.indexOf("/abb") + 1)]))).toBe(true);
+    // Warnungen woanders ändern nichts.
+    expect(nurSlashFehler(text, lauf([fehler(7), { fehler: false, von: 0, bis: 3 }]))).toBe(true);
+  });
+  it("sonst bleibt der Fehler sichtbar", () => {
+    expect(nurSlashFehler(text, lauf([fehler(0)]))).toBe(false);
+    expect(nurSlashFehler(text, lauf([fehler(text.indexOf("/ Begriff"))]))).toBe(false);
+    expect(nurSlashFehler(text, lauf([fehler(7), fehler(0)]))).toBe(false);
+    expect(nurSlashFehler(text, lauf([fehler(null)]))).toBe(false);
+    expect(nurSlashFehler(text, lauf([]))).toBe(false);
+    expect(nurSlashFehler(text, { gelungen: true, meldungen: [] })).toBe(false);
   });
 });

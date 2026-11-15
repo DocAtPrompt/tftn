@@ -55,6 +55,28 @@ export function slashAnfang(zeileVorCursor: string): number | null {
   return m ? m[1].length : null;
 }
 
+/**
+ * Scheitert ein Lauf nur, weil eine Zeile bloß aus „/“ (und der Anfrage dahinter) besteht – der Benutzer
+ * öffnet gerade das Bausteinmenü –, ist das kein Fehler, den er sehen soll: In Typst beginnt so eine
+ * Begriffsliste („expected colon“). Dann bleibt die Vorschau beim letzten Stand.
+ */
+export function nurSlashFehler(
+  text: string,
+  lauf: { gelungen: boolean; meldungen: { fehler: boolean; von: number | null }[] },
+): boolean {
+  if (lauf.gelungen) return false;
+  const fehler = lauf.meldungen.filter((m) => m.fehler);
+  return (
+    fehler.length > 0 &&
+    fehler.every((m) => {
+      if (m.von === null) return false;
+      const anfang = text.lastIndexOf("\n", m.von - 1) + 1;
+      const ende = text.indexOf("\n", m.von);
+      return slashAnfang(text.slice(anfang, ende < 0 ? text.length : ende)) !== null;
+    })
+  );
+}
+
 const REIHENFOLGE: Record<Herkunft, number> = { typst: 0, dokumenttyp: 1, paket: 2, holen: 3 };
 
 /** Einträge für `modus`, die alle Wörter der Anfrage enthalten; Typst, dann Dokumenttyp, dann Pakete. */
