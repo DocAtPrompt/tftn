@@ -41,7 +41,7 @@ import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
 import { type SkinsJs, skinAnwenden } from "./skin";
-import { type McpAuftrag, type McpJs, mcpAnzeige } from "./mcp";
+import { type McpAuftrag, type McpJs, mcpAnzeige, mcpFragtNoch } from "./mcp";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
@@ -1202,7 +1202,10 @@ function status() {
 
 type HinweisKnopf = { titel: string; aktion: () => void };
 
+let mcpStand: McpJs | null = null;
+
 function hinweis(text: string, knopf?: HinweisKnopf | HinweisKnopf[]) {
+  if (text === "" && mcpFragtNoch(mcpStand)) return mcpNachfragen();
   const h = document.getElementById("hinweis")!;
   h.hidden = text === "";
   h.textContent = text;
@@ -1216,7 +1219,6 @@ function hinweis(text: string, knopf?: HinweisKnopf | HinweisKnopf[]) {
 
 // --- MCP ------------------------------------------------------------------------------------
 
-let mcpStand: McpJs | null = null;
 
 /** Statusleiste und Einstellungen; pausiert nach einem Wechsel durch MCP: nachfragen. */
 function mcpZeigen(m: McpJs) {
@@ -1229,13 +1231,14 @@ function mcpZeigen(m: McpJs) {
   el.title = a.titel;
   el.classList.toggle("wartet", m.an && m.wartet);
   einstellDialog?.mcpZeigen(m);
-  if (m.an && m.wartet && !vorher?.wartet) mcpNachfragen();
+  if (mcpFragtNoch(m) && !mcpFragtNoch(vorher)) mcpNachfragen();
+  // Beantwortet, ausgeschaltet oder in den Einstellungen geändert: Die Frage verschwindet.
+  if (!mcpFragtNoch(m) && mcpFragtNoch(vorher)) hinweis("");
   if (m.fehler) hinweis(m.fehler);
 }
 
 function mcpNachfragen() {
   const antworten = async (aktiv: boolean) => {
-    hinweis("");
     try {
       mcpZeigen(await invoke<McpJs>("mcp_bestaetigen", { aktiv }));
     } catch (fehler) {

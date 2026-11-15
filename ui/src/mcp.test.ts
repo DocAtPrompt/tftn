@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type McpJs, mcpAnzeige, mcpBefehl } from "./mcp";
+import { type McpJs, mcpAnzeige, mcpBefehl, mcpFragtNoch } from "./mcp";
 
 const an: McpJs = { an: true, wartet: false, beim_wechsel_aus: false, programm: "/x/tftn-app", fehler: null };
 
@@ -22,5 +22,14 @@ describe("mcpAnzeige", () => {
   it("an und pausiert unterscheidbar", () => {
     expect(mcpAnzeige(an).text).toBe("MCP an");
     expect(mcpAnzeige({ ...an, wartet: true }).text).toBe("MCP pausiert");
+  });
+});
+
+describe("mcpFragtNoch", () => {
+  it("die Frage bleibt stehen, solange MCP an und pausiert ist", () => {
+    expect(mcpFragtNoch({ ...an, wartet: true })).toBe(true);
+    expect(mcpFragtNoch(an)).toBe(false);
+    expect(mcpFragtNoch({ ...an, an: false, wartet: true })).toBe(false);
+    expect(mcpFragtNoch(null)).toBe(false);
   });
 });

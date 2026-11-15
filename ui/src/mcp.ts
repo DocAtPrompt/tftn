@@ -33,3 +33,9 @@ export function mcpAnzeige(m: McpJs | null): { text: string; titel: string } {
     };
   return { text: t("MCP an"), titel: t("KI-Assistenten dürfen im offenen Dokument arbeiten. Klicken schaltet MCP aus.") };
 }
+
+/** Nach einem Wechsel durch MCP: Die Frage „aktiv lassen?“ bleibt stehen, bis der Benutzer antwortet;
+ *  andere Hinweise dürfen sie nur vorübergehend verdrängen. */
+export function mcpFragtNoch(m: McpJs | null): boolean {
+  return m !== null && m.an && m.wartet;
+}
