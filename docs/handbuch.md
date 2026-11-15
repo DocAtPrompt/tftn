@@ -66,14 +66,14 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
 ## 2. Die Oberfläche
 
 - **Kopf:** links das Projekt (der volle Pfad erscheint beim Darüberfahren), rechts „Neu“ (leeres
-  Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“ und als Symbole Seitenleiste,
-  Schreibansicht und Einstellungen (Zahnrad). In einem schmalen Fenster bleiben nur die Symbole.
+  Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“ und das Zahnrad
+  (Einstellungen). In einem schmalen Fenster bleiben nur die Symbole.
 - **Hinweise** erscheinen in einem Band unter dem Kopf. Kurze Meldungen verschwinden von selbst;
   Fehler und Fragen bleiben, bis man sie mit × schließt oder beantwortet.
 - **Fenster wie Export, Neu oder Fassungen** schließen mit ×, Esc oder einem Klick daneben. Hat man
   in einem Dialog schon etwas eingetippt (etwa einen Projektnamen), schließt ihn nur × oder Esc.
 - **Editor** (links): Typst-Quelltext mit Hervorhebung. Darüber die Knöpfe „Baustein“, „Zitat“,
-  „Gliederung“ und „Seite“.
+  „Gliederung“, „Seite“ und als Symbole Seitenleiste und Schreibansicht.
 - **Vorschau** (rechts): die fertigen Seiten. Ein Klick in die Vorschau springt an die Stelle im Text;
   die Vorschau folgt der Schreibmarke. Rechtsklick öffnet ein Menü mit „Ändern …“ und „Im Code zeigen“.
 - **Seitenleiste** (Cmd/Strg+Umschalt+P): Fächer „Hier“, „Einfügen“, „Formel“, „Seite“, „Dokument“,

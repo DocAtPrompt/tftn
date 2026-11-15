@@ -69,14 +69,14 @@ sync it and keep working on another computer without a network.
 ## 2. The window
 
 - **Header:** the project on the left (hover for the full path); on the right “New” (blank document,
-  from template, import), “Open”, “Versions”, “Export” and, as icons, sidebar, focus view and
-  settings (gear). In a narrow window only the icons remain.
+  from template, import), “Open”, “Versions”, “Export” and the gear (settings). In a narrow window
+  only the icons remain.
 - **Messages** appear in a band below the header. Short notices disappear by themselves; errors and
   questions stay until you close them with × or answer them.
 - **Panels such as Export, New or Versions** close with ×, Esc or a click outside. Once you have
   typed something into a dialog (a project name, say), only × or Esc closes it.
-- **Editor** (left): Typst source with highlighting. Above it: “Block”, “Citation”, “Outline” and
-  “Page”.
+- **Editor** (left): Typst source with highlighting. Above it: “Block”, “Citation”, “Outline”,
+  “Page” and, as icons, sidebar and focus view.
 - **Preview** (right): the finished pages. Clicking in the preview jumps to the matching place in
   the text; the preview follows the cursor. Right-click opens a menu with “Edit …” and “Show in
   code”.
