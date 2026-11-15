@@ -4,7 +4,7 @@
 
 import type { EingesetztJs } from "./bausteine";
 import { type Bereich, type FeldZustand, Folge, einsetzen, formelKnoepfe, nachEingabe, naechstesFeld, symbolEinsetzen } from "./formel";
-import { t } from "./sprache";
+import { t, tn } from "./sprache";
 
 export interface FormelStandJs {
   text: string | null;
@@ -288,7 +288,7 @@ export class FormelFach {
     this.palette.replaceChildren(aufbau);
     for (const g of p.symbole) {
       const d = el("div", "formel-gruppe");
-      d.append(el("h4", "", g.name));
+      d.append(el("h4", "", tn(g.name)));
       const zeile = el("div", "formel-reihe");
       for (const s of g.symbole) {
         zeile.append(

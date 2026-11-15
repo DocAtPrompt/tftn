@@ -302,6 +302,22 @@ pub fn bestand(wurzel: &Path) -> Bestand {
         }
     }
     dateien(&wurzel.join("package-descriptions"), ".toml", &mut daten);
+    // Eingebaute Bausteine (Titel, Gruppen, Parameter im Fach „Hier“), gleich aufgebaut wie ein Manifest.
+    daten.push(wurzel.join("crates/tftn-katalog/eingebaut.toml"));
+    // Gruppen der Formelpalette (`[[gruppe]] name`).
+    let mathe = wurzel.join("crates/tftn-katalog/mathe.toml");
+    let gruppen = std::fs::read_to_string(&mathe)
+        .ok()
+        .and_then(|t| toml::from_str::<toml::Table>(&t).ok())
+        .and_then(|t| t.get("gruppe").and_then(|g| g.as_array()).cloned())
+        .unwrap_or_default();
+    eintragen(
+        rel(&mathe),
+        gruppen
+            .iter()
+            .filter_map(|g| g.get("name").and_then(|n| n.as_str()).map(String::from))
+            .collect(),
+    );
     // Mitgelieferte Skins: ihr `name` steht in der Auswahl „Aussehen“.
     let mut skins = Vec::new();
     dateien(&wurzel.join("skins"), ".toml", &mut skins);
