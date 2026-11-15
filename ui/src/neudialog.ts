@@ -41,7 +41,7 @@ export class NeuDialog {
   private laeuft = false;
 
   constructor(private a: NeuAktionen) {
-    this.huelle = el("div", "neu-dialog");
+    this.huelle = el("div", "neu-dialog neu-vorlage");
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
     this.huelle.setAttribute("aria-label", t("Neues Projekt"));

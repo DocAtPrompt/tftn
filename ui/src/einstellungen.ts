@@ -8,6 +8,7 @@ import { type Aktion, type Belegung, type Konflikt, type Plattform, PLATTFORM, k
 import { dialogAnmelden, bereich } from "./dialoge";
 import { type McpJs, mcpBefehl } from "./mcp";
 import { type SkinsJs, skinOptionen } from "./skin";
+import type { TypenJs } from "./neuprojekt";
 import { t } from "./sprache";
 
 export interface EinstellungenJs {
@@ -49,6 +50,9 @@ export interface EinstellAktionen {
   oberflaecheLesen(): Promise<number>;
   /** Prozent, eine der Stufen; gibt die geltende zurück. Gilt sofort. */
   oberflaecheSetzen(prozent: number): Promise<number>;
+  typenLesen(): Promise<TypenJs>;
+  /** Kopiert `basis` als neuen Typ `name`, zeigt den Ordner; gibt den Pfad zurück. */
+  typAnlegen(basis: string, name: string): Promise<string>;
   mcpLesen(): Promise<McpJs>;
   mcpSetzen(an: boolean): Promise<McpJs>;
   mcpBeimWechsel(aus: boolean): Promise<McpJs>;
@@ -128,6 +132,7 @@ export class EinstellDialog {
   private spracheText: HTMLSpanElement;
   private skin: HTMLSelectElement;
   private groesse!: HTMLSelectElement;
+  private typBasis!: HTMLSelectElement;
   private skinText: HTMLSpanElement;
   private mcpAn: HTMLInputElement;
   private mcpWechsel: HTMLInputElement;
@@ -178,6 +183,12 @@ export class EinstellDialog {
           <button class="einst-zuruecksetzen" title="${t("Wieder den Standardordner dieses Rechners nehmen")}">${t("Zurücksetzen")}</button>
           <button class="einst-zeigen">${t("Im Ordner zeigen")}</button>
         </div>
+        <div class="einst-zeile einst-typ">
+          <label>${t("Eigener Dokumenttyp aus")} <select class="einst-typ-basis"></select></label>
+          <input class="einst-typ-name" placeholder="${t("Name, z. B. Mein Brief")}" spellcheck="false" />
+          <button class="einst-typ-anlegen" title="${t("Kopiert den gewählten Typ unter diesem Namen in den Ordner typen/; dort Vorgaben (vorlage/dokument.toml) und Layout (lib.typ) ändern")}">${t("Anlegen")}</button>
+        </div>
+        <span class="einst-typ-text leiste-hilfe"></span>
       </div>
       <div class="palette-fuss">${t("Zeile anklicken und das neue Kürzel drücken (Esc bricht ab, Entf = keine Belegung) · Esc schließt die Einstellungen")}</div>`;
     document.body.append(this.huelle);
@@ -210,6 +221,24 @@ export class EinstellDialog {
         this.spracheText.textContent = String(fehler);
       }
     });
+    const typBasis = q<HTMLSelectElement>(".einst-typ-basis");
+    const typName = q<HTMLInputElement>(".einst-typ-name");
+    const typText = q<HTMLSpanElement>(".einst-typ-text");
+    const typAnlegen = async () => {
+      try {
+        const pfad = await this.a.typAnlegen(typBasis.value, typName.value);
+        typName.value = "";
+        typText.textContent = t("Angelegt: {pfad} – Vorgaben in vorlage/dokument.toml, Layout in lib.typ. „Neu“ → „Aus Vorlage …“ bietet ihn an.", { pfad });
+        this.typenZeigen();
+      } catch (fehler) {
+        typText.textContent = String(fehler);
+      }
+    };
+    q(".einst-typ-anlegen").addEventListener("click", () => void typAnlegen());
+    typName.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") void typAnlegen();
+    });
+    this.typBasis = typBasis;
     const groesse = q<HTMLSelectElement>(".einst-groesse-wahl");
     groesse.addEventListener("change", async () => {
       groesse.value = String(await this.a.oberflaecheSetzen(Number(groesse.value)).catch(() => 100));
@@ -302,6 +331,7 @@ export class EinstellDialog {
     this.zeichnen();
     this.suche.focus();
     void this.sprachenZeichnen();
+    this.typenZeigen();
     void this.a.oberflaecheLesen().then(
       (p) => (this.groesse.value = String(p)),
       () => {},
@@ -322,6 +352,25 @@ export class EinstellDialog {
     this.mcpWechsel.checked = m.beim_wechsel_aus;
     this.mcpBefehl.value = mcpBefehl(m.programm);
     if (m.fehler) this.mcpText.textContent = m.fehler;
+  }
+
+  /** Auswahl der Vorbilder für „Eigener Dokumenttyp“; der Brief ist vorgewählt. */
+  private typenZeigen() {
+    void this.a.typenLesen().then(
+      (j) => {
+        const vorher = this.typBasis.value || "tftn-brief";
+        this.typBasis.replaceChildren(
+          ...j.typen.map((typ) => {
+            const o = document.createElement("option");
+            o.value = typ.name;
+            o.textContent = typ.herkunft === "eigen" ? `${typ.titel} (${t("eigen")})` : typ.titel;
+            return o;
+          }),
+        );
+        if (j.typen.some((typ) => typ.name === vorher)) this.typBasis.value = vorher;
+      },
+      () => {},
+    );
   }
 
   /** Auswahl „Aussehen“ und darunter Warnungen des Skins bzw. der Ordner für eigene. */

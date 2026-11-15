@@ -1659,3 +1659,21 @@ button:hover .ikone {
   gap: 6px;
   margin: 6px 0;
 }
+
+/* „Neu aus Vorlage“: nur die Typenliste scrollt, Ordner, Name und „Anlegen“ bleiben stehen. */
+.neu-dialog.neu-vorlage {
+  overflow: hidden;
+}
+.neu-vorlage .neu-rumpf {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+.neu-vorlage .neu-links,
+.neu-vorlage .neu-rechts {
+  min-height: 0;
+  overflow-y: auto;
+}
+.neu-vorlage .neu-links {
+  padding-right: 4px;
+}

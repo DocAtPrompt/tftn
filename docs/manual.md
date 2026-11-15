@@ -160,6 +160,13 @@ form doesn't know or to repair a broken file: “Apply” (Cmd/Ctrl+Enter) only 
 over the bundled ones. A document type is a Typst package with a `[tool.tftn]` section in
 `typst.toml`.
 
+**Creating your own document type**, such as a letter with your own sender: Settings → “Custom
+document type from”, choose an existing type, enter a name, “Create”. TFTN copies it to
+`typen/<name>/` and shows the folder. There, `vorlage/dokument.toml` holds the defaults of every new
+document (English template: `vorlage-en/`) and `lib.typ` the layout. The new type appears under
+“New” → “From template …”; existing documents stay as they are. The copy brings its own fonts and
+travels with the settings folder to other computers.
+
 ## 6. Packages from Typst Universe
 
 The “Packages” panel (Cmd/Ctrl+Shift+Y) searches the package index by name, description and

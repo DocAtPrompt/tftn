@@ -5,6 +5,7 @@
 
 pub mod aktualisieren;
 pub mod anlegen;
+pub mod eigen;
 pub mod typen;
 
 use std::fmt;

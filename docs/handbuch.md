@@ -157,6 +157,14 @@ zurück.
 **Eigene Dokumenttypen** liegen im Ordner `typen/` des Einstellungsordners und haben Vorrang vor den
 mitgelieferten. Ein Dokumenttyp ist ein Typst-Paket mit einem Abschnitt `[tool.tftn]` in `typst.toml`.
 
+**Eigenen Dokumenttyp anlegen**, etwa einen Brief mit dem eigenen Absender: Einstellungen → „Eigener
+Dokumenttyp aus“ einen vorhandenen Typ wählen, einen Namen eingeben, „Anlegen“. TFTN kopiert ihn nach
+`typen/<name>/` und zeigt den Ordner. Darin stehen die Vorgaben jedes neuen Dokuments in
+`vorlage/dokument.toml` (englische Vorlage: `vorlage-en/`) und das Layout in `lib.typ`. Der neue Typ
+erscheint unter „Neu“ → „Aus Vorlage …“; Dokumente, die schon bestehen, bleiben, wie sie sind. Die
+Kopie bringt ihre Schriften mit und lässt sich mit dem Einstellungsordner auf andere Rechner
+mitnehmen.
+
 ## 6. Pakete aus Typst Universe
 
 Das Fach „Pakete“ (Cmd/Strg+Umschalt+Y) sucht im Paketindex nach Name, Beschreibung und Schlagwort.

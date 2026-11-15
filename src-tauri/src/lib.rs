@@ -851,6 +851,27 @@ fn typquellen(app: &tauri::AppHandle) -> Result<(Vec<typen::Typquelle>, PathBuf)
     ))
 }
 
+/// „Eigener Dokumenttyp …“: kopiert `basis` als neuen Typ `name` in den Ordner `typen/` und zeigt ihn.
+#[tauri::command(async)]
+fn typ_eigen_anlegen(app: tauri::AppHandle, basis: String, name: String) -> Result<String, String> {
+    let (mut quellen, eigen) = typquellen(&app)?;
+    if !quellen
+        .iter()
+        .any(|q| q.herkunft == tftn_manifest::typen::Herkunft::Eigen)
+    {
+        quellen.insert(
+            0,
+            typen::Typquelle {
+                ordner: eigen,
+                herkunft: tftn_manifest::typen::Herkunft::Eigen,
+            },
+        );
+    }
+    let ordner = tftn_manifest::eigen::eigenen_typ_anlegen(&quellen, &basis, &name)?;
+    word::im_ordner_zeigen(&ordner)?;
+    Ok(ordner.display().to_string())
+}
+
 #[tauri::command]
 fn typen_liste(
     app: tauri::AppHandle,
@@ -3301,6 +3322,7 @@ pub fn run() {
             mcp_antwort,
             mcp_wechsel_vormerken,
             oberflaeche_lesen,
+            typ_eigen_anlegen,
             oberflaeche_setzen,
         ])
         .on_window_event(|fenster, ereignis| {

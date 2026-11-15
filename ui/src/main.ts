@@ -1585,6 +1585,8 @@ async function start() {
       }
     },
     sprachvorlage: () => invoke<string>("sprachvorlage_anlegen"),
+    typenLesen: () => invoke<TypenJs>("typen_liste").then(texteUebersetzen),
+    typAnlegen: (basis, name) => invoke<string>("typ_eigen_anlegen", { basis, name }),
     oberflaecheLesen: () => invoke<number>("oberflaeche_lesen"),
     oberflaecheSetzen: async (prozent) => {
       const p = await invoke<number>("oberflaeche_setzen", { prozent });
