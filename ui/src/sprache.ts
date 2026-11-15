@@ -28,6 +28,16 @@ export function zahl(wert: number): string {
   }
 }
 
+/** Dezimaltrennzeichen der Oberflächensprache. */
+export function dezimalzeichen(): string {
+  if (kennung === "de") return ",";
+  try {
+    return (1.5).toLocaleString(kennung).charAt(1) || ".";
+  } catch {
+    return ".";
+  }
+}
+
 function einsetzen(vorlage: string, werte?: Record<string, string | number>): string {
   if (!werte) return vorlage;
   return vorlage.replace(/\{([\p{L}_][\p{L}\p{N}_]*)\}/gu, (ganz, name: string) =>

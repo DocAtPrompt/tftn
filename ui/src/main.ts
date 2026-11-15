@@ -46,7 +46,7 @@ import { ikonenSetzen } from "./ikonen";
 import { KnopfMenue } from "./knopfmenue";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
-import { t, texteUebersetzen } from "./sprache";
+import { dezimalzeichen, t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
 import { type Fach, type HierJs, type MarkupAktion, Seitenleiste } from "./seitenleiste";
 import { DokumentFach } from "./dokumentfach";
@@ -57,6 +57,7 @@ import type { FormularJs, ProjektJs, VergleichJs } from "./formular";
 import { NeuDialog, PfadDialog } from "./neudialog";
 import { einDialogOffen, escAktivieren } from "./dialoge";
 import { kontextmenueBegrenzen } from "./kontextmenue";
+import { dauerText, syncText } from "./statuszeile";
 import * as schreibansicht from "./schreibansicht";
 import { type FassungJs, FassungenDialog } from "./fassungen";
 import { type GliederungJs, GliederungLeiste } from "./gliederung";
@@ -158,11 +159,24 @@ function gezeichnet(rev: number) {
     if (latenzen.length > 200) latenzen.shift();
   }
   for (const r of tastenZeit.keys()) if (r <= rev) tastenZeit.delete(r);
+  dauerZeigen();
+}
+
+/** Dauer des letzten Typst-Laufs (aus dem Ereignis `vorschau`). */
+let letzteDauer: number | null = null;
+
+/** Statusleiste rechts: wie lange Typst zuletzt gebraucht hat; in `tauri dev` dazu die Latenz
+ *  Taste → Vorschau (PLAN-M1 4.4). */
+function dauerZeigen() {
+  const teile: string[] = [];
+  if (letzteDauer !== null) teile.push(t("Vorschau: {dauer}", { dauer: dauerText(letzteDauer, dezimalzeichen()) }));
   const s = [...latenzen].sort((a, b) => a - b);
   const q = (p: number) => s[Math.min(s.length - 1, Math.round((s.length - 1) * p))];
-  document.getElementById("latenz")!.textContent = s.length
-    ? t("Taste → Vorschau p50 {p50} ms · p95 {p95} ms (n={n})", { p50: q(0.5).toFixed(0), p95: q(0.95).toFixed(0), n: s.length })
-    : "";
+  if (import.meta.env.DEV && s.length)
+    teile.push(t("Taste → Vorschau p50 {p50} ms · p95 {p95} ms (n={n})", { p50: q(0.5).toFixed(0), p95: q(0.95).toFixed(0), n: s.length }));
+  const el = document.getElementById("latenz")!;
+  el.textContent = teile.join(" · ");
+  el.title = t("Wie lange Typst für den letzten Lauf gebraucht hat (Übersetzen und Satz)");
 }
 
 function sichtbar(): [number, number] {
@@ -1211,15 +1225,9 @@ async function paketWechseln(spec: string, version: string): Promise<string> {
 
 function status() {
   const s = document.getElementById("sync")!;
-  s.textContent = t("Rev {rev} · Prüfsummen gleich {gleich} · abweichend {abweichend} · Neusync {neusync} · Fehler {fehler} · {zustand}", {
-    rev,
-    gleich: zahlen.abgleiche,
-    abweichend: zahlen.abweichungen,
-    neusync: zahlen.neusyncs,
-    fehler: zahlen.fehler,
-    zustand: ungespeichert ? t("ungespeichert") : t("gespeichert"),
-  });
-  s.classList.toggle("warnung", zahlen.abweichungen + zahlen.fehler > 0);
+  const z = syncText(zahlen, rev, ungespeichert, import.meta.env.DEV);
+  s.textContent = z.text;
+  s.classList.toggle("warnung", z.warnung);
 }
 
 type HinweisKnopf = { titel: string; aktion: () => void };
@@ -1607,7 +1615,16 @@ async function start() {
       try {
         await invoke("sprache_setzen", { kennung });
         // Neu laden wie bei einem Projektwechsel; ein Dokument ohne Namen braucht vorher einen.
-        if (!(await wechselNachSpeichern(vorWechsel, async () => location.reload()))) {
+        // Danach sind die Einstellungen wieder offen.
+        const neuLaden = async () => {
+          try {
+            sessionStorage.setItem(NACH_START, "einstellungen");
+          } catch {
+            // ohne sessionStorage bleiben sie eben zu
+          }
+          location.reload();
+        };
+        if (!(await wechselNachSpeichern(vorWechsel, neuLaden))) {
           meldung(t("Die Sprache gilt ab dem nächsten Start."));
         }
       } catch (fehler) {
@@ -1696,6 +1713,8 @@ async function start() {
   });
   await listen<VorschauEreignis>("vorschau", (e) => {
     vorschau.aktualisieren(e.payload);
+    letzteDauer = e.payload.dauer_ms;
+    dauerZeigen();
     // Markierungen nur, wenn sie zum aktuellen Text passen; sonst kommt bald ein neuer Lauf.
     if (view && e.payload.rev === rev) {
       const laenge = view.state.doc.length;
@@ -1829,6 +1848,7 @@ async function start() {
     // ohne sessionStorage nichts zu tun
   }
   if (nachStart === "dokument") seitenleisteOeffnen("dokument");
+  else if (nachStart === "einstellungen") einstellDialog.oeffnen();
   try {
     const m = sessionStorage.getItem(NACH_IMPORT);
     sessionStorage.removeItem(NACH_IMPORT);
