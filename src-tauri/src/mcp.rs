@@ -57,6 +57,30 @@ pub struct Mcp {
     /// Aufträge an den Editor, die auf Antwort warten.
     offen: HashMap<u64, mpsc::Sender<Result<bool, String>>>,
     naechste: u64,
+    /// Ziel eines Wechsels durch MCP. Wird erst nach dem Speichern vorgemerkt, weil das Benennen
+    /// eines Dokuments ohne Namen die Vormerkung sonst überschreibt.
+    ziel: Option<PathBuf>,
+}
+
+/// Merkt das Ziel eines MCP-Wechsels für das Neuladen vor (nach dem Speichern im Editor).
+pub fn vormerken(
+    ziel: Option<PathBuf>,
+    naechstes: &mut Option<PathBuf>,
+    wechsel: &mut Wechsel,
+) -> Result<(), String> {
+    let ziel = ziel.ok_or("kein Wechsel durch MCP vorgemerkt")?;
+    *naechstes = Some(ziel);
+    *wechsel = Wechsel::Mcp;
+    Ok(())
+}
+
+/// Befehl des Editors, sobald vor einem MCP-Wechsel gespeichert (und benannt) ist.
+pub fn wechsel_vormerken(app: &AppHandle) -> Result<(), String> {
+    let zustand = app.state::<Zustand>();
+    let ziel = zustand.mcp.lock().unwrap().ziel.take();
+    let mut naechstes = zustand.naechstes.lock().unwrap();
+    let mut wechsel = zustand.wechsel.lock().unwrap();
+    vormerken(ziel, &mut naechstes, &mut wechsel)
 }
 
 #[derive(Serialize, Clone)]
@@ -285,7 +309,13 @@ fn ausfuehren(app: &AppHandle, werkzeug: &str, a: &Value) -> Result<Ergebnis, St
                 false,
                 Some(&tftn_sprachen::kennung()),
             )?;
-            wechseln(app, ziel)
+            wechseln(app, ziel.clone()).map_err(|e| {
+                format!(
+                    "{e} Das Projekt ist aber angelegt: {}; zum Öffnen `dokument_oeffnen` mit diesem \
+                     Ordner, nicht noch einmal anlegen.",
+                    ziel.display()
+                )
+            })
         }
         "dokument_oeffnen" => {
             let ordner = typen::pfad_aus_eingabe(&pflicht("ordner")?).ok_or("`ordner` ist leer")?;
@@ -506,10 +536,10 @@ fn typen_auflisten(app: &AppHandle) -> Result<Ergebnis, String> {
 /// einem) und lädt neu; dann wartet der Aufruf, bis das neue Dokument offen ist.
 fn wechseln(app: &AppHandle, ziel: PathBuf) -> Result<Ergebnis, String> {
     let zustand = app.state::<Zustand>();
-    *zustand.naechstes.lock().unwrap() = Some(ziel.clone());
-    *zustand.wechsel.lock().unwrap() = Wechsel::Mcp;
+    zustand.mcp.lock().unwrap().ziel = Some(ziel.clone());
     let gewechselt = rufen(app, json!({ "art": "wechseln" }), Duration::from_secs(280));
     if !matches!(gewechselt, Ok(true)) {
+        zustand.mcp.lock().unwrap().ziel = None;
         let mut naechstes = zustand.naechstes.lock().unwrap();
         if naechstes.as_ref() == Some(&ziel) {
             *naechstes = None;
@@ -582,6 +612,21 @@ pub fn bruecke() -> std::process::ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn vormerken_gewinnt_gegen_das_benennen_des_entwurfs() {
+        // Der Entwurf wurde vor dem Wechsel benannt: das merkt sich den umbenannten Ordner.
+        let mut naechstes = Some(PathBuf::from("/Dokumente/Benannt"));
+        let mut wechsel = Wechsel::Umbenannt;
+        vormerken(Some(PathBuf::from("/ziel")), &mut naechstes, &mut wechsel).unwrap();
+        assert_eq!(naechstes, Some(PathBuf::from("/ziel")));
+        assert_eq!(wechsel, Wechsel::Mcp);
+
+        let mut naechstes = None;
+        let mut wechsel = Wechsel::Benutzer;
+        assert!(vormerken(None, &mut naechstes, &mut wechsel).is_err());
+        assert_eq!((naechstes, wechsel), (None, Wechsel::Benutzer));
+    }
 
     #[test]
     fn lauf_text_nennt_seiten_meldungen_und_rueckstand() {

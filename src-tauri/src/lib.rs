@@ -323,28 +323,49 @@ fn zuletzt_datei(app: &tauri::AppHandle) -> Option<PathBuf> {
 /// Im Entwurf: der Name, den das Speichern vorschlägt.
 const NAMENSVORSCHLAG: &str = ".tftn-name";
 
-/// Dateiwahl (macOS); `None` bei Abbruch und auf anderen Systemen.
-fn datei_waehlen(aufforderung: &str) -> Option<PathBuf> {
+#[derive(Clone, Copy)]
+enum Wahl {
+    Datei,
+    Ordner,
+}
+
+/// Argumente für `osascript`: JavaScript statt AppleScript, weil `activate` dort sofort wirkt
+/// (AppleScripts „tell me to activate“ kostete rund zwei Sekunden, bevor der Dialog erschien).
+/// Die Aufforderung kommt als Argument, nicht in den Skripttext.
+fn wahl_argumente(wahl: Wahl, aufforderung: &str) -> Vec<String> {
+    let funktion = match wahl {
+        Wahl::Datei => "chooseFile",
+        Wahl::Ordner => "chooseFolder",
+    };
+    let skript = format!(
+        "function run(argv) {{ var a = Application.currentApplication(); \
+         a.includeStandardAdditions = true; a.activate(); \
+         return a.{funktion}({{ withPrompt: argv[0] }}).toString(); }}"
+    );
+    ["-l", "JavaScript", "-e", &skript, aufforderung]
+        .map(String::from)
+        .to_vec()
+}
+
+/// Systemdialog zur Datei- oder Ordnerwahl (macOS); `None` bei Abbruch und auf anderen Systemen.
+fn waehlen(wahl: Wahl, aufforderung: &str) -> Option<PathBuf> {
     if !cfg!(target_os = "macos") {
         return None;
     }
     let aus = std::process::Command::new("osascript")
-        .args([
-            "-e",
-            "tell me to activate",
-            "-e",
-            &format!(
-                "POSIX path of (choose file with prompt \"{}\")",
-                applescript_text(aufforderung)
-            ),
-        ])
+        .args(wahl_argumente(wahl, aufforderung))
         .output()
         .ok()?;
     if !aus.status.success() {
         return None;
     }
     let pfad = String::from_utf8(aus.stdout).ok()?;
-    Some(PathBuf::from(pfad.trim_end_matches('\n')))
+    let pfad = pfad.trim_end_matches('\n');
+    (!pfad.is_empty()).then(|| PathBuf::from(pfad))
+}
+
+fn datei_waehlen(aufforderung: &str) -> Option<PathBuf> {
+    waehlen(Wahl::Datei, aufforderung)
 }
 
 #[tauri::command(async)]
@@ -432,29 +453,10 @@ fn startordner(app: &tauri::AppHandle, waehlen: bool) -> Result<PathBuf, String>
     }
 }
 
-/// Systemdialog zur Ordnerwahl; `None` bei Abbruch. Unter macOS über AppleScript (keine
+/// Systemdialog zur Ordnerwahl; `None` bei Abbruch. Unter macOS über `osascript` (keine
 /// zusätzliche Abhängigkeit), sonst noch keiner.
 fn ordner_waehlen(aufforderung: &str) -> Option<PathBuf> {
-    if !cfg!(target_os = "macos") {
-        return None;
-    }
-    let aus = std::process::Command::new("osascript")
-        .args([
-            "-e",
-            "tell me to activate",
-            "-e",
-            &format!(
-                "POSIX path of (choose folder with prompt \"{}\")",
-                applescript_text(aufforderung)
-            ),
-        ])
-        .output()
-        .ok()?;
-    if !aus.status.success() {
-        return None;
-    }
-    let pfad = String::from_utf8(aus.stdout).ok()?;
-    Some(PathBuf::from(pfad.trim_end_matches('\n')))
+    waehlen(Wahl::Ordner, aufforderung)
 }
 
 /// Hängt eine Zeile an `<projekt>/_lokal/tftn-sync.log` an (nicht synchronisiert, nicht in Git).
@@ -2881,11 +2883,6 @@ fn einstellungsordner_zeigen(app: tauri::AppHandle) -> Result<(), String> {
     word::im_ordner_zeigen(&ort.ordner)
 }
 
-/// Text für ein AppleScript-Literal: `\\` und `"` maskiert (Aufforderungen kommen aus Sprachdateien).
-fn applescript_text(text: &str) -> String {
-    text.replace('\\', "\\\\").replace('"', "\\\"")
-}
-
 // --- Sprache der Oberfläche ---------------------------------------------------------------
 
 /// Ordner der mitgelieferten und der eigenen Sprachdateien.
@@ -3086,6 +3083,12 @@ fn mcp_bestaetigen(app: tauri::AppHandle, aktiv: bool) -> mcp::McpJs {
     mcp::js(&app, fehler)
 }
 
+/// Vor einem MCP-Wechsel ist gespeichert (und ein Dokument ohne Namen benannt): Ziel vormerken.
+#[tauri::command]
+fn mcp_wechsel_vormerken(app: tauri::AppHandle) -> Result<(), String> {
+    mcp::wechsel_vormerken(&app)
+}
+
 /// Antwort des Editors auf einen MCP-Auftrag (`ok`: ausgeführt; `false`: veraltet).
 #[tauri::command]
 fn mcp_antwort(app: tauri::AppHandle, id: u64, ok: bool, fehler: Option<String>) {
@@ -3260,6 +3263,7 @@ pub fn run() {
             mcp_beim_wechsel_aus,
             mcp_bestaetigen,
             mcp_antwort,
+            mcp_wechsel_vormerken,
         ])
         .on_window_event(|fenster, ereignis| {
             if let tauri::WindowEvent::CloseRequested { .. } = ereignis {
@@ -3318,15 +3322,19 @@ mod tests {
         let _ = std::fs::remove_dir_all(&o);
     }
 
-    /// Fachartikel regelt die Literatur selbst; ein leeres Dokument braucht `#bibliography(…)`.
+    /// Die Aufforderung geht unverändert als eigenes Argument an das Skript, nie in den Skripttext.
     #[test]
-    fn aufforderung_bricht_applescript_nicht() {
-        assert_eq!(
-            applescript_text(r#"Choose "folder" \ x"#),
-            r#"Choose \"folder\" \\ x"#
-        );
+    fn wahldialog_reicht_die_aufforderung_als_argument() {
+        let a = wahl_argumente(Wahl::Ordner, r#"Wählen "x" \ ');"#);
+        assert_eq!(a[0], "-l");
+        assert_eq!(a[1], "JavaScript");
+        assert!(a[3].contains("chooseFolder"));
+        assert!(!a[3].contains("Wählen"));
+        assert_eq!(a[4], r#"Wählen "x" \ ');"#);
+        assert!(wahl_argumente(Wahl::Datei, "y")[3].contains("chooseFile"));
     }
 
+    /// Fachartikel regelt die Literatur selbst; ein leeres Dokument braucht `#bibliography(…)`.
     #[test]
     fn wer_das_literaturverzeichnis_setzt() {
         let o = std::env::temp_dir().join(format!("tftn-app-verzeichnis-{}", std::process::id()));

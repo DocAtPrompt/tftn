@@ -58,6 +58,22 @@ export async function wechselNachSpeichern(speichern: () => Promise<boolean>, we
   return true;
 }
 
+/** Eine gemeinsame Sperre: Solange ein Aufruf läuft, werden weitere übergangen (`false`), etwa
+ *  mehrfaches Klicken auf „Öffnen“, das sonst mehrere Systemdialoge öffnet. */
+export function sperre(): (f: () => Promise<unknown>) => Promise<boolean> {
+  let laeuft = false;
+  return async (f) => {
+    if (laeuft) return false;
+    laeuft = true;
+    try {
+      await f();
+      return true;
+    } finally {
+      laeuft = false;
+    }
+  };
+}
+
 /** Steht im Dokument ohne Namen schon etwas außer der Sprachzeile der Vorlage? */
 export function entwurfHatText(text: string): boolean {
   return (

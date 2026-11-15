@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type TypJs, namePruefen, oeffnenArt, typenOrdnen, wechselNachSpeichern, zielPfad, entwurfHatText, brauchtListe } from "./neuprojekt";
+import { type TypJs, namePruefen, oeffnenArt, typenOrdnen, wechselNachSpeichern, zielPfad, entwurfHatText, brauchtListe, sperre } from "./neuprojekt";
 
 describe("name_pruefen", () => {
   it("gleiche Fälle wie Rust name_pruefen", () => {
@@ -89,5 +89,31 @@ describe("brauchtListe", () => {
   it("ohne_angaben_nichts", () => {
     expect(brauchtListe([])).toEqual(["Nichts weiter – einfach losschreiben."]);
     expect(brauchtListe(undefined)).toEqual(["Nichts weiter – einfach losschreiben."]);
+  });
+});
+
+describe("einzeln", () => {
+  it("ignoriert Aufrufe, solange einer läuft, und gibt danach wieder frei", async () => {
+    const einzeln = sperre();
+    let fertig!: () => void;
+    let aufrufe = 0;
+    const langsam = () => {
+      aufrufe++;
+      return new Promise<void>((r) => (fertig = r));
+    };
+    const erster = einzeln(langsam);
+    expect(await einzeln(langsam)).toBe(false);
+    expect(await einzeln(async () => void aufrufe++)).toBe(false);
+    expect(aufrufe).toBe(1);
+    fertig();
+    expect(await erster).toBe(true);
+    expect(await einzeln(async () => void aufrufe++)).toBe(true);
+    expect(aufrufe).toBe(2);
+  });
+
+  it("gibt auch nach einem Fehler frei", async () => {
+    const einzeln = sperre();
+    await expect(einzeln(async () => Promise.reject(new Error("x")))).rejects.toThrow("x");
+    expect(await einzeln(async () => {})).toBe(true);
   });
 });

@@ -60,7 +60,7 @@ import { type Zahlen, zahlText } from "./zaehler";
 import { type RechtschreibungJs, falschSetzen, ohneIgnorierte, rechtschreibMenue } from "./rechtschreibung";
 import { abbildungText, blockEinfuegen, eingefuegterName, istBild } from "./bildeinfuegen";
 import { SeiteFach, type SeitenFeld, type SeitenJs } from "./seitefach";
-import { type TypenJs, oeffnenArt, wechselNachSpeichern, entwurfHatText } from "./neuprojekt";
+import { type TypenJs, oeffnenArt, wechselNachSpeichern, entwurfHatText, sperre } from "./neuprojekt";
 import type { Wert } from "./werte";
 import { HALTEN_MS, type MarkenEreignis, MarkenSchalter } from "./marken";
 import { type MarkeJs, Popover, markenErweiterung, setzeMarken } from "./markenansicht";
@@ -528,10 +528,10 @@ function ausfuehren(id: string): boolean {
       void (entwurf ? entwurfBenennen(true) : speichern());
       return true;
     case "app/neu":
-      void neuesDokument();
+      void einzeln(neuesDokument);
       return true;
     case "app/oeffnen":
-      void projektWechseln();
+      void einzeln(projektWechseln);
       return true;
     case "auszeichnung/ebene-plus":
       markupAktion("ebene-plus");
@@ -1094,6 +1094,9 @@ async function importieren() {
 }
 let neuDialog: NeuDialog | undefined;
 
+/** Öffnen, Neu, Importieren und die Ordnerwahl: immer nur ein Dialog bzw. Wechsel zugleich. */
+const einzeln = sperre();
+
 let pfadDialog: PfadDialog | undefined;
 
 /** Speichern, ein anderes Projekt wählen (Systemdialog am Mac, Pfad unter Windows), dann neu laden. */
@@ -1276,11 +1279,17 @@ async function mcpAuftrag(a: McpAuftrag) {
       });
       await antwort(true);
     } else {
-      const ok = await wechselNachSpeichern(vorWechsel, async () => {
-        await antwort(true);
-        location.reload();
+      // Ziel erst jetzt vormerken: Das Benennen eines Dokuments ohne Namen merkt sich sonst sich selbst.
+      let ok = false;
+      const lief = await einzeln(async () => {
+        ok = await wechselNachSpeichern(vorWechsel, async () => {
+          await invoke("mcp_wechsel_vormerken");
+          await antwort(true);
+          location.reload();
+        });
       });
-      if (!ok) await antwort(false);
+      if (!lief) await antwort(false, "In TFTN ist gerade ein Dialog zum Öffnen oder Anlegen offen; bitte später noch einmal.");
+      else if (!ok) await antwort(false);
     }
   } catch (fehler) {
     await antwort(false, String(fehler));
@@ -1362,7 +1371,13 @@ async function start() {
   neuDialog = new NeuDialog({
     typen: () => invoke<TypenJs>("typen_liste").then(texteUebersetzen),
     vorschaubild: (name) => invoke<string>("typ_vorschaubild", { name }),
-    ordnerWaehlen: () => invoke<string | null>("ordner_waehlen_dialog", { aufforderung: t("Ordner für das neue Projekt wählen") }),
+    ordnerWaehlen: async () => {
+      let ordner: string | null = null;
+      await einzeln(async () => {
+        ordner = await invoke<string | null>("ordner_waehlen_dialog", { aufforderung: t("Ordner für das neue Projekt wählen") });
+      });
+      return ordner;
+    },
     ordnerdialog: PLATTFORM === "mac",
     // Erst speichern, dann anlegen (Rust merkt sich dabei das neue Projekt), dann neu laden: So bleibt
     // bei einem Speicherfehler alles, wie es war (Abschlussprüfung AP8).
@@ -1384,8 +1399,8 @@ async function start() {
     },
   });
   document.getElementById("neu-knopf")!.addEventListener("click", () => void neuDialog?.oeffnen());
-  document.getElementById("oeffnen-knopf")!.addEventListener("click", () => void projektWechseln());
-  document.getElementById("import-knopf")!.addEventListener("click", () => void importieren());
+  document.getElementById("oeffnen-knopf")!.addEventListener("click", () => void einzeln(projektWechseln));
+  document.getElementById("import-knopf")!.addEventListener("click", () => void einzeln(importieren));
   const fassungen = new FassungenDialog({
     liste: async () => {
       await kette;
