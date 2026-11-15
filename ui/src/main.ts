@@ -56,6 +56,7 @@ import { type Treffer, verbindungText } from "./pakete";
 import type { FormularJs, ProjektJs, VergleichJs } from "./formular";
 import { NeuDialog, PfadDialog } from "./neudialog";
 import { einDialogOffen, escAktivieren } from "./dialoge";
+import { kontextmenueBegrenzen } from "./kontextmenue";
 import * as schreibansicht from "./schreibansicht";
 import { type FassungJs, FassungenDialog } from "./fassungen";
 import { type GliederungJs, GliederungLeiste } from "./gliederung";
@@ -1375,6 +1376,7 @@ function skinsSetzen(s: SkinsJs) {
 
 async function start() {
   escAktivieren();
+  kontextmenueBegrenzen();
   ikonenSetzen(document.body);
   document.getElementById("hinweis-zu")!.addEventListener("click", () => hinweis(""));
   // Skin zuerst, damit das Fenster nicht erst in den Standardfarben erscheint.
