@@ -2,7 +2,8 @@
 // und kompiliert die Vorschau.
 
 import { meldungMit } from "./meldung";
-import { type ChangeSet, Compartment, EditorState, Prec, StateEffect, StateField, type Transaction } from "@codemirror/state";
+import { type ChangeSet, Compartment, EditorState, Prec, StateEffect, StateField, type Text, type Transaction } from "@codemirror/state";
+import { type Angebot, umwandelnAngebot } from "./umwandeln";
 import {
   Decoration,
   type DecorationSet,
@@ -242,6 +243,7 @@ const synchron = EditorView.updateListener.of((u: ViewUpdate) => {
   if (u.selectionSet || u.docChanged) stelleZeigenSpaeter();
   if (u.docChanged) markenEreignis({ art: "dokument-geaendert" });
   if (u.docChanged) gliederungSpaeter();
+  if (u.docChanged && umwandelnAngebotStand && u.state.doc !== umwandelnAngebotStand.doc) umwandelnAngebotVerwerfen();
   if (u.docChanged) formelFach?.aenderung((p) => u.changes.mapPos(p, 1));
   else if (u.viewportChanged && markenSichtbar) markenLaden();
 });
@@ -984,12 +986,77 @@ const bildAblage = EditorView.domEventHandlers({
   },
   paste(e, v) {
     const bilder = bilderAus(e.clipboardData?.files);
-    if (bilder.length === 0) return false;
-    e.preventDefault();
-    void bilderEinfuegen(bilder, v.state.selection.main.head);
-    return true;
+    if (bilder.length > 0) {
+      e.preventDefault();
+      void bilderEinfuegen(bilder, v.state.selection.main.head);
+      return true;
+    }
+    return einfuegenMitAngebot(e, v);
   },
 });
+
+// --- Einfügen mit Umwandlung (Markdown, HTML) ----------------------------------------------
+
+/** Das zuletzt eingefügte Stück, solange seither nichts getippt wurde. */
+let umwandelnAngebotStand: { doc: Text; von: number; bis: number; quelle: string; art: Angebot } | null = null;
+let umwandelnAngebotText = "";
+
+/** Sieht der Text nach Markdown oder formatiertem HTML aus: wie gewohnt einfügen und im
+ *  Hinweisband „In Typst umwandeln“ anbieten. Sonst übernimmt CodeMirror (`false`). */
+function einfuegenMitAngebot(e: ClipboardEvent, v: EditorView): boolean {
+  const text = e.clipboardData?.getData("text/plain") ?? "";
+  const html = e.clipboardData?.getData("text/html") ?? "";
+  const art = umwandelnAngebot(text, html);
+  if (art === null || v.state.selection.ranges.length > 1) return false;
+  e.preventDefault();
+  const auswahl = v.state.selection.main;
+  const vorher = v.state.doc.length;
+  v.dispatch(v.state.replaceSelection(text), { userEvent: "input.paste", scrollIntoView: true });
+  const bis = auswahl.to + (v.state.doc.length - vorher);
+  umwandelnAngebotStand = { doc: v.state.doc, von: auswahl.from, bis, quelle: art === "html" ? html : text, art };
+  umwandelnAngebotText = art === "html" ? t("Formatierter Text eingefügt.") : t("Sieht nach Markdown aus.");
+  hinweis(umwandelnAngebotText, { titel: t("In Typst umwandeln"), aktion: () => void umwandelnAusfuehren() }, "kurz");
+  return true;
+}
+
+/** Nach jeder anderen Änderung gilt das Angebot nicht mehr. */
+function umwandelnAngebotVerwerfen() {
+  if (!umwandelnAngebotStand) return;
+  umwandelnAngebotStand = null;
+  if (document.getElementById("hinweis-text")?.textContent === umwandelnAngebotText) hinweis("");
+}
+
+async function umwandelnAusfuehren() {
+  const a = umwandelnAngebotStand;
+  if (!a) return;
+  hinweis("");
+  try {
+    const u = await invoke<{ text: string; hinweise: string[] }>("einfuegen_umwandeln", {
+      text: a.quelle,
+      html: a.art === "html",
+    });
+    if (view.state.doc !== a.doc) {
+      hinweis(t("Inzwischen getippt – nicht umgewandelt."));
+      return;
+    }
+    // Pandoc schließt mit einem Zeilenumbruch; mitten im Satz eingefügt stört er.
+    const eingefuegt = view.state.sliceDoc(a.von, a.bis);
+    const neu = /\n$/.test(eingefuegt) ? u.text : u.text.replace(/\n+$/, "");
+    umwandelnAngebotStand = null;
+    view.dispatch({
+      changes: { from: a.von, to: a.bis, insert: neu },
+      selection: { anchor: a.von + neu.length },
+      userEvent: "input.tftn-umwandeln",
+      annotations: isolateHistory.of("full"),
+      scrollIntoView: true,
+    });
+    if (u.hinweise.length > 0) hinweis(u.hinweise.join(" "));
+    else meldung(t("In Typst umgewandelt. Rückgängig holt den eingefügten Text zurück."));
+  } catch (fehler) {
+    hinweis(meldungMit(t("Nicht umgewandelt"), String(fehler)));
+  }
+  view.focus();
+}
 
 // Eine Datei, die neben den Editor fällt, darf das Fenster nicht wegnavigieren.
 for (const art of ["dragover", "drop"] as const) {

@@ -410,6 +410,37 @@ fn importieren(
     Ok(u.hinweise)
 }
 
+#[derive(Serialize)]
+struct UmgewandeltJs {
+    text: String,
+    hinweise: Vec<String>,
+}
+
+/// Eingefügten Text (Markdown oder HTML aus der Zwischenablage) über Pandoc nach Typst. Schreibt
+/// nichts in `main.typ`; das setzt die Oberfläche ein (ein Rückgängig-Schritt).
+#[tauri::command(async)]
+fn einfuegen_umwandeln(
+    zustand: State<'_, Zustand>,
+    text: String,
+    html: bool,
+) -> Result<UmgewandeltJs, String> {
+    let pandoc = import::pandoc_finden().ok_or_else(import::fehlt_fuer_umwandeln)?;
+    let wurzel = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .projekt
+            .wurzel
+            .clone()
+    };
+    let u = import::umwandeln_text(&pandoc, &text, html, &wurzel)?;
+    Ok(UmgewandeltJs {
+        text: u.text,
+        hinweise: u.hinweise,
+    })
+}
+
 /// Der Ordner des Dokuments ohne Namen.
 fn entwurf_ordner(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     app.path()
@@ -3283,6 +3314,7 @@ pub fn run() {
             schriften_einbinden,
             datei_waehlen_dialog,
             importieren,
+            einfuegen_umwandeln,
             updates_pruefen,
             entwurf_benennen,
             fassungen_liste,

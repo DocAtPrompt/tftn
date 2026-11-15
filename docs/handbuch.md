@@ -186,6 +186,12 @@ Listen, Tabellen, Fußnoten, Formeln und Bilder kommen mit; Layout, Kommentare u
 nicht. Das Original bleibt unberührt. Pandoc läuft abgeschottet und holt nichts aus dem Netz.
 Installieren: Mac `brew install pandoc`, Windows `winget install --id JohnMacFarlane.Pandoc`.
 
+**Einfügen mit Umwandlung** (braucht ebenfalls Pandoc): Fügt man mit Cmd/Strg+V Markdown ein (etwa
+`# Titel`, `**fett**`, `[Link](…)`, Tabellen) oder formatierten Text aus dem Browser oder aus Word,
+steht er zuerst unverändert da, und das Hinweisband bietet „In Typst umwandeln“ an. Ein Klick ersetzt
+das Eingefügte durch Typst; ein Rückgängig holt den eingefügten Text zurück. Tippt man weiter, gilt
+das Angebot nicht mehr. Bilder aus dem Netz werden nicht geholt.
+
 **PDF** („Export“): Die Profile kommen vom Dokumenttyp, beim Fachartikel etwa „vorschau“ und
 „archiv“ (PDF/A-2b). Das PDF entsteht mit der beigelegten typst-CLI und ist reproduzierbar.
 

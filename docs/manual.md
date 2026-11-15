@@ -188,6 +188,12 @@ tables, footnotes, equations and images come along; layout, comments and tracked
 The original stays untouched. Pandoc runs sandboxed and fetches nothing from the network. Install:
 Mac `brew install pandoc`, Windows `winget install --id JohnMacFarlane.Pandoc`.
 
+**Paste with conversion** (also requires Pandoc): when you paste Markdown with Cmd/Ctrl+V (such as
+`# Title`, `**bold**`, `[link](…)`, tables) or formatted text from a browser or Word, it first appears
+unchanged, and the notification bar offers “Convert to Typst”. One click replaces the pasted text with
+Typst; one undo brings the pasted text back. Once you keep typing, the offer goes away. Images from
+the internet are not downloaded.
+
 **PDF** (“Export”): the profiles come from the document type, for the journal article “vorschau”
 (preview) and “archiv” (PDF/A-2b). The PDF is produced by the bundled typst CLI and is reproducible.
 
