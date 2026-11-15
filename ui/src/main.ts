@@ -1517,7 +1517,7 @@ async function start() {
   formelFach = new FormelFach({
     stand: (pos) => abfragen((r) => invoke<FormelStandJs>("formel_stand", { rev: r, pos })),
     vorschau: (text, block) => invoke<FormelBildJs>("formel_vorschau", { text, block }),
-    palette: () => invoke<PaletteJs>("formel_palette"),
+    palette: () => invoke<PaletteJs>("formel_palette").then(texteUebersetzen),
     baustein: (id, auswahl) => invoke<EingesetztJs>("formel_baustein", { id, auswahl }),
     setzen: (pos, erwartet, text) => formelPatch((r) => invoke<PatchJs>("formel_setzen", { rev: r, pos, erwartet, text })),
     einfuegen: (pos, text, block) => formelPatch((r) => invoke<PatchJs>("formel_einfuegen", { rev: r, pos, text, block })),
