@@ -27,6 +27,7 @@ tftn-export.workspace = true
 tftn-katalog.workspace = true
 tftn-formular.workspace = true
 tftn-literatur.workspace = true
+tftn-mcp.workspace = true
 tftn-manifest.workspace = true
 tftn-pakete.workspace = true
 tftn-sprachen.workspace = true

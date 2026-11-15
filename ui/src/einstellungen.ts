@@ -1,4 +1,4 @@
-// Einstellungen (PLAN-M2 AP3, Entwurf 7): Ordner für eigene Anpassungen (unten), „ganz offline“ für diesen Rechner und die
+// Einstellungen (PLAN-M2 AP3, Entwurf 7): Ordner für eigene Anpassungen (unten), „ganz offline“ und MCP für diesen Rechner und die
 // Tabelle der Tastenkürzel mit Suchfeld. Zeile anklicken, neues Kürzel drücken: Esc bricht ab,
 // Entf/Rücktaste heißt „keine Belegung“, „Standard“ nimmt die eigene Belegung zurück. Konflikte beider
 // Plattformen stehen sofort in der Zeile; gespeichert wird trotzdem (bewusst gesetzt).
@@ -6,6 +6,7 @@
 import { kuerzelText } from "./bausteine";
 import { type Aktion, type Belegung, type Konflikt, type Plattform, PLATTFORM, kuerzelAusTaste } from "./tasten";
 import { dialogAnmelden } from "./dialoge";
+import { type McpJs, mcpBefehl } from "./mcp";
 import { type SkinsJs, skinOptionen } from "./skin";
 import { t } from "./sprache";
 
@@ -45,6 +46,9 @@ export interface EinstellAktionen {
   skinSetzen(kennung: string | null): Promise<SkinsJs>;
   /** Legt die Vorlage für einen eigenen Skin an und zeigt sie; gibt den Pfad zurück. */
   skinvorlage(): Promise<string>;
+  mcpLesen(): Promise<McpJs>;
+  mcpSetzen(an: boolean): Promise<McpJs>;
+  mcpBeimWechsel(aus: boolean): Promise<McpJs>;
   geschlossen(): void;
 }
 
@@ -121,6 +125,10 @@ export class EinstellDialog {
   private spracheText: HTMLSpanElement;
   private skin: HTMLSelectElement;
   private skinText: HTMLSpanElement;
+  private mcpAn: HTMLInputElement;
+  private mcpWechsel: HTMLInputElement;
+  private mcpBefehl: HTMLInputElement;
+  private mcpText: HTMLSpanElement;
   private daten: EinstellDaten | null = null;
   /** Aktion, für die gerade ein Kürzel aufgenommen wird */
   private aufnahme: string | null = null;
@@ -136,6 +144,12 @@ export class EinstellDialog {
         <div class="einst-zeile einst-sprache"><label>${t("Sprache der Oberfläche")} <select class="einst-sprache-wahl"></select></label><button class="einst-sprachvorlage" title="${t("Legt eine Vorlage zum Übersetzen an und zeigt sie; übersetzt als <kennung>.toml speichern, etwa fr.toml")}">${t("Weitere Sprache …")}</button><span class="einst-sprache-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-skin"><label>${t("Aussehen")} <select class="einst-skin-wahl"></select></label><button class="einst-skinvorlage" title="${t("Legt eine Vorlage für einen eigenen Skin an und zeigt sie; Farben und Editorschrift lassen sich darin ändern")}">${t("Eigener Skin …")}</button><span class="einst-skin-text leiste-hilfe"></span></div>
         <label class="einst-offline"><input type="checkbox" /> ${t("Ganz offline (nur dieser Rechner): TFTN holt keine Pakete aus dem Netz")}</label>
+        <div class="einst-mcp">
+          <label><input type="checkbox" class="einst-mcp-an" /> ${t("MCP: KI-Assistenten (etwa Claude) dürfen im offenen Dokument lesen und schreiben")}</label>
+          <label><input type="checkbox" class="einst-mcp-wechsel" /> ${t("MCP ausschalten, wenn ein anderes Dokument geöffnet wird (öffnet MCP es selbst, fragt TFTN nach)")}</label>
+          <div class="einst-zeile"><input class="einst-mcp-befehl" readonly spellcheck="false" title="${t("Im Assistenten als MCP-Server eintragen; in Claude Code diese Zeile im Terminal ausführen")}" /><button class="einst-mcp-kopieren">${t("Kopieren")}</button></div>
+          <span class="einst-mcp-text leiste-hilfe">${t("Im Assistenten als MCP-Server eintragen; in Claude Code diese Zeile im Terminal ausführen.")}</span>
+        </div>
       </div>
       <div class="einst-befund"></div>
       <div class="palette-felder palette-einzeln">
@@ -207,6 +221,28 @@ export class EinstellDialog {
         this.skinText.textContent = String(fehler);
       }
     });
+    this.mcpAn = q(".einst-mcp-an");
+    this.mcpWechsel = q(".einst-mcp-wechsel");
+    this.mcpBefehl = q(".einst-mcp-befehl");
+    this.mcpText = q(".einst-mcp-text");
+    const mcp = async (f: () => Promise<McpJs>) => {
+      try {
+        this.mcpZeigen(await f());
+      } catch (fehler) {
+        this.mcpText.textContent = String(fehler);
+      }
+    };
+    this.mcpAn.addEventListener("change", () => void mcp(() => this.a.mcpSetzen(this.mcpAn.checked)));
+    this.mcpWechsel.addEventListener("change", () => void mcp(() => this.a.mcpBeimWechsel(this.mcpWechsel.checked)));
+    q(".einst-mcp-kopieren").addEventListener("click", async () => {
+      this.mcpBefehl.select();
+      try {
+        await navigator.clipboard.writeText(this.mcpBefehl.value);
+        this.mcpText.textContent = t("Kopiert.");
+      } catch {
+        this.mcpText.textContent = t("Markiert – mit Cmd/Strg+C kopieren.");
+      }
+    });
     this.kopf = q(".einst-zustand");
     this.befundOrt = q(".einst-befund");
     this.pfad = q(".einst-pfad");
@@ -253,6 +289,18 @@ export class EinstellDialog {
       (s) => this.skinZeigen(s),
       (fehler) => (this.skinText.textContent = String(fehler)),
     );
+    void this.a.mcpLesen().then(
+      (m) => this.mcpZeigen(m),
+      (fehler) => (this.mcpText.textContent = String(fehler)),
+    );
+  }
+
+  /** Schalter und Befehlszeile für MCP; auch, wenn es sich von außen ändert. */
+  mcpZeigen(m: McpJs) {
+    this.mcpAn.checked = m.an;
+    this.mcpWechsel.checked = m.beim_wechsel_aus;
+    this.mcpBefehl.value = mcpBefehl(m.programm);
+    if (m.fehler) this.mcpText.textContent = m.fehler;
   }
 
   /** Auswahl „Aussehen“ und darunter Warnungen des Skins bzw. der Ordner für eigene. */

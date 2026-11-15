@@ -24,6 +24,7 @@ Ihr Text bleibt gewöhnliches Typst. Jedes Dokument lässt sich auch ohne TFTN m
 10. [Einstellungen und Tastenkürzel](#10-einstellungen-und-tastenkürzel)
 11. [Netz, Updates, Datenschutz](#11-netz-updates-datenschutz)
 12. [Kommandozeile](#12-kommandozeile)
+13. [KI-Assistenten (MCP)](#13-ki-assistenten-mcp)
 
 ## 1. Erste Schritte
 
@@ -252,6 +253,10 @@ Solange eine Anfrage läuft, steht sie in der Statuszeile. **„Ganz offline“*
 sperrt jeden Netzzugriff. TFTN installiert nie etwas von selbst: Eine neue Version laden Sie von der
 Release-Seite.
 
+Mit **MCP** (Abschnitt 13) liest ein KI-Assistent das offene Dokument. TFTN selbst geht dabei nicht ins
+Netz; was der Assistent liest, kann er aber an seinen Anbieter schicken. Darum ist MCP aus, bis Sie es
+einschalten.
+
 ## 12. Kommandozeile
 
 Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
@@ -268,3 +273,41 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 | `tftn typ-pruefen <ordner>` | alle Bausteine eines Dokumenttyps prüfen |
 
 `tftn gegenprobe` zeigt, wie dasselbe PDF ohne TFTN entsteht – Ihr Dokument hängt nie an TFTN.
+
+## 13. KI-Assistenten (MCP)
+
+Über MCP (Model Context Protocol) kann ein KI-Assistent wie Claude im offenen Dokument arbeiten: den
+Quelltext lesen, Stellen ändern, Seiten der Vorschau ansehen, ein neues Dokument aus einem Typ anlegen
+oder ein anderes öffnen. Jede Änderung erscheint sofort im Editor und in der Vorschau und lässt sich
+mit Rückgängig zurücknehmen.
+
+**Einschalten:** In den Einstellungen „MCP: KI-Assistenten … dürfen im offenen Dokument lesen und
+schreiben“ anhaken. Solange MCP an ist, steht „MCP an“ in der Statusleiste; ein Klick darauf schaltet
+es aus. Die Wahl gilt je Rechner und bleibt über einen Neustart erhalten.
+
+**Im Assistenten eintragen:** Darunter steht die Zeile für Claude Code
+(`claude mcp add tftn -- "<Pfad zu TFTN>" --mcp`); „Kopieren“ und im Terminal ausführen. Andere
+Assistenten tragen als Befehl das TFTN-Programm mit dem Argument `--mcp` ein, in Claude Desktop etwa:
+
+```json
+{ "mcpServers": { "tftn": { "command": "/Applications/TFTN.app/Contents/MacOS/tftn-app", "args": ["--mcp"] } } }
+```
+
+Der Assistent spricht mit der laufenden App über eine Verbindung, die nur auf diesem Rechner besteht
+und einen Zufallsschlüssel braucht. Ist TFTN geschlossen oder MCP aus, bekommt er eine Meldung.
+
+**Beim Dokumentwechsel ausschalten:** Wer möchte, dass MCP nur für ein Dokument gilt, hakt „MCP
+ausschalten, wenn ein anderes Dokument geöffnet wird“ an. Öffnen Sie dann selbst ein anderes Dokument,
+geht MCP aus. Öffnet oder legt der Assistent eines an, pausiert MCP und TFTN fragt, ob es aktiv
+bleiben soll („Aktiv lassen“ oder „MCP ausschalten“); bis dahin lehnt TFTN seine Aufrufe ab.
+
+| Werkzeug | Wirkung |
+|---|---|
+| `status` | Projekt, Revision, gespeichert?, Ergebnis des letzten Typst-Laufs |
+| `quelltext_lesen` | Quelltext der Hauptdatei, wie er im Editor steht |
+| `text_ersetzen` | eine Stelle wörtlich ersetzen (oder jedes Vorkommen) |
+| `quelltext_setzen` | den ganzen Quelltext ersetzen |
+| `seite_ansehen` | eine Seite der Vorschau als Bild |
+| `typen_auflisten` | Dokumenttypen für ein neues Dokument |
+| `dokument_anlegen` | neues Projekt aus einem Typ anlegen und öffnen |
+| `dokument_oeffnen` | ein anderes Projekt öffnen (das offene wird vorher gespeichert) |

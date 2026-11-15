@@ -41,6 +41,7 @@ mod formel;
 mod formular;
 mod helfer;
 mod import;
+mod mcp;
 mod pakete;
 mod rechtschreibung;
 mod skins;
@@ -102,6 +103,12 @@ struct Zustand {
     index: Mutex<Option<(std::time::SystemTime, Arc<tftn_pakete::Index>)>>,
     /// Wörterbuch der Dokumentsprache samt eigener Wörter.
     rechtschreibung: Mutex<Option<rechtschreibung::Stand>>,
+    /// MCP: Schalter, Verbindung, offene Aufträge an den Editor.
+    mcp: Mutex<mcp::Mcp>,
+    /// Wer den gemerkten Wechsel (`naechstes`) ausgelöst hat.
+    wechsel: Mutex<mcp::Wechsel>,
+    /// Letzter Typst-Lauf, für die Antworten an MCP.
+    lauf: Arc<Mutex<Option<mcp::LaufStand>>>,
 }
 
 struct Auftrag {
@@ -146,6 +153,7 @@ fn kompilierer_starten(
     app: tauri::AppHandle,
     vorschau: Arc<Mutex<Vorschau>>,
     anzeige: Arc<Mutex<Option<Anzeige>>>,
+    stand: Arc<Mutex<Option<mcp::LaufStand>>>,
 ) -> mpsc::Sender<Auftrag> {
     let (tx, rx) = mpsc::channel::<Auftrag>();
     std::thread::spawn(move || {
@@ -190,6 +198,29 @@ fn kompilierer_starten(
                     }
                 })
                 .collect();
+            *stand.lock().unwrap() = Some(mcp::LaufStand {
+                rev: lauf.rev,
+                gelungen: lauf.gelungen,
+                seiten: lauf.seiten.len(),
+                meldungen: lauf
+                    .meldungen
+                    .iter()
+                    .map(|m| {
+                        let art = if m.fehler { "Fehler" } else { "Warnung" };
+                        let ort = match m.stelle.as_ref().filter(|(id, _)| *id == haupt) {
+                            Some((_, r)) => {
+                                let (z, sp) = tftn_mcp::zeile_spalte(zeilen.text(), r.start);
+                                Some(format!("Zeile {z}, Spalte {sp}"))
+                            }
+                            None => m.ort.clone(),
+                        };
+                        match ort {
+                            Some(o) => format!("{art} ({o}): {}", m.text),
+                            None => format!("{art}: {}", m.text),
+                        }
+                    })
+                    .collect(),
+            });
             let ereignis = VorschauEreignis {
                 rev: lauf.rev,
                 gelungen: lauf.gelungen,
@@ -453,6 +484,8 @@ fn oeffnen(
 ) -> Result<Geoeffnet, String> {
     // Ein gewünschter Projektwechsel (Neu, Öffnen) geht allem anderen vor.
     let naechstes = zustand.naechstes.lock().unwrap().take();
+    let wechsel = std::mem::take(&mut *zustand.wechsel.lock().unwrap());
+    let gewechselt = naechstes.is_some();
     let ordner = match naechstes {
         Some(p) => p,
         None => startordner(&app, waehlen.unwrap_or(false))?,
@@ -468,7 +501,12 @@ fn oeffnen(
     let spiegel = Spiegel::neu(vorschau.world().haupt(), &roh);
     let vorschau = Arc::new(Mutex::new(vorschau));
     *zustand.vorschau.lock().unwrap() = Some(vorschau.clone());
-    let tx = kompilierer_starten(app.clone(), vorschau, zustand.anzeige.clone());
+    let tx = kompilierer_starten(
+        app.clone(),
+        vorschau,
+        zustand.anzeige.clone(),
+        zustand.lauf.clone(),
+    );
     let antwort = Geoeffnet {
         ordner: projekt.wurzel.display().to_string(),
         datei: projekt.konfig.haupt.clone(),
@@ -501,6 +539,9 @@ fn oeffnen(
     *zustand.kompilierer.lock().unwrap() = Some(tx);
     kompilieren_lassen(&zustand, &sitzung);
     *zustand.sitzung.lock().unwrap() = Some(sitzung);
+    if gewechselt {
+        mcp::nach_wechsel(&app, wechsel);
+    }
     Ok(antwort)
 }
 
@@ -909,6 +950,7 @@ fn entwurf_benennen(
         schriften,
     )?;
     *zustand.naechstes.lock().unwrap() = Some(ziel.clone());
+    *zustand.wechsel.lock().unwrap() = mcp::Wechsel::Umbenannt;
     Ok(ziel.display().to_string())
 }
 
@@ -3012,6 +3054,44 @@ fn offline_setzen(app: tauri::AppHandle, an: bool) -> Result<EinstellungenJs, St
     Ok(einstellungen_js(&konfig))
 }
 
+// --- MCP ------------------------------------------------------------------------------------
+
+/// `tftn-app --mcp`: Brücke für KI-Assistenten (startet keine Oberfläche).
+pub fn mcp_bruecke() -> std::process::ExitCode {
+    mcp::bruecke()
+}
+
+#[tauri::command]
+fn mcp_stand(app: tauri::AppHandle) -> mcp::McpJs {
+    mcp::js(&app, None)
+}
+
+/// MCP ein- oder ausschalten (nur der Benutzer, über Einstellungen oder Statusleiste).
+#[tauri::command]
+fn mcp_setzen(app: tauri::AppHandle, an: bool) -> mcp::McpJs {
+    let fehler = mcp::setzen(&app, an).err();
+    mcp::js(&app, fehler)
+}
+
+#[tauri::command]
+fn mcp_beim_wechsel_aus(app: tauri::AppHandle, aus: bool) -> mcp::McpJs {
+    let fehler = mcp::beim_wechsel_aus_setzen(&app, aus).err();
+    mcp::js(&app, fehler)
+}
+
+/// Nach einem Wechsel durch MCP: aktiv lassen oder ausschalten.
+#[tauri::command]
+fn mcp_bestaetigen(app: tauri::AppHandle, aktiv: bool) -> mcp::McpJs {
+    let fehler = mcp::bestaetigen(&app, aktiv).err();
+    mcp::js(&app, fehler)
+}
+
+/// Antwort des Editors auf einen MCP-Auftrag (`ok`: ausgeführt; `false`: veraltet).
+#[tauri::command]
+fn mcp_antwort(app: tauri::AppHandle, id: u64, ok: bool, fehler: Option<String>) {
+    mcp::antwort(&app, id, ok, fehler);
+}
+
 /// Patch eines Markup-Helfers (AP4) an der UTF-16-Position `pos`; `None`, wenn dort keine passende
 /// Stelle ist. Ebene ± gilt der innersten Überschrift.
 #[tauri::command]
@@ -3086,6 +3166,7 @@ pub fn run() {
             if let Err(e) = einstellungen_beobachten(app.handle()) {
                 eprintln!("Einstellungen werden nicht beobachtet: {e}");
             }
+            mcp::beim_start(app.handle());
             // Schriften für Dokumente, die keine eigenen eingebunden haben.
             if let Ok((quellen, _)) = typquellen(app.handle()) {
                 tftn_core::schriftvorrat_setzen(typen::schriftvorrat(&quellen));
@@ -3174,6 +3255,11 @@ pub fn run() {
             paket_entfernen,
             paket_vergleichen,
             paket_wechseln,
+            mcp_stand,
+            mcp_setzen,
+            mcp_beim_wechsel_aus,
+            mcp_bestaetigen,
+            mcp_antwort,
         ])
         .on_window_event(|fenster, ereignis| {
             if let tauri::WindowEvent::CloseRequested { .. } = ereignis {
@@ -3185,6 +3271,7 @@ pub fn run() {
         .run(|app, ereignis| {
             if let tauri::RunEvent::ExitRequested { .. } = ereignis {
                 beim_schliessen(&app.state::<Zustand>());
+                mcp::beim_schliessen(app);
             }
         });
 }

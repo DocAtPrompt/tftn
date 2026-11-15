@@ -41,6 +41,7 @@ import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
 import { type SkinsJs, skinAnwenden } from "./skin";
+import { type McpAuftrag, type McpJs, mcpAnzeige } from "./mcp";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
@@ -1196,15 +1197,93 @@ function status() {
   s.classList.toggle("warnung", zahlen.abweichungen + zahlen.fehler > 0);
 }
 
-function hinweis(text: string, knopf?: { titel: string; aktion: () => void }) {
+type HinweisKnopf = { titel: string; aktion: () => void };
+
+function hinweis(text: string, knopf?: HinweisKnopf | HinweisKnopf[]) {
   const h = document.getElementById("hinweis")!;
   h.hidden = text === "";
   h.textContent = text;
-  if (knopf) {
+  for (const k of knopf === undefined ? [] : Array.isArray(knopf) ? knopf : [knopf]) {
     const b = document.createElement("button");
-    b.textContent = knopf.titel;
-    b.onclick = knopf.aktion;
+    b.textContent = k.titel;
+    b.onclick = k.aktion;
     h.append(" ", b);
+  }
+}
+
+// --- MCP ------------------------------------------------------------------------------------
+
+let mcpStand: McpJs | null = null;
+
+/** Statusleiste und Einstellungen; pausiert nach einem Wechsel durch MCP: nachfragen. */
+function mcpZeigen(m: McpJs) {
+  const vorher = mcpStand;
+  mcpStand = m;
+  const el = document.getElementById("mcp")!;
+  const a = mcpAnzeige(m);
+  el.hidden = a.text === "";
+  el.textContent = a.text;
+  el.title = a.titel;
+  el.classList.toggle("wartet", m.an && m.wartet);
+  einstellDialog?.mcpZeigen(m);
+  if (m.an && m.wartet && !vorher?.wartet) mcpNachfragen();
+  if (m.fehler) hinweis(m.fehler);
+}
+
+function mcpNachfragen() {
+  const antworten = async (aktiv: boolean) => {
+    hinweis("");
+    try {
+      mcpZeigen(await invoke<McpJs>("mcp_bestaetigen", { aktiv }));
+    } catch (fehler) {
+      hinweis(String(fehler));
+    }
+    view?.focus();
+  };
+  hinweis(t("Dieses Dokument hat ein KI-Assistent über MCP geöffnet. Soll MCP aktiv bleiben?"), [
+    { titel: t("Aktiv lassen"), aktion: () => void antworten(true) },
+    { titel: t("MCP ausschalten"), aktion: () => void antworten(false) },
+  ]);
+}
+
+/** Klick auf „MCP an“ schaltet aus; auf „MCP pausiert“ fragt erneut. */
+async function mcpKlick() {
+  if (!mcpStand?.an) return;
+  if (mcpStand.wartet) {
+    mcpNachfragen();
+    return;
+  }
+  try {
+    mcpZeigen(await invoke<McpJs>("mcp_setzen", { an: false }));
+    hinweis(t("MCP ausgeschaltet."));
+  } catch (fehler) {
+    hinweis(String(fehler));
+  }
+}
+
+/** Auftrag der App: Patch anwenden (ein Rückgängig-Schritt) oder das gemerkte Dokument öffnen. */
+async function mcpAuftrag(a: McpAuftrag) {
+  const antwort = (ok: boolean, fehler: string | null = null) => invoke("mcp_antwort", { id: a.id, ok, fehler });
+  try {
+    if (a.art === "patch") {
+      const p = a.patch;
+      // Veraltet (der Benutzer tippt gerade): die App rechnet neu, ohne Hinweis.
+      if (p.rev !== rev) return void (await antwort(false));
+      view.dispatch({
+        changes: { from: p.von, to: p.bis, insert: p.text },
+        userEvent: "input.mcp",
+        annotations: isolateHistory.of("full"),
+      });
+      await antwort(true);
+    } else {
+      const ok = await wechselNachSpeichern(vorWechsel, async () => {
+        await antwort(true);
+        location.reload();
+      });
+      if (!ok) await antwort(false);
+    }
+  } catch (fehler) {
+    await antwort(false, String(fehler));
   }
 }
 
@@ -1463,6 +1542,9 @@ async function start() {
       return s;
     },
     skinvorlage: () => invoke<string>("skinvorlage_anlegen"),
+    mcpLesen: () => invoke<McpJs>("mcp_stand"),
+    mcpSetzen: (an) => invoke<McpJs>("mcp_setzen", { an }),
+    mcpBeimWechsel: (aus) => invoke<McpJs>("mcp_beim_wechsel_aus", { aus }),
     geschlossen: () => view?.focus(),
   });
   document.getElementById("einstellungen-knopf")!.addEventListener("click", () => einstellDialog.oeffnen());
@@ -1640,6 +1722,10 @@ async function start() {
       });
     }
   });
+  await listen<McpAuftrag>("mcp-auftrag", (e) => void mcpAuftrag(e.payload));
+  await listen<McpJs>("mcp-geaendert", (e) => mcpZeigen(e.payload));
+  document.getElementById("mcp")!.addEventListener("click", () => void mcpKlick());
+  mcpZeigen(await invoke<McpJs>("mcp_stand"));
   status();
   if (entwurf) view.dispatch({ selection: { anchor: view.state.doc.length } });
   view.focus();

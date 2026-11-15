@@ -40,6 +40,8 @@ fn rechner_ohne_datei_ist_standard() {
             ganz_offline: false,
             sprache: None,
             skin: None,
+            mcp: false,
+            mcp_beim_wechsel_aus: false,
         }
     );
     let gesetzt = Rechner {
@@ -47,6 +49,8 @@ fn rechner_ohne_datei_ist_standard() {
         ganz_offline: true,
         sprache: Some("en".into()),
         skin: Some("papier".into()),
+        mcp: true,
+        mcp_beim_wechsel_aus: true,
     };
     gesetzt.speichern(t.p()).unwrap();
     assert_eq!(Rechner::laden(t.p()), gesetzt);
@@ -73,6 +77,7 @@ fn ort_fehlender_ordner() {
         ganz_offline: false,
         sprache: None,
         skin: None,
+        ..Rechner::default()
     };
     let o = ort(t.p(), &r);
     assert_eq!(o.ordner, t.p());
@@ -91,6 +96,7 @@ fn ort_gewaehlt() {
         ganz_offline: false,
         sprache: None,
         skin: None,
+        ..Rechner::default()
     };
     let o = ort(t.p(), &r);
     assert_eq!(o.ordner, tresor);

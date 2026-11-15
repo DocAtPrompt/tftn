@@ -24,6 +24,7 @@ tftn-export = { path = "crates/tftn-export" }
 tftn-formular = { path = "crates/tftn-formular" }
 tftn-katalog = { path = "crates/tftn-katalog" }
 tftn-literatur = { path = "crates/tftn-literatur" }
+tftn-mcp = { path = "crates/tftn-mcp" }
 tftn-manifest = { path = "crates/tftn-manifest" }
 tftn-messen = { path = "crates/tftn-messen" }
 tftn-holer = { path = "crates/tftn-holer" }

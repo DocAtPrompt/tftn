@@ -990,6 +990,28 @@ body {
   color: var(--warn);
 }
 
+/* MCP: an oder pausiert, klickbar */
+#mcp {
+  color: var(--akzent);
+  cursor: pointer;
+}
+
+#mcp.wartet {
+  color: var(--warn);
+}
+
+.einst-mcp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.einst-mcp-befehl {
+  flex: 1;
+  font-family: var(--editor-schrift, monospace);
+  font-size: 12px;
+}
+
 .paket-fach {
   display: flex;
   flex-direction: column;

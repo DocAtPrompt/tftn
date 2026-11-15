@@ -39,6 +39,12 @@ pub struct Rechner {
     /// Skin der Oberfläche (Dateiname ohne `.toml`); fehlt er, folgt TFTN hell/dunkel des Systems.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skin: Option<String>,
+    /// MCP an: KI-Assistenten dürfen über `tftn-app --mcp` im offenen Dokument arbeiten.
+    #[serde(default)]
+    pub mcp: bool,
+    /// MCP ausschalten, sobald ein anderes Dokument geöffnet wird (öffnet MCP es selbst: nachfragen).
+    #[serde(default)]
+    pub mcp_beim_wechsel_aus: bool,
 }
 
 impl Rechner {

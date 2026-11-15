@@ -28,6 +28,7 @@ journal article, book, poster and CV.
 10. [Settings and keyboard shortcuts](#10-settings-and-keyboard-shortcuts)
 11. [Network, updates, privacy](#11-network-updates-privacy)
 12. [Command line](#12-command-line)
+13. [AI assistants (MCP)](#13-ai-assistants-mcp)
 
 ## 1. Getting started
 
@@ -256,6 +257,10 @@ While a request runs, the status bar shows it. **“Fully offline”** in the se
 network access. TFTN never installs anything by itself: you download a new version from the release
 page.
 
+With **MCP** (section 13) an AI assistant reads the open document. TFTN itself does not go online for
+this, but whatever the assistant reads it may send to its provider. That is why MCP stays off until
+you turn it on.
+
 ## 12. Command line
 
 The `tftn` program (built from source) works without the window:
@@ -273,3 +278,41 @@ The `tftn` program (built from source) works without the window:
 
 `tftn gegenprobe` shows how to produce the same PDF without TFTN – your document never depends on
 TFTN.
+
+## 13. AI assistants (MCP)
+
+With MCP (Model Context Protocol) an AI assistant such as Claude can work in the open document: read
+the source, change passages, look at preview pages, create a new document from a type or open another
+one. Every change appears in the editor and the preview right away and can be undone.
+
+**Turning it on:** In the settings, tick “MCP: AI assistants … may read and write in the open
+document”. While MCP is on, “MCP on” shows in the status bar; clicking it turns MCP off. The choice is
+per computer and survives a restart.
+
+**Adding it to the assistant:** Below the checkbox is the line for Claude Code
+(`claude mcp add tftn -- "<path to TFTN>" --mcp`); click “Copy” and run it in a terminal. Other
+assistants take the TFTN program with the argument `--mcp` as the command, for example in Claude
+Desktop:
+
+```json
+{ "mcpServers": { "tftn": { "command": "/Applications/TFTN.app/Contents/MacOS/tftn-app", "args": ["--mcp"] } } }
+```
+
+The assistant talks to the running app over a connection that exists only on this computer and needs
+a random key. If TFTN is closed or MCP is off, it gets a message saying so.
+
+**Turning it off when switching documents:** If MCP should apply to one document only, tick “Turn MCP
+off when another document is opened”. When you open another document yourself, MCP turns off. When
+the assistant opens or creates one, MCP pauses and TFTN asks whether it should stay active (“Keep
+active” or “Turn MCP off”); until then TFTN refuses its calls.
+
+| Tool | Effect |
+|---|---|
+| `status` | project, revision, saved?, result of the last Typst run |
+| `quelltext_lesen` | source of the main file as it is in the editor |
+| `text_ersetzen` | replace one passage literally (or every occurrence) |
+| `quelltext_setzen` | replace the whole source |
+| `seite_ansehen` | one preview page as an image |
+| `typen_auflisten` | document types for a new document |
+| `dokument_anlegen` | create a new project from a type and open it |
+| `dokument_oeffnen` | open another project (the open one is saved first) |
