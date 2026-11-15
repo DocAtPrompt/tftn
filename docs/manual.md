@@ -258,8 +258,9 @@ network access. TFTN never installs anything by itself: you download a new versi
 page.
 
 With **MCP** (section 13) an AI assistant reads the open document. TFTN itself does not go online for
-this, but whatever the assistant reads it may send to its provider. That is why MCP stays off until
-you turn it on.
+this. Where the content goes depends on the assistant: a local model (in LM Studio, for example) keeps
+everything on your computer, a cloud assistant sends it to its provider. MCP stays off until you turn
+it on.
 
 ## 12. Command line
 
@@ -281,7 +282,8 @@ TFTN.
 
 ## 13. AI assistants (MCP)
 
-With MCP (Model Context Protocol) an AI assistant such as Claude can work in the open document: read
+With MCP (Model Context Protocol) an AI assistant can work in the open document – a local model just as well as a cloud
+service such as Claude: read
 the source, change passages, look at preview pages, create a new document from a type or open another
 one. Every change appears in the editor and the preview right away and can be undone.
 
@@ -291,8 +293,8 @@ per computer and survives a restart.
 
 **Adding it to the assistant:** Below the checkbox is the line for Claude Code
 (`claude mcp add tftn -- "<path to TFTN>" --mcp`); click “Copy” and run it in a terminal. Other
-assistants take the TFTN program with the argument `--mcp` as the command, for example in Claude
-Desktop:
+assistants, including ones running a local model, take the TFTN program with the argument `--mcp` as
+the command; the usual `mcpServers` entry (Claude Desktop, LM Studio and others) looks like this:
 
 ```json
 { "mcpServers": { "tftn": { "command": "/Applications/TFTN.app/Contents/MacOS/tftn-app", "args": ["--mcp"] } } }

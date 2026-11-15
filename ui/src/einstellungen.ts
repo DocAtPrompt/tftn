@@ -145,7 +145,7 @@ export class EinstellDialog {
         <div class="einst-zeile einst-skin"><label>${t("Aussehen")} <select class="einst-skin-wahl"></select></label><button class="einst-skinvorlage" title="${t("Legt eine Vorlage für einen eigenen Skin an und zeigt sie; Farben und Editorschrift lassen sich darin ändern")}">${t("Eigener Skin …")}</button><span class="einst-skin-text leiste-hilfe"></span></div>
         <label class="einst-offline"><input type="checkbox" /> ${t("Ganz offline (nur dieser Rechner): TFTN holt keine Pakete aus dem Netz")}</label>
         <div class="einst-mcp">
-          <label><input type="checkbox" class="einst-mcp-an" /> ${t("MCP: KI-Assistenten (etwa Claude) dürfen im offenen Dokument lesen und schreiben")}</label>
+          <label><input type="checkbox" class="einst-mcp-an" /> ${t("MCP: KI-Assistenten (lokal oder in der Cloud) dürfen im offenen Dokument lesen und schreiben")}</label>
           <label><input type="checkbox" class="einst-mcp-wechsel" /> ${t("MCP ausschalten, wenn ein anderes Dokument geöffnet wird (öffnet MCP es selbst, fragt TFTN nach)")}</label>
           <div class="einst-zeile"><input class="einst-mcp-befehl" readonly spellcheck="false" title="${t("Im Assistenten als MCP-Server eintragen; in Claude Code diese Zeile im Terminal ausführen")}" /><button class="einst-mcp-kopieren">${t("Kopieren")}</button></div>
           <span class="einst-mcp-text leiste-hilfe">${t("Im Assistenten als MCP-Server eintragen; in Claude Code diese Zeile im Terminal ausführen.")}</span>

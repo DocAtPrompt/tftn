@@ -254,7 +254,8 @@ sperrt jeden Netzzugriff. TFTN installiert nie etwas von selbst: Eine neue Versi
 Release-Seite.
 
 Mit **MCP** (Abschnitt 13) liest ein KI-Assistent das offene Dokument. TFTN selbst geht dabei nicht ins
-Netz; was der Assistent liest, kann er aber an seinen Anbieter schicken. Darum ist MCP aus, bis Sie es
+Netz. Wohin das Gelesene geht, hängt am Assistenten: Ein lokales Modell (etwa in LM Studio) behält alles
+auf dem Rechner, ein Cloud-Assistent schickt es an seinen Anbieter. MCP bleibt aus, bis Sie es
 einschalten.
 
 ## 12. Kommandozeile
@@ -276,7 +277,8 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 
 ## 13. KI-Assistenten (MCP)
 
-Über MCP (Model Context Protocol) kann ein KI-Assistent wie Claude im offenen Dokument arbeiten: den
+Über MCP (Model Context Protocol) kann ein KI-Assistent im offenen Dokument arbeiten – ein lokales Modell ebenso wie ein
+Cloud-Dienst wie Claude: den
 Quelltext lesen, Stellen ändern, Seiten der Vorschau ansehen, ein neues Dokument aus einem Typ anlegen
 oder ein anderes öffnen. Jede Änderung erscheint sofort im Editor und in der Vorschau und lässt sich
 mit Rückgängig zurücknehmen.
@@ -287,7 +289,8 @@ es aus. Die Wahl gilt je Rechner und bleibt über einen Neustart erhalten.
 
 **Im Assistenten eintragen:** Darunter steht die Zeile für Claude Code
 (`claude mcp add tftn -- "<Pfad zu TFTN>" --mcp`); „Kopieren“ und im Terminal ausführen. Andere
-Assistenten tragen als Befehl das TFTN-Programm mit dem Argument `--mcp` ein, in Claude Desktop etwa:
+Assistenten, auch solche mit lokalem Modell, tragen als Befehl das TFTN-Programm mit dem Argument
+`--mcp` ein; die übliche `mcpServers`-Angabe (Claude Desktop, LM Studio u. a.) lautet etwa:
 
 ```json
 { "mcpServers": { "tftn": { "command": "/Applications/TFTN.app/Contents/MacOS/tftn-app", "args": ["--mcp"] } } }
