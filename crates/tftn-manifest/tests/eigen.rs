@@ -39,6 +39,10 @@ fn kennung_aus_dem_titel() {
         Some("eigen-2-spalten")
     );
     assert_eq!(kennung_aus_titel(" – "), None);
+    // Unter Windows reservierte Ordnernamen
+    assert_eq!(kennung_aus_titel("Con").as_deref(), Some("eigen-con"));
+    assert_eq!(kennung_aus_titel("NUL").as_deref(), Some("eigen-nul"));
+    assert_eq!(kennung_aus_titel("com1").as_deref(), Some("eigen-com1"));
 }
 
 #[test]
@@ -99,4 +103,39 @@ fn eigener_typ_als_vorbild() {
     let main = std::fs::read_to_string(zweiter.join("vorlage/main.typ")).unwrap();
     assert!(main.contains("@local/brief-ordination:0.1.0"), "{main}");
     assert!(zweiter.join("schriften/SourceSans3-Regular.otf").is_file());
+}
+
+/// Finder-Reste im Vorbild kommen nicht mit.
+#[test]
+fn ds_store_kommt_nicht_mit() {
+    let (_, q) = quellen("ds-store");
+    let erster = eigenen_typ_anlegen(&q, "tftn-brief", "Mein Brief").unwrap();
+    std::fs::write(erster.join(".DS_Store"), b"x").unwrap();
+    std::fs::write(erster.join("vorlage/.DS_Store"), b"x").unwrap();
+    let zweiter = eigenen_typ_anlegen(&q, "mein-brief", "Zweiter Brief").unwrap();
+    assert!(!zweiter.join(".DS_Store").exists());
+    assert!(!zweiter.join("vorlage/.DS_Store").exists());
+    assert!(zweiter.join("vorlage/main.typ").is_file());
+}
+
+/// Ein Manifest, dessen Vorlagenpfad aus dem Typ hinausführt, darf beim Kopieren keine fremden
+/// Dateien umschreiben.
+#[test]
+fn vorlagenpfad_ausserhalb_des_typs_abgelehnt() {
+    let (o, q) = quellen("ausserhalb");
+    let erster = eigenen_typ_anlegen(&q, "tftn-brief", "Mein Brief").unwrap();
+    let fremd = o.join("fremd.typ");
+    std::fs::write(&fremd, "#import \"@local/mein-brief:0.1.0\": *\n").unwrap();
+    let manifest = std::fs::read_to_string(erster.join("typst.toml")).unwrap();
+    let manifest = manifest.replace("path = \"vorlage\"", "path = \"../../..\"");
+    assert!(manifest.contains("../../.."), "{manifest}");
+    std::fs::write(erster.join("typst.toml"), manifest).unwrap();
+    let e = eigenen_typ_anlegen(&q, "mein-brief", "Zweiter Brief");
+    assert!(e.is_err(), "{e:?}");
+    assert!(
+        std::fs::read_to_string(&fremd)
+            .unwrap()
+            .contains("mein-brief"),
+        "fremde Datei unverändert"
+    );
 }

@@ -1,7 +1,8 @@
 // Export-Menü (PLAN-M1 AP8): Profile aus dem Manifest, „Probe“ nach _renders/, „Abnehmen“ nach
 // export/ (setzt den Zeitstempel; zweiter Klick bestätigt). Vor dem Export wird gespeichert.
 
-import { dialogAnmelden, bereich, schliessenKnopf } from "./dialoge";
+import { dialogAnmelden, dialogKopf } from "./dialoge";
+import { anAnker, knopfAnker, oberflaechenZoom } from "./platz";
 import { t } from "./sprache";
 
 export interface ProfilJs {
@@ -33,7 +34,7 @@ export class ExportMenue {
   private menue: HTMLDivElement;
 
   constructor(
-    knopf: HTMLElement,
+    private knopf: HTMLElement,
     private profile: () => Promise<ProfilJs[]>,
     private exportieren: (profil: string, abnehmen: boolean) => Promise<ExportJs>,
     private word: WordAktionen,
@@ -42,19 +43,18 @@ export class ExportMenue {
     this.menue.id = "export-menue";
     this.menue.hidden = true;
     document.body.append(this.menue);
+    this.menue.setAttribute("role", "dialog");
+    knopf.setAttribute("aria-haspopup", "dialog");
+    knopf.setAttribute("aria-expanded", "false");
     knopf.addEventListener("click", () => (this.menue.hidden ? void this.oeffnen() : this.schliessen()));
-    this.menue.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        this.schliessen();
-      }
-    });
-    dialogAnmelden(this);
+    // Esc schließt über dialoge.ts (`escAktivieren`).
+    dialogAnmelden(this, this.menue, this.knopf);
   }
 
-  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
-  enthaelt(ziel: Node): boolean {
-    return bereich(this.menue, document.getElementById("export-knopf"))(ziel);
+
+  /** Unter dem Knopf, ganz im Fenster; nach jedem Wachsen neu. */
+  private platzieren() {
+    if (!this.menue.hidden) anAnker(this.menue, knopfAnker(this.knopf), oberflaechenZoom());
   }
 
   get offen(): boolean {
@@ -63,11 +63,14 @@ export class ExportMenue {
 
   schliessen() {
     this.menue.hidden = true;
+    this.knopf.setAttribute("aria-expanded", "false");
   }
 
   private async oeffnen() {
     this.menue.hidden = false;
+    this.knopf.setAttribute("aria-expanded", "true");
     this.menue.textContent = t("Lade Export-Profile …");
+    this.platzieren();
     let liste: ProfilJs[];
     try {
       liste = await this.profile();
@@ -75,12 +78,7 @@ export class ExportMenue {
       this.menue.textContent = String(fehler);
       return;
     }
-    const kopf = document.createElement("div");
-    kopf.className = "neu-kopf";
-    const titel = document.createElement("h2");
-    titel.textContent = t("Export");
-    kopf.append(titel, schliessenKnopf(() => this.schliessen()));
-    this.menue.replaceChildren(kopf);
+    this.menue.replaceChildren(dialogKopf(t("Export"), () => this.schliessen()));
     const w = document.createElement("div");
     w.className = "export-zeile";
     const wName = document.createElement("span");
@@ -118,6 +116,7 @@ export class ExportMenue {
     const ergebnis = document.createElement("div");
     ergebnis.className = "export-ergebnis";
     this.menue.append(ergebnis);
+    this.platzieren();
   }
 
   private async wordLos() {
@@ -140,6 +139,7 @@ export class ExportMenue {
     } catch (fehler) {
       ergebnis.textContent = t("Export nach Word fehlgeschlagen: {fehler}", { fehler: String(fehler) });
     }
+    this.platzieren();
   }
 
   private async los(profil: string, abnehmen: boolean) {
@@ -167,5 +167,6 @@ export class ExportMenue {
     } catch (fehler) {
       ergebnis.textContent = t("Export fehlgeschlagen: {fehler}", { fehler: String(fehler) });
     }
+    this.platzieren();
   }
 }

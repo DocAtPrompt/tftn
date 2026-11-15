@@ -47,14 +47,6 @@ pub fn kleinster_bereich(alt: &str, neu: &str) -> (Range<usize>, String) {
     )
 }
 
-/// Zeile und Spalte (beide ab 1, Spalte in Zeichen) zum Byte `pos`.
-pub fn zeile_spalte(text: &str, pos: usize) -> (usize, usize) {
-    let vor = &text[..pos.min(text.len())];
-    let zeile = vor.matches('\n').count() + 1;
-    let anfang = vor.rfind('\n').map(|i| i + 1).unwrap_or(0);
-    (zeile, vor[anfang..].chars().count() + 1)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -106,14 +98,5 @@ mod tests {
             probe.replace_range(b, &t);
             assert_eq!(probe, n);
         }
-    }
-
-    #[test]
-    fn zeile_und_spalte() {
-        let t = "eins\nzwei äb\ndrei";
-        assert_eq!(zeile_spalte(t, 0), (1, 1));
-        assert_eq!(zeile_spalte(t, 5), (2, 1));
-        assert_eq!(zeile_spalte(t, t.find('b').unwrap()), (2, 7));
-        assert_eq!(zeile_spalte(t, t.len()), (3, 5));
     }
 }

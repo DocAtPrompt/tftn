@@ -6,5 +6,6 @@ export default defineConfig({
   clearScreen: false,
   server: { port: 1420, strictPort: true, watch: { ignored: ["**/src-tauri/**", "**/target/**"] } },
   build: { outDir: "../dist", emptyOutDir: true, target: "es2022" },
-  test: { root: ".", include: ["ui/src/**/*.test.ts"] },
+  // CSS nur für stil.test.ts (liest stil.css?raw); sonst ersetzt vitest CSS durch Leeres.
+  test: { root: ".", include: ["ui/src/**/*.test.ts"], css: { include: [/stil\.css/] } },
 });

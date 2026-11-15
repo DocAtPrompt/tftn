@@ -1,8 +1,10 @@
-// Kleines Menü unter einem Knopf der Kopfzeile (etwa „Neu“). Schließt mit Esc, einem Klick daneben
-// oder nach einer Wahl.
+// Kleines Menü unter einem Knopf der Kopfzeile (etwa „Neu“). Schließt mit Esc, Tab, einem Klick
+// daneben oder nach einer Wahl; Pfeiltasten, Pos1 und Ende wandern durch die Punkte. Nach dem
+// Schließen mit der Tastatur bekommt der Knopf den Fokus zurück.
 
-import { bereich, dialogAnmelden } from "./dialoge";
+import { dialogAnmelden } from "./dialoge";
 import { ikoneSvg } from "./ikonen";
+import { anAnker, knopfAnker, oberflaechenZoom } from "./platz";
 
 export interface MenuePunkt {
   text: string;
@@ -11,9 +13,22 @@ export interface MenuePunkt {
   aktion: () => void;
 }
 
-/** Vergrößerung der Oberfläche (Einstellungen); Lage und Maße rechnen sich in ungezoomten Pixeln. */
-export function oberflaechenZoom(): number {
-  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui-zoom")) || 1;
+/** Was eine Taste im offenen Menü bewirkt: anderer Punkt, schließen oder nichts. */
+export function menueTaste(taste: string, index: number, anzahl: number): { fokus: number } | "schliessen" | null {
+  if (taste === "Tab") return "schliessen";
+  if (anzahl === 0) return null;
+  switch (taste) {
+    case "ArrowDown":
+      return { fokus: (index + 1) % anzahl };
+    case "ArrowUp":
+      return { fokus: index <= 0 ? anzahl - 1 : index - 1 };
+    case "Home":
+      return { fokus: 0 };
+    case "End":
+      return { fokus: anzahl - 1 };
+    default:
+      return null;
+  }
 }
 
 export class KnopfMenue {
@@ -28,20 +43,34 @@ export class KnopfMenue {
     this.huelle.hidden = true;
     document.body.append(this.huelle);
     knopf.setAttribute("aria-haspopup", "menu");
+    knopf.setAttribute("aria-expanded", "false");
     knopf.addEventListener("click", () => (this.offen ? this.schliessen() : this.oeffnen()));
-    dialogAnmelden(this);
+    this.huelle.addEventListener("keydown", (e) => this.taste(e));
+    dialogAnmelden(this, this.huelle, this.knopf);
   }
 
   get offen(): boolean {
     return !this.huelle.hidden;
   }
 
-  enthaelt(ziel: Node): boolean {
-    return bereich(this.huelle, this.knopf)(ziel);
-  }
 
   schliessen() {
+    const hatteFokus = this.huelle.contains(document.activeElement);
     this.huelle.hidden = true;
+    this.knopf.setAttribute("aria-expanded", "false");
+    if (hatteFokus) this.knopf.focus();
+  }
+
+  private taste(e: KeyboardEvent) {
+    const knoepfe = [...this.huelle.querySelectorAll<HTMLButtonElement>("button")];
+    const was = menueTaste(e.key, knoepfe.indexOf(document.activeElement as HTMLButtonElement), knoepfe.length);
+    if (was === "schliessen") {
+      // Tab geht vom Knopf aus weiter (kein preventDefault).
+      this.schliessen();
+    } else if (was) {
+      e.preventDefault();
+      knoepfe[was.fokus].focus();
+    }
   }
 
   private oeffnen() {
@@ -59,11 +88,9 @@ export class KnopfMenue {
         return b;
       }),
     );
-    const zoom = oberflaechenZoom();
-    const r = this.knopf.getBoundingClientRect();
-    this.huelle.style.top = `${(r.bottom + 4) / zoom}px`;
-    this.huelle.style.left = `${Math.max(8, r.left) / zoom}px`;
     this.huelle.hidden = false;
+    this.knopf.setAttribute("aria-expanded", "true");
+    anAnker(this.huelle, knopfAnker(this.knopf), oberflaechenZoom());
     this.huelle.querySelector("button")?.focus();
   }
 }

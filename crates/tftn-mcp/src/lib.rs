@@ -14,8 +14,11 @@ mod verbindung;
 mod werkzeuge;
 
 pub use protokoll::bruecke;
-pub use text::{ersetzen, kleinster_bereich, zeile_spalte};
-pub use verbindung::{Auftrag, VERBINDUNGSDATEI, Verbindung, schluessel, weiterreichen};
+pub use text::{ersetzen, kleinster_bereich};
+pub use verbindung::{
+    Auftrag, GEDULD, GRENZE_AUFTRAG, VERBINDUNGSDATEI, Verbindung, auftrag_lesen, schluessel,
+    schluessel_gleich, weiterreichen,
+};
 pub use werkzeuge::werkzeuge;
 
 use serde::{Deserialize, Serialize};

@@ -41,7 +41,7 @@ import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
 import { type SkinsJs, skinAnwenden } from "./skin";
-import { type McpAuftrag, type McpJs, mcpAnzeige, mcpFragtNoch } from "./mcp";
+import { type McpAuftrag, type McpJs, mcpAnzeige, mcpFragtNoch, mcpWechselAbschliessen } from "./mcp";
 import { ikonenSetzen } from "./ikonen";
 import { KnopfMenue } from "./knopfmenue";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
@@ -467,7 +467,7 @@ async function bausteinEinsetzen(id: string, von: number, bis: number, auswahl: 
 async function bausteinPaletteOeffnen() {
   const m = await modusAn(view.state.selection.main.from);
   if (m === null) {
-    hinweis(t("Hier lässt sich kein Baustein einfügen (Kommentar oder Raw-Text)."), undefined, "kurz");
+    meldung(t("Hier lässt sich kein Baustein einfügen (Kommentar oder Raw-Text)."));
     return;
   }
   bausteinPalette.oeffnen(m);
@@ -822,6 +822,15 @@ function schreibansichtSchalten(an: boolean) {
   view.dispatch({ effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: "center" }) });
 }
 
+/** Ein Schaltknopf zeigt seinen An-Zustand (`aria-pressed`, Optik in stil.css); er folgt dem
+ *  Attribut `attribut` von `ziel`, gleich wer es ändert (Knopf, Kürzel, Esc). */
+function schaltZustand(knopf: string, ziel: Element, attribut: string, an: () => boolean) {
+  const k = document.getElementById(knopf)!;
+  const zeigen = () => k.setAttribute("aria-pressed", String(an()));
+  new MutationObserver(zeigen).observe(ziel, { attributes: true, attributeFilter: [attribut] });
+  zeigen();
+}
+
 function seitenleisteUmschalten() {
   if (seitenleiste?.offen) seitenleiste.schliessen();
   else seitenleisteOeffnen("hier");
@@ -897,7 +906,7 @@ async function klick(seite: number, x: number, y: number) {
       hinweis(t("Diese Stelle steht in {datei}; TFTN öffnet derzeit nur die Hauptdatei.", { datei: a.datei }));
       break;
     case "url":
-      hinweis(t("Verweis auf {url}", { url: a.url }), undefined, "kurz");
+      meldung(t("Verweis auf {url}", { url: a.url }));
       break;
     case "position":
       vorschau.scrollen(a.seite, a.y);
@@ -930,7 +939,7 @@ async function bilderEinfuegen(dateien: File[], pos: number) {
         scrollIntoView: true,
       });
       pos = b.von + b.text.length;
-      hinweis(t("{pfad} übernommen. Die Unterschrift kommt in die eckigen Klammern.", { pfad }), undefined, "kurz");
+      meldung(t("{pfad} übernommen. Die Unterschrift kommt in die eckigen Klammern.", { pfad }));
     } catch (fehler) {
       hinweis(t("Bild nicht übernommen: {fehler}", { fehler: String(fehler) }));
     }
@@ -1041,8 +1050,15 @@ async function entwurfBenennen(neuLaden: boolean): Promise<boolean> {
   return true;
 }
 
-/** Vor einem Wechsel: Ein Dokument ohne Namen, in dem etwas steht, bekommt erst einen. */
-function vorWechsel(): Promise<boolean> {
+/** Text in Arbeit im Fach „Dokument“ übernehmen (gesetzt, sobald das Fach steht). */
+let fachVorWechsel: () => Promise<boolean> = async () => true;
+
+/**
+ * Vor einem Wechsel: Text in Arbeit im Fach „Dokument“ wird übernommen; ein Dokument ohne Namen, in
+ * dem etwas steht, bekommt erst einen.
+ */
+async function vorWechsel(): Promise<boolean> {
+  if (!(await fachVorWechsel())) return false;
   return entwurf && entwurfHatText(view.state.doc.toString()) ? entwurfBenennen(false) : speichern();
 }
 
@@ -1098,7 +1114,9 @@ async function importieren() {
 let neuDialog: NeuDialog | undefined;
 
 /** Öffnen, Neu, Importieren und die Ordnerwahl: immer nur ein Dialog bzw. Wechsel zugleich. */
-const einzeln = sperre();
+const einzeln = sperre(() =>
+  meldung(t("Ein Dokumentwechsel läuft noch – bitte die offene Frage beantworten oder kurz warten.")),
+);
 
 let pfadDialog: PfadDialog | undefined;
 
@@ -1218,6 +1236,8 @@ function hinweis(text: string, knopf?: HinweisKnopf | HinweisKnopf[], art: Hinwe
   const h = document.getElementById("hinweis")!;
   h.hidden = text === "";
   h.classList.toggle("kurz", art === "kurz");
+  // Fehler und Warnungen sagt ein Bildschirmleser sofort an, kurze Meldungen höflich.
+  h.setAttribute("role", art === "kurz" ? "status" : "alert");
   document.getElementById("hinweis-text")!.textContent = text;
   document.getElementById("hinweis-knoepfe")!.replaceChildren(
     ...knoepfe.map((k) => {
@@ -1229,6 +1249,11 @@ function hinweis(text: string, knopf?: HinweisKnopf | HinweisKnopf[], art: Hinwe
   );
   const ms = ausblendenNach(art, knoepfe.length);
   if (text && ms !== null) hinweisZeitgeber = window.setTimeout(() => hinweis(""), ms);
+}
+
+/** Kurze Erfolgsmeldung („… übernommen.“): ruhige Farbe, blendet sich aus. */
+function meldung(text: string) {
+  hinweis(text, undefined, "kurz");
 }
 
 // --- MCP ------------------------------------------------------------------------------------
@@ -1275,7 +1300,7 @@ async function mcpKlick() {
   }
   try {
     mcpZeigen(await invoke<McpJs>("mcp_setzen", { an: false }));
-    hinweis(t("MCP ausgeschaltet."), undefined, "kurz");
+    meldung(t("MCP ausgeschaltet."));
   } catch (fehler) {
     hinweis(String(fehler));
   }
@@ -1299,11 +1324,9 @@ async function mcpAuftrag(a: McpAuftrag) {
       // Ziel erst jetzt vormerken: Das Benennen eines Dokuments ohne Namen merkt sich sonst sich selbst.
       let ok = false;
       const lief = await einzeln(async () => {
-        ok = await wechselNachSpeichern(vorWechsel, async () => {
-          await invoke("mcp_wechsel_vormerken");
-          await antwort(true);
-          location.reload();
-        });
+        ok = await wechselNachSpeichern(vorWechsel, () =>
+          mcpWechselAbschliessen(() => invoke("mcp_wechsel_vormerken"), antwort, () => location.reload()),
+        );
       });
       if (!lief) await antwort(false, "In TFTN ist gerade ein Dialog zum Öffnen oder Anlegen offen; bitte später noch einmal.");
       else if (!ok) await antwort(false);
@@ -1338,12 +1361,12 @@ async function projektOeffnen(): Promise<Geoeffnet> {
   }
 }
 
-/** CSS-Variablen, die der geltende Skin gesetzt hat (für den nächsten Wechsel). */
 /** Größe der Oberfläche (Prozent) als `--ui-zoom` (stil.css). */
 function oberflaecheAnwenden(prozent: number) {
   document.documentElement.style.setProperty("--ui-zoom", String(prozent / 100));
 }
 
+/** CSS-Variablen, die der geltende Skin gesetzt hat (für den nächsten Wechsel). */
 let skinVariablen: string[] = [];
 
 function skinsSetzen(s: SkinsJs) {
@@ -1389,12 +1412,14 @@ async function start() {
       return invoke<ExportJs>("exportieren", { profil, abnehmen });
     },
     hinweis: (text) => hinweis(text),
+    meldung,
     vergleichen: async () => {
       if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht verglichen."));
       return invoke<VergleichJs>("typ_vergleichen");
     },
     uebernehmen: typUebernehmen,
   });
+  fachVorWechsel = () => dokumentFach.vorWechsel();
   neuDialog = new NeuDialog({
     typen: () => invoke<TypenJs>("typen_liste").then(texteUebersetzen),
     vorschaubild: (name) => invoke<string>("typ_vorschaubild", { name }),
@@ -1534,6 +1559,9 @@ async function start() {
   document.getElementById("seite-knopf")!.addEventListener("click", () => seitenleisteOeffnen("seite"));
   document.getElementById("seitenleiste-knopf")!.addEventListener("click", seitenleisteUmschalten);
   document.getElementById("schreibansicht-knopf")!.addEventListener("click", () => schreibansichtSchalten(true));
+  schaltZustand("gliederung-knopf", gliederungOrt(), "hidden", () => !gliederungOrt().hidden);
+  schaltZustand("seitenleiste-knopf", document.getElementById("seitenleiste")!, "hidden", () => seitenleiste?.offen ?? false);
+  schaltZustand("schreibansicht-knopf", document.body, "class", () => schreibansicht.istAn());
   document.getElementById("schreibansicht-ende")!.addEventListener("click", () => schreibansichtSchalten(false));
   // Esc verlässt die Schreibansicht, wenn nichts anderes die Taste gebraucht hat; das Kürzel wirkt
   // auch außerhalb des Editors (im Editor über die Keymap).
@@ -1578,7 +1606,7 @@ async function start() {
         await invoke("sprache_setzen", { kennung });
         // Neu laden wie bei einem Projektwechsel; ein Dokument ohne Namen braucht vorher einen.
         if (!(await wechselNachSpeichern(vorWechsel, async () => location.reload()))) {
-          hinweis(t("Die Sprache gilt ab dem nächsten Start."), undefined, "kurz");
+          meldung(t("Die Sprache gilt ab dem nächsten Start."));
         }
       } catch (fehler) {
         hinweis(String(fehler));
@@ -1772,7 +1800,7 @@ async function start() {
   await listen<string>("extern-geaendert", (e) => {
     if (!ungespeichert) {
       textErsetzen(e.payload);
-      hinweis(t("Datei wurde außerhalb von TFTN geändert und neu geladen."), undefined, "kurz");
+      meldung(t("Datei wurde außerhalb von TFTN geändert und neu geladen."));
     } else {
       hinweis(t("Datei wurde außerhalb von TFTN geändert. Deine Änderungen sind noch nicht gespeichert."), {
         titel: t("Fremde Fassung laden"),

@@ -1,6 +1,7 @@
 // Gemeinsames aller Dialoge: Schließen-Knopf, Esc (wirkt auch, wenn der Dialog den Fokus verloren hat)
 // und ein Klick daneben.
 
+import { ikoneSvg } from "./ikonen";
 import { t } from "./sprache";
 
 export interface Dialog {
@@ -33,8 +34,24 @@ export function escZiel(dialoge: readonly Dialog[]): Dialog | null {
 
 const dialoge: Dialog[] = [];
 
-export function dialogAnmelden(d: Dialog) {
-  dialoge.push(d);
+/** `d` mit `enthaelt`: Ein Klick daneben schließt ihn, außer `behalten` sagt nein. */
+export function mitBereich(d: Dialog, enthaelt: (ziel: Node) => boolean): Dialog {
+  return {
+    get offen() {
+      return d.offen;
+    },
+    schliessen: () => d.schliessen(),
+    enthaelt,
+    behalten: () => d.behalten?.() ?? false,
+  };
+}
+
+/**
+ * Meldet einen Dialog an (Esc schließt den obersten). Mit `bereich` (Hülle, Auslöser) schließt ihn
+ * auch ein Klick daneben; ohne nur Esc und ×.
+ */
+export function dialogAnmelden(d: Dialog, ...elemente: (Element | null | undefined)[]) {
+  dialoge.push(elemente.length ? mitBereich(d, bereich(...elemente)) : d);
 }
 
 export function einDialogOffen(): boolean {
@@ -61,11 +78,23 @@ export function escAktivieren() {
   });
 }
 
+/** Schließen-Knopf mit demselben Symbol wie im Hinweisband. */
 export function schliessenKnopf(schliessen: () => void): HTMLButtonElement {
   const b = document.createElement("button");
-  b.className = "neu-zu";
-  b.textContent = "×";
+  b.className = "neu-zu nur-ikone";
+  b.innerHTML = ikoneSvg("schliessen");
   b.title = t("Schließen (Esc)");
+  b.setAttribute("aria-label", t("Schließen"));
   b.addEventListener("click", schliessen);
   return b;
+}
+
+/** Kopf eines Dialogs: Titel links, Schließen rechts. */
+export function dialogKopf(titel: string, schliessen: () => void, ebene: "h2" | "span" = "h2"): HTMLDivElement {
+  const kopf = document.createElement("div");
+  kopf.className = "neu-kopf";
+  const h = document.createElement(ebene);
+  h.textContent = titel;
+  kopf.append(h, schliessenKnopf(schliessen));
+  return kopf;
 }

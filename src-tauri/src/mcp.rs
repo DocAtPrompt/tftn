@@ -9,7 +9,7 @@
 //! Texte an den Assistenten bleiben deutsch und unübersetzt; was der Benutzer sieht, geht über `tr!`.
 
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Write};
+use std::io::Write;
 use std::net::{Ipv4Addr, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -45,7 +45,7 @@ pub enum Wechsel {
 }
 
 struct Horcher {
-    port: u16,
+    verbindung: Verbindung,
     stopp: Arc<AtomicBool>,
 }
 
@@ -117,16 +117,14 @@ fn melden(app: &AppHandle) {
 /// Schaltet ein oder aus und merkt es für den nächsten Start.
 pub fn setzen(app: &AppHandle, an: bool) -> Result<(), String> {
     let konfig = app_konfig(app)?;
-    let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
     if an {
         starten(app, &konfig)?;
     } else {
         stoppen(app, &konfig);
     }
     app.state::<Zustand>().mcp.lock().unwrap().wartet = false;
-    if rechner.mcp != an {
-        rechner.mcp = an;
-        rechner.speichern(&konfig).map_err(|e| e.to_string())?;
+    if tftn_einstellungen::Rechner::laden(&konfig).mcp != an {
+        crate::rechner_aendern(&konfig, |r| r.mcp = an)?;
     }
     melden(app);
     Ok(())
@@ -134,9 +132,7 @@ pub fn setzen(app: &AppHandle, an: bool) -> Result<(), String> {
 
 pub fn beim_wechsel_aus_setzen(app: &AppHandle, aus: bool) -> Result<(), String> {
     let konfig = app_konfig(app)?;
-    let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
-    rechner.mcp_beim_wechsel_aus = aus;
-    rechner.speichern(&konfig).map_err(|e| e.to_string())?;
+    crate::rechner_aendern(&konfig, |r| r.mcp_beim_wechsel_aus = aus)?;
     melden(app);
     Ok(())
 }
@@ -152,10 +148,11 @@ pub fn bestaetigen(app: &AppHandle, aktiv: bool) -> Result<(), String> {
     }
 }
 
-/// Beim Start: an, wenn es zuletzt an war; eine liegengebliebene Verbindungsdatei weg.
+/// Beim Start: an, wenn es zuletzt an war; eine liegengebliebene Verbindungsdatei weg (die einer
+/// zweiten laufenden Instanz bleibt).
 pub fn beim_start(app: &AppHandle) {
     let Ok(konfig) = app_konfig(app) else { return };
-    Verbindung::entfernen(&konfig);
+    Verbindung::verwaiste_entfernen(&konfig);
     if tftn_einstellungen::Rechner::laden(&konfig).mcp
         && let Err(e) = starten(app, &konfig)
     {
@@ -201,12 +198,11 @@ fn starten(app: &AppHandle, konfig: &Path) -> Result<(), String> {
     let horcher = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).map_err(|e| e.to_string())?;
     let port = horcher.local_addr().map_err(|e| e.to_string())?.port();
     let schluessel = tftn_mcp::schluessel();
-    Verbindung {
+    let verbindung = Verbindung {
         port,
         schluessel: schluessel.clone(),
-    }
-    .schreiben(konfig)
-    .map_err(|e| e.to_string())?;
+    };
+    verbindung.schreiben(konfig).map_err(|e| e.to_string())?;
     let stopp = Arc::new(AtomicBool::new(false));
     let halt = stopp.clone();
     let app = app.clone();
@@ -221,18 +217,18 @@ fn starten(app: &AppHandle, konfig: &Path) -> Result<(), String> {
             std::thread::spawn(move || bedienen(&app, strom, &schluessel));
         }
     });
-    m.horcher = Some(Horcher { port, stopp });
+    m.horcher = Some(Horcher { verbindung, stopp });
     Ok(())
 }
 
 fn stoppen(app: &AppHandle, konfig: &Path) {
     let horcher = app.state::<Zustand>().mcp.lock().unwrap().horcher.take();
-    Verbindung::entfernen(konfig);
     if let Some(h) = horcher {
+        h.verbindung.entfernen_wenn_eigen(konfig);
         h.stopp.store(true, Ordering::SeqCst);
         // `accept` aufwecken, damit der Faden endet.
         let _ = TcpStream::connect_timeout(
-            &(Ipv4Addr::LOCALHOST, h.port).into(),
+            &(Ipv4Addr::LOCALHOST, h.verbindung.port).into(),
             Duration::from_millis(500),
         );
     }
@@ -241,13 +237,21 @@ fn stoppen(app: &AppHandle, konfig: &Path) {
 /// Eine Verbindung der Brücke: ein Auftrag, eine Antwort.
 fn bedienen(app: &AppHandle, strom: TcpStream, schluessel: &str) {
     let _ = strom.set_read_timeout(Some(Duration::from_secs(10)));
-    let mut zeile = String::new();
-    if BufReader::new(&strom).read_line(&mut zeile).is_err() {
-        return;
-    }
+    let zeile = match tftn_mcp::auftrag_lesen(&strom, tftn_mcp::GRENZE_AUFTRAG) {
+        Ok(Some(z)) => z,
+        Ok(None) => return,
+        Err(e) => {
+            let antwort =
+                serde_json::to_string(&Ergebnis::fehler(e.to_string())).unwrap_or_default();
+            let _ = writeln!(&strom, "{antwort}");
+            return;
+        }
+    };
     let ergebnis = match serde_json::from_str::<Auftrag>(&zeile) {
         Err(e) => Ergebnis::fehler(format!("unlesbarer Auftrag: {e}")),
-        Ok(a) if a.schluessel != schluessel => Ergebnis::fehler("falscher Schlüssel"),
+        Ok(a) if !tftn_mcp::schluessel_gleich(&a.schluessel, schluessel) => {
+            Ergebnis::fehler("falscher Schlüssel")
+        }
         Ok(a) => {
             let (an, wartet) = {
                 let zustand = app.state::<Zustand>();
@@ -467,21 +471,35 @@ fn aendern(
                 .map_or(rev, |s| s.spiegel.rev());
             neu_rev > rev
         });
-        warten(Duration::from_secs(30), || {
-            zustand
-                .lauf
-                .lock()
-                .unwrap()
-                .as_ref()
-                .is_some_and(|l| l.rev >= neu_rev)
-        });
+        if neu_rev > rev {
+            warten(Duration::from_secs(30), || {
+                zustand
+                    .lauf
+                    .lock()
+                    .unwrap()
+                    .as_ref()
+                    .is_some_and(|l| l.rev >= neu_rev)
+            });
+        }
         let lauf = zustand.lauf.lock().unwrap().clone();
-        return Ok(Ergebnis::text(format!(
-            "Geändert (jetzt Rev {neu_rev}); im Editor mit Rückgängig zurückzunehmen.\n{}",
-            lauf_text(lauf.as_ref(), neu_rev)
-        )));
+        return Ok(Ergebnis::text(aenderung_text(rev, neu_rev, lauf.as_ref())));
     }
     Err("Der Benutzer schreibt gerade; bitte gleich noch einmal versuchen.".into())
+}
+
+/// Antwort auf eine Änderung. Kam die neue Revision nicht rechtzeitig an, ist der letzte Lauf noch
+/// der des alten Texts und kein Ergebnis der Änderung.
+fn aenderung_text(rev: u64, neu_rev: u64, lauf: Option<&LaufStand>) -> String {
+    if neu_rev <= rev {
+        return format!(
+            "Der Editor hat die Änderung angenommen, aber noch nicht gemeldet (Rev {rev}); das \
+             Ergebnis bitte gleich mit `status` prüfen."
+        );
+    }
+    format!(
+        "Geändert (jetzt Rev {neu_rev}); im Editor mit Rückgängig zurückzunehmen.\n{}",
+        lauf_text(lauf, neu_rev)
+    )
 }
 
 fn seite_ansehen(app: &AppHandle, seite: usize, ppi: f64) -> Result<Ergebnis, String> {
@@ -532,12 +550,19 @@ fn typen_auflisten(app: &AppHandle) -> Result<Ergebnis, String> {
     Ok(Ergebnis::text(t))
 }
 
+/// Wartezeiten eines Wechsels: auf den Benutzer (Speichern, Name für ein Dokument ohne Namen), auf das
+/// Öffnen und auf den ersten Typst-Lauf. Zusammen kürzer als die Geduld der Brücke
+/// (`tftn_mcp::GEDULD`), damit der Assistent eine Antwort bekommt statt eines Abbruchs.
+const WECHSEL_RUFEN: Duration = Duration::from_secs(230);
+const WECHSEL_OFFEN: Duration = Duration::from_secs(40);
+const WECHSEL_LAUF: Duration = Duration::from_secs(15);
+
 /// Öffnet `ziel` wie „Öffnen …“: Der Editor speichert (fragt bei einem Dokument ohne Namen nach
 /// einem) und lädt neu; dann wartet der Aufruf, bis das neue Dokument offen ist.
 fn wechseln(app: &AppHandle, ziel: PathBuf) -> Result<Ergebnis, String> {
     let zustand = app.state::<Zustand>();
     zustand.mcp.lock().unwrap().ziel = Some(ziel.clone());
-    let gewechselt = rufen(app, json!({ "art": "wechseln" }), Duration::from_secs(280));
+    let gewechselt = rufen(app, json!({ "art": "wechseln" }), WECHSEL_RUFEN);
     if !matches!(gewechselt, Ok(true)) {
         zustand.mcp.lock().unwrap().ziel = None;
         let mut naechstes = zustand.naechstes.lock().unwrap();
@@ -552,7 +577,7 @@ fn wechseln(app: &AppHandle, ziel: PathBuf) -> Result<Ergebnis, String> {
         });
     }
     let wurzel = ziel.canonicalize().unwrap_or(ziel.clone());
-    let offen = warten(Duration::from_secs(60), || {
+    let offen = warten(WECHSEL_OFFEN, || {
         zustand
             .sitzung
             .lock()
@@ -563,10 +588,17 @@ fn wechseln(app: &AppHandle, ziel: PathBuf) -> Result<Ergebnis, String> {
     if !offen {
         return Err(format!("{} wurde nicht geöffnet.", ziel.display()));
     }
-    let mut t = format!("Geöffnet: {}.", wurzel.display());
+    // Erst antworten, wenn Typst das neue Dokument einmal übersetzt hat (`oeffnen` leert den Lauf).
+    warten(WECHSEL_LAUF, || zustand.lauf.lock().unwrap().is_some());
+    let lauf = zustand.lauf.lock().unwrap().clone();
+    let mut t = format!(
+        "Geöffnet: {}.\n{}",
+        wurzel.display(),
+        lauf_text(lauf.as_ref(), lauf.as_ref().map_or(0, |l| l.rev))
+    );
     if zustand.mcp.lock().unwrap().wartet {
         t.push_str(
-            " MCP ist pausiert, bis der Benutzer in TFTN bestätigt, dass es für dieses Dokument aktiv \
+            "\nMCP ist pausiert, bis der Benutzer in TFTN bestätigt, dass es für dieses Dokument aktiv \
              bleibt; bis dahin werden Aufrufe abgelehnt.",
         );
     }
@@ -651,6 +683,35 @@ mod tests {
             lauf_text(Some(&l), 4),
             "Typst-Lauf (Rev 4): gelungen, 2 Seite(n)."
         );
+    }
+
+    #[test]
+    fn wechsel_antwortet_bevor_die_bruecke_aufgibt() {
+        let summe = WECHSEL_RUFEN + WECHSEL_OFFEN + WECHSEL_LAUF;
+        assert!(
+            summe + Duration::from_secs(10) <= tftn_mcp::GEDULD,
+            "{summe:?} gegen {:?}",
+            tftn_mcp::GEDULD
+        );
+    }
+
+    #[test]
+    fn aenderung_ohne_neue_revision_sagt_das() {
+        let l = LaufStand {
+            rev: 4,
+            gelungen: true,
+            seiten: 1,
+            meldungen: vec![],
+        };
+        let t = aenderung_text(4, 4, Some(&l));
+        assert!(t.contains("noch nicht"), "{t}");
+        assert!(
+            !t.contains("Typst-Lauf (Rev 4)"),
+            "kein alter Lauf als Ergebnis: {t}"
+        );
+        let t = aenderung_text(4, 5, Some(&LaufStand { rev: 5, ..l }));
+        assert!(t.starts_with("Geändert (jetzt Rev 5)"), "{t}");
+        assert!(t.contains("Typst-Lauf (Rev 5): gelungen"), "{t}");
     }
 
     #[test]

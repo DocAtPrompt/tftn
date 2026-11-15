@@ -41,6 +41,8 @@ sha2 = "0.10"
 tar = "0.4"
 # Rechtschreibung nach Dokumentsprache: Hunspell-Wörterbücher aus `dictionaries/`.
 spellbook = "0.4.2"
+# MCP-Schlüssel aus dem Zufall des Betriebssystems (Benutzer 2026-11-15; ohnehin über Tauri im Baum).
+getrandom = "0.3"
 
 # Abhängigkeiten (Typst, Rastern) auch im Entwicklungsbau optimieren: unoptimiert braucht die
 # Vorschau in `tauri dev` Sekunden statt Millisekunden. Eigene Crates bleiben schnell übersetzbar.

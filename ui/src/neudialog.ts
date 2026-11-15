@@ -3,7 +3,7 @@
 // steht in neuprojekt.ts, angelegt wird in Rust.
 
 import { type TypJs, type TypenJs, namePruefen, typenOrdnen, zielPfad, brauchtListe } from "./neuprojekt";
-import { dialogAnmelden, schliessenKnopf, bereich } from "./dialoge";
+import { dialogAnmelden, dialogKopf, schliessenKnopf } from "./dialoge";
 import { t } from "./sprache";
 
 export interface NeuAktionen {
@@ -52,7 +52,7 @@ export class NeuDialog {
         this.schliessen();
       }
     });
-    dialogAnmelden(this);
+    dialogAnmelden(this, this.huelle, document.getElementById("neu-knopf"));
     this.eltern.type = "text";
     this.eltern.placeholder = t("Ordner, in dem das Projekt entsteht");
     this.name.type = "text";
@@ -64,10 +64,6 @@ export class NeuDialog {
     this.anlegenKnopf.addEventListener("click", () => void this.anlegen());
   }
 
-  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
-  enthaelt(ziel: Node): boolean {
-    return bereich(this.huelle, document.getElementById("neu-knopf"))(ziel);
-  }
 
   behalten(): boolean {
     return this.name.value.trim() !== "";
@@ -91,8 +87,7 @@ export class NeuDialog {
     this.gewaehlt = typen[0] ?? null;
     if (!this.eltern.value) this.eltern.value = daten.vorgabe_ordner ?? "";
 
-    const kopf = el("div", "neu-kopf");
-    kopf.append(el("h2", "", t("Neu aus Vorlage")), this.zuKnopf());
+    const kopf = dialogKopf(t("Neu aus Vorlage"), () => this.schliessen());
     const teile: HTMLElement[] = [kopf];
     for (const w of daten.warnungen) teile.push(el("p", "dok-warnung", w));
 
@@ -288,8 +283,7 @@ export class PfadDialog {
       });
       const knoepfe = el("div", "neu-ordnerzeile");
       knoepfe.append(ok, ab);
-      const kopf = el("div", "neu-kopf");
-      kopf.append(el("h2", "", titel), schliessenKnopf(() => ende(null)));
+      const kopf = dialogKopf(titel, () => ende(null));
       this.huelle.replaceChildren(kopf, feld, ...(zusatz ? [zusatz] : []), knoepfe);
       this.huelle.hidden = false;
       feld.focus();

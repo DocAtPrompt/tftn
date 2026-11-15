@@ -70,24 +70,17 @@ body {
   grid-row: 4;
 }
 
-#kopf,
 #status {
   padding: 4px 10px;
   color: var(--leise);
-  border-bottom: 1px solid var(--linie);
+  border-top: 1px solid var(--linie);
   display: flex;
   gap: 1em;
   align-items: center;
-}
-
-#status {
-  border-top: 1px solid var(--linie);
-  border-bottom: none;
   justify-content: space-between;
 }
 
-#sync.warnung,
-#hinweis {
+#sync.warnung {
   color: var(--warn);
 }
 
@@ -111,13 +104,6 @@ body {
   grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
-}
-
-#editor-knoepfe {
-  display: flex;
-  gap: 6px;
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--linie, #ddd);
 }
 
 #editor {
@@ -219,15 +205,16 @@ body {
   margin-left: auto;
 }
 
+/* Fensteranteile durch die Oberflächengröße geteilt: `zoom` vergrößert sie sonst über das Fenster hinaus. */
 #palette,
 #baustein-palette,
 #einstellungen {
   position: fixed;
-  top: 12vh;
+  top: calc(12vh / var(--ui-zoom));
   left: 50%;
   transform: translateX(-50%);
-  width: min(720px, 92vw);
-  max-height: 70vh;
+  width: min(720px, calc(92vw / var(--ui-zoom)));
+  max-height: calc(70vh / var(--ui-zoom));
   display: flex;
   flex-direction: column;
   background: var(--grund);
@@ -309,16 +296,20 @@ body {
 }
 
 #export-menue {
+  /* Lage rechnet export.ts am Knopf (platz.ts). */
   position: fixed;
-  top: 36px;
-  right: 10px;
-  width: min(560px, 92vw);
+  width: min(560px, calc(92vw / var(--ui-zoom)));
   padding: 8px;
+  z-index: 10;
+}
+
+/* Klappfenster an einem Knopf (Neu-Menü, Export) */
+#export-menue,
+.knopf-menue {
   background: var(--grund);
   border: 1px solid var(--linie);
   border-radius: 8px;
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.25);
-  z-index: 10;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22);
 }
 
 #export-menue[hidden] {
@@ -384,9 +375,9 @@ body {
 
 /* Einstellungen und Tastenkürzel (PLAN-M2 AP3) */
 #einstellungen {
-  width: min(900px, 94vw);
-  max-height: 80vh;
-  top: 8vh;
+  width: min(900px, calc(94vw / var(--ui-zoom)));
+  max-height: calc(80vh / var(--ui-zoom));
+  top: calc(8vh / var(--ui-zoom));
 }
 
 .einst-ordner {
@@ -1492,7 +1483,9 @@ body.schreibansicht #schreibansicht-ende:focus-visible {
 #export-menue,
 #baustein-palette,
 .knopf-menue,
-#seitenleiste {
+#seitenleiste,
+#palette,
+#einstellungen {
   zoom: var(--ui-zoom);
 }
 
@@ -1502,6 +1495,8 @@ body.schreibansicht #schreibansicht-ende:focus-visible {
   align-items: center;
   gap: 12px;
   padding: 6px 10px;
+  color: var(--leise);
+  border-bottom: 1px solid var(--linie);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -1532,6 +1527,11 @@ body.schreibansicht #schreibansicht-ende:focus-visible {
   justify-content: center;
   gap: 6px;
   white-space: nowrap;
+}
+#editor-knoepfe button[aria-pressed="true"] {
+  background: var(--flaeche);
+  border-color: var(--akzent);
+  color: var(--akzent);
 }
 button.nur-ikone {
   width: 30px;
@@ -1566,7 +1566,11 @@ button:hover .ikone {
 
 #editor-knoepfe {
   container-type: inline-size;
+  display: flex;
   align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--linie);
   overflow: hidden;
 }
 @container (max-width: 380px) {
@@ -1612,10 +1616,6 @@ button:hover .ikone {
   flex-direction: column;
   min-width: 200px;
   padding: 4px;
-  background: var(--grund);
-  border: 1px solid var(--linie);
-  border-radius: 8px;
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.2);
 }
 .knopf-menue[hidden] {
   display: none;

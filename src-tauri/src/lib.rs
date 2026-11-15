@@ -35,6 +35,7 @@
 //! `paket_readme`, `paket_hinzufuegen`; der Kern steht in `pakete.rs`. Netz gibt es nur im
 //! Hilfsprogramm `tftn-holer`, das die App auf Klick startet.
 
+mod ablage;
 mod bilder;
 mod fassungen;
 mod formel;
@@ -109,6 +110,8 @@ struct Zustand {
     wechsel: Mutex<mcp::Wechsel>,
     /// Letzter Typst-Lauf, für die Antworten an MCP.
     lauf: Arc<Mutex<Option<mcp::LaufStand>>>,
+    /// Nummer der offenen Sitzung; `anzeige` und `lauf` nehmen nur Läufe dieser Sitzung an.
+    sitzung_nr: Arc<std::sync::atomic::AtomicU64>,
 }
 
 struct Auftrag {
@@ -148,12 +151,53 @@ struct VorschauEreignis {
     dauer_ms: f64,
 }
 
-/// Startet den Kompilier-Faden; endet, wenn der Sender fallen gelassen wird.
+/// Meldungen eines Laufs für den Editor (UTF-16-Bereich in der Hauptdatei) und für MCP
+/// („Fehler (Zeile 3, Spalte 5): …“); Meldungen aus anderen Dateien behalten ihren Ort.
+fn meldungen_aufbereiten(
+    meldungen: &[tftn_core::Meldung],
+    haupt: &Source,
+) -> (Vec<MeldungJs>, Vec<String>) {
+    let zeilen = haupt.lines();
+    meldungen
+        .iter()
+        .map(|m| {
+            let bereich = m
+                .stelle
+                .as_ref()
+                .filter(|(id, _)| *id == haupt.id())
+                .map(|(_, r)| r);
+            let utf16 = bereich
+                .and_then(|r| Some((zeilen.byte_to_utf16(r.start)?, zeilen.byte_to_utf16(r.end)?)));
+            let ort = match bereich.and_then(|r| zeilen.byte_to_line_column(r.start)) {
+                Some((z, sp)) => Some(format!("Zeile {}, Spalte {}", z + 1, sp + 1)),
+                None => m.ort.clone(),
+            };
+            let art = if m.fehler { "Fehler" } else { "Warnung" };
+            let text = match ort {
+                Some(o) => format!("{art} ({o}): {}", m.text),
+                None => format!("{art}: {}", m.text),
+            };
+            let js = MeldungJs {
+                fehler: m.fehler,
+                text: m.text.clone(),
+                ort: m.ort.clone(),
+                von: utf16.map(|b| b.0),
+                bis: utf16.map(|b| b.1),
+            };
+            (js, text)
+        })
+        .unzip()
+}
+
+/// Startet den Kompilier-Faden der Sitzung `meine`; endet, wenn der Sender fallen gelassen wird.
+/// Ergebnisse legt er nur ab, solange `meine` die laufende Sitzung ist (siehe `ablage`).
 fn kompilierer_starten(
     app: tauri::AppHandle,
     vorschau: Arc<Mutex<Vorschau>>,
     anzeige: Arc<Mutex<Option<Anzeige>>>,
     stand: Arc<Mutex<Option<mcp::LaufStand>>>,
+    laufend: Arc<std::sync::atomic::AtomicU64>,
+    meine: u64,
 ) -> mpsc::Sender<Auftrag> {
     let (tx, rx) = mpsc::channel::<Auftrag>();
     std::thread::spawn(move || {
@@ -162,7 +206,6 @@ fn kompilierer_starten(
             while let Ok(neuer) = rx.try_recv() {
                 auftrag = neuer;
             }
-            let haupt = auftrag.quelle.id();
             let zeilen = auftrag.quelle.clone();
             let lauf = {
                 let mut vorschau = vorschau.lock().unwrap();
@@ -170,56 +213,19 @@ fn kompilierer_starten(
                 if lauf.gelungen
                     && let Some(gut) = vorschau.gut()
                 {
-                    *anzeige.lock().unwrap() = Some(Anzeige {
+                    ablage::ablegen(&anzeige, &laufend, meine, || Anzeige {
                         hashes: gut.hashes.clone(),
                         dokument: gut.dokument.clone(),
                     });
                 }
                 lauf
             };
-            let meldungen = lauf
-                .meldungen
-                .iter()
-                .map(|m| {
-                    let bereich =
-                        m.stelle
-                            .as_ref()
-                            .filter(|(id, _)| *id == haupt)
-                            .and_then(|(_, r)| {
-                                let z = zeilen.lines();
-                                Some((z.byte_to_utf16(r.start)?, z.byte_to_utf16(r.end)?))
-                            });
-                    MeldungJs {
-                        fehler: m.fehler,
-                        text: m.text.clone(),
-                        ort: m.ort.clone(),
-                        von: bereich.map(|b| b.0),
-                        bis: bereich.map(|b| b.1),
-                    }
-                })
-                .collect();
-            *stand.lock().unwrap() = Some(mcp::LaufStand {
+            let (meldungen, fuer_mcp) = meldungen_aufbereiten(&lauf.meldungen, &zeilen);
+            ablage::ablegen(&stand, &laufend, meine, || mcp::LaufStand {
                 rev: lauf.rev,
                 gelungen: lauf.gelungen,
                 seiten: lauf.seiten.len(),
-                meldungen: lauf
-                    .meldungen
-                    .iter()
-                    .map(|m| {
-                        let art = if m.fehler { "Fehler" } else { "Warnung" };
-                        let ort = match m.stelle.as_ref().filter(|(id, _)| *id == haupt) {
-                            Some((_, r)) => {
-                                let (z, sp) = tftn_mcp::zeile_spalte(zeilen.text(), r.start);
-                                Some(format!("Zeile {z}, Spalte {sp}"))
-                            }
-                            None => m.ort.clone(),
-                        };
-                        match ort {
-                            Some(o) => format!("{art} ({o}): {}", m.text),
-                            None => format!("{art}: {}", m.text),
-                        }
-                    })
-                    .collect(),
+                meldungen: fuer_mcp,
             });
             let ereignis = VorschauEreignis {
                 rev: lauf.rev,
@@ -237,7 +243,10 @@ fn kompilierer_starten(
                 meldungen,
                 dauer_ms: lauf.dauer_ms,
             };
-            let _ = app.emit("vorschau", ereignis);
+            // Nach einem Wechsel gehört der Lauf zum alten Dokument: nicht mehr melden.
+            if ablage::aktuell(&laufend, meine) {
+                let _ = app.emit("vorschau", ereignis);
+            }
         }
     });
     tx
@@ -503,12 +512,6 @@ fn oeffnen(
     let spiegel = Spiegel::neu(vorschau.world().haupt(), &roh);
     let vorschau = Arc::new(Mutex::new(vorschau));
     *zustand.vorschau.lock().unwrap() = Some(vorschau.clone());
-    let tx = kompilierer_starten(
-        app.clone(),
-        vorschau,
-        zustand.anzeige.clone(),
-        zustand.lauf.clone(),
-    );
     let antwort = Geoeffnet {
         ordner: projekt.wurzel.display().to_string(),
         datei: projekt.konfig.haupt.clone(),
@@ -538,6 +541,18 @@ fn oeffnen(
         auf_platte,
         schriften_abdruck: 0,
     };
+    // Vorschau und Lauf des vorigen Dokuments gelten nicht mehr; sein Kompilierer legt nichts mehr ab.
+    let meine = ablage::neue_sitzung(&zustand.sitzung_nr);
+    ablage::leeren(&zustand.anzeige);
+    ablage::leeren(&zustand.lauf);
+    let tx = kompilierer_starten(
+        app.clone(),
+        vorschau,
+        zustand.anzeige.clone(),
+        zustand.lauf.clone(),
+        zustand.sitzung_nr.clone(),
+        meine,
+    );
     *zustand.kompilierer.lock().unwrap() = Some(tx);
     kompilieren_lassen(&zustand, &sitzung);
     *zustand.sitzung.lock().unwrap() = Some(sitzung);
@@ -3003,9 +3018,15 @@ fn sprachen_lesen(app: tauri::AppHandle) -> Result<SprachenJs, String> {
 #[tauri::command]
 fn sprache_setzen(app: tauri::AppHandle, kennung: Option<String>) -> Result<(), String> {
     let konfig = app_konfig(&app)?;
-    let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
-    rechner.sprache = kennung.filter(|k| !k.is_empty());
-    rechner.speichern(&konfig).map_err(|e| e.to_string())
+    rechner_aendern(&konfig, |r| r.sprache = kennung.filter(|k| !k.is_empty()))
+}
+
+/// Einstellungen dieses Rechners laden, ändern, speichern.
+fn rechner_aendern<T>(
+    konfig: &Path,
+    f: impl FnOnce(&mut tftn_einstellungen::Rechner) -> T,
+) -> Result<T, String> {
+    tftn_einstellungen::Rechner::aendern(konfig, f).map_err(|e| e.to_string())
 }
 
 // --- Skins ---------------------------------------------------------------------------------
@@ -3060,21 +3081,14 @@ fn oberflaeche_lesen(app: tauri::AppHandle) -> Result<u16, String> {
 #[tauri::command]
 fn oberflaeche_setzen(app: tauri::AppHandle, prozent: u16) -> Result<u16, String> {
     let konfig = app_konfig(&app)?;
-    let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
-    rechner.oberflaeche = (prozent != 100).then_some(prozent);
-    let gilt = rechner.oberflaeche_prozent();
-    rechner.oberflaeche = (gilt != 100).then_some(gilt);
-    rechner.speichern(&konfig).map_err(|e| e.to_string())?;
-    Ok(gilt)
+    rechner_aendern(&konfig, |r| r.oberflaeche_setzen(prozent))
 }
 
 /// Skin für diesen Rechner; `None` = wie das System. Gilt sofort.
 #[tauri::command]
 fn skin_setzen(app: tauri::AppHandle, kennung: Option<String>) -> Result<SkinsJs, String> {
     let konfig = app_konfig(&app)?;
-    let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
-    rechner.skin = kennung.filter(|k| !k.is_empty());
-    rechner.speichern(&konfig).map_err(|e| e.to_string())?;
+    rechner_aendern(&konfig, |r| r.skin = kennung.filter(|k| !k.is_empty()))?;
     skins_js(&app)
 }
 
@@ -3100,9 +3114,7 @@ fn sprachvorlage_anlegen(app: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 fn offline_setzen(app: tauri::AppHandle, an: bool) -> Result<EinstellungenJs, String> {
     let konfig = app_konfig(&app)?;
-    let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
-    rechner.ganz_offline = an;
-    rechner.speichern(&konfig).map_err(|e| e.to_string())?;
+    rechner_aendern(&konfig, |r| r.ganz_offline = an)?;
     Ok(einstellungen_js(&konfig))
 }
 
@@ -3342,6 +3354,39 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn meldungen_fuer_editor_und_mcp_in_einem_durchgang() {
+        let quelle = super::Source::detached("a\nb€ cd");
+        let id = quelle.id();
+        let meldung = |fehler, stelle: Option<std::ops::Range<usize>>, ort: Option<&str>| {
+            tftn_core::Meldung {
+                fehler,
+                ort: ort.map(String::from),
+                text: "kaputt".into(),
+                stelle: stelle.map(|r| (id, r)),
+            }
+        };
+        // „c“ beginnt bei Byte 7 (b, €=3 Byte, Leerzeichen): Zeile 2, Spalte 4; UTF-16 5..6.
+        let (js, texte) = super::meldungen_aufbereiten(
+            &[
+                meldung(true, Some(7..8), Some("main.typ:2:4")),
+                meldung(false, None, Some("lib.typ:1:1")),
+                meldung(false, None, None),
+            ],
+            &quelle,
+        );
+        assert_eq!((js[0].von, js[0].bis), (Some(5), Some(6)));
+        assert_eq!((js[1].von, js[1].bis), (None, None));
+        assert_eq!(
+            texte,
+            [
+                "Fehler (Zeile 2, Spalte 4): kaputt",
+                "Warnung (lib.typ:1:1): kaputt",
+                "Warnung: kaputt"
+            ]
+        );
+    }
+
     use super::*;
 
     /// Abschlussprüfung AP8: Ohne passende Sitzung (gewechselt oder keine) spielt „Übernehmen“

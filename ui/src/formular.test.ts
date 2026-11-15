@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  textVorWechsel,
   type Art,
   type Feld,
   type Formular,
@@ -215,5 +216,27 @@ describe("knopfNachEintrag", () => {
 
   it("hinzufügen: das erste Feld des neuen Eintrags", () => {
     expect(knopfNachEintrag({ art: "hinzufuegen" }, 3)).toEqual({ index: 2, knopf: "feld" });
+  });
+});
+
+describe("textVorWechsel", () => {
+  it("unveränderter oder kein Text: wechseln ohne Schreiben", async () => {
+    const geschrieben: string[] = [];
+    const setzen = async (_s: string, t: string) => void geschrieben.push(t);
+    expect(await textVorWechsel(null, setzen)).toBeNull();
+    expect(await textVorWechsel({ stand: "a", start: "x = 1\n", text: "x = 1\n" }, setzen)).toBeNull();
+    expect(geschrieben).toEqual([]);
+  });
+  it("geänderter Text wird vor dem Wechsel übernommen", async () => {
+    const geschrieben: [string, string][] = [];
+    const setzen = async (s: string, t: string) => void geschrieben.push([s, t]);
+    expect(await textVorWechsel({ stand: "a", start: "x = 1\n", text: "x = 2\n" }, setzen)).toBeNull();
+    expect(geschrieben).toEqual([["a", "x = 2\n"]]);
+  });
+  it("scheitert das Übernehmen, bleibt das Dokument offen und der Grund kommt zurück", async () => {
+    const setzen = async () => {
+      throw "kaputtes TOML";
+    };
+    expect(await textVorWechsel({ stand: "a", start: "", text: "x =" }, setzen)).toBe("kaputtes TOML");
   });
 });

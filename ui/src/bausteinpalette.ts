@@ -3,7 +3,7 @@
 // wird wie im Menü nach „/“ (`menue`). Tastatur: ↑/↓ wählen, Enter einfügen, Esc schließen.
 
 import { type EintragJs, type Modus, abschnitt, kuerzelText, menue } from "./bausteine";
-import { dialogAnmelden, schliessenKnopf, bereich } from "./dialoge";
+import { dialogAnmelden, schliessenKnopf } from "./dialoge";
 import { t } from "./sprache";
 
 export class BausteinPalette {
@@ -32,7 +32,7 @@ export class BausteinPalette {
       <div class="palette-fuss"></div>`;
     document.body.append(this.huelle);
     this.huelle.querySelector(".neu-kopf")!.append(schliessenKnopf(() => this.schliessen()));
-    dialogAnmelden(this);
+    dialogAnmelden(this, this.huelle, document.getElementById("baustein-knopf"));
     this.suche = this.huelle.querySelector(".palette-suche")!;
     this.liste = this.huelle.querySelector(".palette-liste")!;
     this.fuss = this.huelle.querySelector(".palette-fuss")!;
@@ -47,10 +47,6 @@ export class BausteinPalette {
     });
   }
 
-  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
-  enthaelt(ziel: Node): boolean {
-    return bereich(this.huelle, document.getElementById("baustein-knopf"))(ziel);
-  }
 
   get offen(): boolean {
     return !this.huelle.hidden;

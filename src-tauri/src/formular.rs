@@ -185,6 +185,16 @@ impl FormularSitzung {
         }
     }
 
+    /// Der Text der Datei, wenn er noch der Stand ist, den die Oberfläche gesehen hat; sonst
+    /// „veraltet“.
+    fn text_im_stand(&self, stand_ui: &str) -> Result<String, String> {
+        let text = self.text()?;
+        if stand(&text) != stand_ui {
+            return Err("veraltet".into());
+        }
+        Ok(text)
+    }
+
     /// Liest frisch, prüft den Stand, wendet `aenderung` an und schreibt. Ein abgelehnter Wert
     /// kommt als `abgelehnt` mit `pfad` zurück; geschrieben wird dann nichts.
     fn aendern(
@@ -194,10 +204,7 @@ impl FormularSitzung {
         stile: &[&str],
         aenderung: impl FnOnce(&mut Daten, &Formular, &Kontext) -> Result<(), String>,
     ) -> Result<FormularJs, String> {
-        let text = self.text()?;
-        if stand(&text) != stand_ui {
-            return Err("veraltet".into());
-        }
+        let text = self.text_im_stand(stand_ui)?;
         let formular = self
             .formular()
             .cloned()
@@ -273,10 +280,7 @@ impl FormularSitzung {
         neu: &str,
         stile: &[&str],
     ) -> Result<FormularJs, String> {
-        let text = self.text()?;
-        if stand(&text) != stand_ui {
-            return Err("veraltet".into());
-        }
+        let text = self.text_im_stand(stand_ui)?;
         Daten::lesen(neu).map_err(|e| {
             tr!(
                 "{datei} nicht übernommen: {fehler}",
@@ -311,10 +315,7 @@ impl FormularSitzung {
         stile: &[&str],
         zurueck: bool,
     ) -> Result<FormularJs, String> {
-        let text = self.text()?;
-        if stand(&text) != stand_ui {
-            return Err("veraltet".into());
-        }
+        let text = self.text_im_stand(stand_ui)?;
         // Die Historie stellt ihre Stapel vorab um; scheitert das Schreiben, gilt der alte Stand.
         let vorher = self.historie.clone();
         let ziel = if zurueck {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Dialog, escZiel, klickZiel } from "./dialoge";
+import { type Dialog, escZiel, klickZiel, mitBereich } from "./dialoge";
 
 const d = (offen: boolean): Dialog => ({ offen, schliessen: () => {} });
 
@@ -37,5 +37,28 @@ describe("klickZiel", () => {
   it("Dialoge ohne Angabe ihres Bereichs schließt nur Esc oder ×", () => {
     expect(klickZiel([d(true)], aussen)).toBeNull();
     expect(klickZiel([], aussen)).toBeNull();
+  });
+});
+
+describe("mitBereich", () => {
+  it("leiht dem Dialog ein `enthaelt` und reicht offen, schliessen und behalten durch", () => {
+    let offen = true;
+    let zu = 0;
+    const innen = {} as Node;
+    const roh = {
+      get offen() {
+        return offen;
+      },
+      schliessen: () => void zu++,
+      behalten: () => false,
+    };
+    const d = mitBereich(roh, (z) => z === innen);
+    expect(d.enthaelt!(innen)).toBe(true);
+    expect(klickZiel([d], {} as Node)).toBe(d);
+    d.schliessen();
+    expect(zu).toBe(1);
+    offen = false;
+    expect(d.offen).toBe(false);
+    expect(escZiel([d])).toBeNull();
   });
 });

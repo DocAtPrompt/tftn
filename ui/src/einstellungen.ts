@@ -5,7 +5,7 @@
 
 import { kuerzelText } from "./bausteine";
 import { type Aktion, type Belegung, type Konflikt, type Plattform, PLATTFORM, kuerzelAusTaste } from "./tasten";
-import { dialogAnmelden, bereich } from "./dialoge";
+import { dialogAnmelden, schliessenKnopf } from "./dialoge";
 import { type McpJs, mcpBefehl } from "./mcp";
 import { type SkinsJs, skinOptionen } from "./skin";
 import type { TypenJs } from "./neuprojekt";
@@ -113,6 +113,11 @@ export function einstellHinweise(
 }
 
 /** Ein Eingabefeld bekommt seine Tasten, auch während ein Kürzel aufgenommen wird. */
+/** Klick daneben: Ein eingetippter, noch nicht übernommener Pfad oder Typname hält den Dialog offen. */
+export function einstellungenBehalten(e: { pfad: string; pfadGezeigt: string; typName: string }): boolean {
+  return e.pfad.trim() !== e.pfadGezeigt.trim() || e.typName.trim() !== "";
+}
+
 export function tasteDurchlassen(ziel: { tagName: string; type?: string } | null): boolean {
   if (!ziel) return false;
   if (ziel.tagName === "TEXTAREA") return true;
@@ -127,12 +132,15 @@ export class EinstellDialog {
   /** Fehler und Warnungen zu tasten.toml, direkt über der Tabelle */
   private befundOrt: HTMLDivElement;
   private pfad: HTMLInputElement;
+  /** Was im Pfadfeld zuletzt vom Stand gezeigt wurde. */
+  private pfadGezeigt = "";
+  private typName: HTMLInputElement;
   private offline: HTMLInputElement;
   private sprache: HTMLSelectElement;
   private spracheText: HTMLSpanElement;
   private skin: HTMLSelectElement;
-  private groesse!: HTMLSelectElement;
-  private typBasis!: HTMLSelectElement;
+  private groesse: HTMLSelectElement;
+  private typBasis: HTMLSelectElement;
   private skinText: HTMLSpanElement;
   private mcpAn: HTMLInputElement;
   private mcpWechsel: HTMLInputElement;
@@ -147,7 +155,7 @@ export class EinstellDialog {
     this.huelle.id = "einstellungen";
     this.huelle.hidden = true;
     this.huelle.innerHTML = `
-      <div class="neu-kopf einst-kopf"><div class="palette-kopf">${t("Einstellungen")}</div><button class="neu-zu einst-zu" title="${t("Schließen (Esc)")}">×</button></div>
+      <div class="neu-kopf einst-kopf"><div class="palette-kopf">${t("Einstellungen")}</div></div>
       <div class="einst-ordner">
         <div class="einst-zeile einst-updates"><button class="einst-updates-knopf" title="${t("Fragt GitHub nach den neuesten Versionen von TFTN und typst – nur auf Klick")}">${t("Nach Updates suchen")}</button><span class="einst-updates-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-sprache"><label>${t("Sprache der Oberfläche")} <select class="einst-sprache-wahl"></select></label><button class="einst-sprachvorlage" title="${t("Legt eine Vorlage zum Übersetzen an und zeigt sie; übersetzt als <kennung>.toml speichern, etwa fr.toml")}">${t("Weitere Sprache …")}</button><span class="einst-sprache-text leiste-hilfe"></span></div>
@@ -193,8 +201,8 @@ export class EinstellDialog {
       <div class="palette-fuss">${t("Zeile anklicken und das neue Kürzel drücken (Esc bricht ab, Entf = keine Belegung) · Esc schließt die Einstellungen")}</div>`;
     document.body.append(this.huelle);
     const q = <T extends Element>(s: string) => this.huelle.querySelector<T>(s)!;
-    q<HTMLButtonElement>(".einst-zu").addEventListener("click", () => this.schliessen());
-    dialogAnmelden(this);
+    q(".einst-kopf").append(schliessenKnopf(() => this.schliessen()));
+    dialogAnmelden(this, this.huelle, document.getElementById("einstellungen-knopf"));
     const knopf = q<HTMLButtonElement>(".einst-updates-knopf");
     const text = q<HTMLSpanElement>(".einst-updates-text");
     knopf.addEventListener("click", async () => {
@@ -223,6 +231,7 @@ export class EinstellDialog {
     });
     const typBasis = q<HTMLSelectElement>(".einst-typ-basis");
     const typName = q<HTMLInputElement>(".einst-typ-name");
+    this.typName = typName;
     const typText = q<HTMLSpanElement>(".einst-typ-text");
     const typAnlegen = async () => {
       try {
@@ -315,9 +324,9 @@ export class EinstellDialog {
     window.addEventListener("keydown", (e) => this.taste(e), true);
   }
 
-  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
-  enthaelt(ziel: Node): boolean {
-    return bereich(this.huelle, document.getElementById("einstellungen-knopf"))(ziel);
+
+  behalten(): boolean {
+    return einstellungenBehalten({ pfad: this.pfad.value, pfadGezeigt: this.pfadGezeigt, typName: this.typName.value });
   }
 
   get offen(): boolean {
@@ -484,7 +493,8 @@ export class EinstellDialog {
       f.textContent = w;
       this.befundOrt.append(f);
     }
-    if (document.activeElement !== this.pfad) this.pfad.value = e.synchronisiert ? e.ordner : "";
+    this.pfadGezeigt = e.synchronisiert ? e.ordner : "";
+    if (document.activeElement !== this.pfad) this.pfad.value = this.pfadGezeigt;
     this.offline.checked = e.ganz_offline;
 
     const woerter = this.suche.value.toLowerCase().split(/\s+/).filter(Boolean);

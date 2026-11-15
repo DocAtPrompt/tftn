@@ -18,9 +18,34 @@ export type McpAuftrag =
   | { id: number; art: "patch"; patch: { rev: number; von: number; bis: number; text: string } }
   | { id: number; art: "wechseln" };
 
-/** Zeile zum Eintragen in Claude Code; Pfade mit Leerzeichen in Anführungszeichen. */
+/**
+ * Zeile zum Eintragen in Claude Code. Windows-Pfade (`C:\…`) in doppelten Anführungszeichen;
+ * sonst in einfachen, damit `$`, Backtick und `\` in einer Mac- oder Linux-Shell nichts bewirken.
+ */
 export function mcpBefehl(programm: string): string {
-  return `claude mcp add tftn -- "${programm.replaceAll('"', '\\"')}" --mcp`;
+  const windows = /^[A-Za-z]:[\\/]|^\\\\/.test(programm);
+  const pfad = windows ? `"${programm.replaceAll('"', '\\"')}"` : `'${programm.replaceAll("'", "'\\''")}'`;
+  return `claude mcp add tftn -- ${pfad} --mcp`;
+}
+
+/**
+ * Letzter Schritt eines Wechsels durch MCP, nachdem gespeichert (und ein Dokument ohne Namen benannt)
+ * ist: vormerken, antworten, neu laden. Neu geladen wird auch, wenn das Vormerken scheitert (etwa weil
+ * der Aufruf abgelaufen ist, während der Benutzer den Namen eintippte): Sonst bliebe der Editor auf
+ * dem schon umbenannten Dokument stehen.
+ */
+export async function mcpWechselAbschliessen(
+  vormerken: () => Promise<unknown>,
+  antwort: (ok: boolean, fehler?: string) => Promise<unknown>,
+  neuLaden: () => void,
+): Promise<void> {
+  try {
+    await vormerken();
+    await antwort(true);
+  } catch (fehler) {
+    await antwort(false, String(fehler));
+  }
+  neuLaden();
 }
 
 /** Text und Erklärung für die Statusleiste; leer, wenn MCP aus ist. */

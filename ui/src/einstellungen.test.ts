@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type EinstellungenJs, einstellHinweise, tasteDurchlassen } from "./einstellungen";
+import { type EinstellungenJs, einstellHinweise, einstellungenBehalten, tasteDurchlassen } from "./einstellungen";
 
 const basis: EinstellungenJs = {
   ordner: "/x",
@@ -37,5 +37,14 @@ describe("tasteDurchlassen", () => {
     expect(tasteDurchlassen({ tagName: "BUTTON" })).toBe(false);
     expect(tasteDurchlassen({ tagName: "INPUT", type: "checkbox" })).toBe(false);
     expect(tasteDurchlassen(null)).toBe(false);
+  });
+});
+
+describe("einstellungenBehalten", () => {
+  it("ein eingetippter Pfad oder Typname hält die Einstellungen beim Klick daneben offen", () => {
+    expect(einstellungenBehalten({ pfad: "", pfadGezeigt: "", typName: "" })).toBe(false);
+    expect(einstellungenBehalten({ pfad: "/sync", pfadGezeigt: "/sync", typName: " " })).toBe(false);
+    expect(einstellungenBehalten({ pfad: "/sync/neu", pfadGezeigt: "/sync", typName: "" })).toBe(true);
+    expect(einstellungenBehalten({ pfad: "", pfadGezeigt: "", typName: "Mein Brief" })).toBe(true);
   });
 });

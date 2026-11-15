@@ -24,13 +24,40 @@ export function platzieren(
   return { links, oben: Math.max(RAND, oben) };
 }
 
-/** Setzt `huelle` (schon sichtbar, also messbar) an den Anker. */
-export function anAnker(huelle: HTMLElement, anker: Anker) {
-  const p = platzieren(
+/**
+ * Wie `platzieren`, aber für ein Element mit CSS-`zoom` (Oberflächengröße): Anker, gemessene Größe und
+ * Fenster in sichtbaren Pixeln, das Ergebnis in Pixeln des Elements (`left`/`top` werden mitgezoomt).
+ */
+export function lageImStil(
+  anker: Anker,
+  groesse: { breite: number; hoehe: number },
+  fenster: { breite: number; hoehe: number },
+  zoom: number,
+): { links: number; oben: number } {
+  const p = platzieren(anker, groesse, fenster);
+  return { links: p.links / zoom, oben: p.oben / zoom };
+}
+
+/** Vergrößerung der Oberfläche (Einstellungen). */
+export function oberflaechenZoom(): number {
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui-zoom")) || 1;
+}
+
+/** Setzt `huelle` (schon sichtbar, also messbar) an den Anker; `zoom` für gezoomte Elemente. */
+export function anAnker(huelle: HTMLElement, anker: Anker, zoom = 1) {
+  const r = huelle.getBoundingClientRect();
+  const p = lageImStil(
     anker,
-    { breite: huelle.offsetWidth, hoehe: huelle.offsetHeight },
+    { breite: r.width, hoehe: r.height },
     { breite: window.innerWidth, hoehe: window.innerHeight },
+    zoom,
   );
   huelle.style.left = `${p.links}px`;
   huelle.style.top = `${p.oben}px`;
+}
+
+/** Anker unter einem Knopf. */
+export function knopfAnker(knopf: HTMLElement): Anker {
+  const r = knopf.getBoundingClientRect();
+  return { x: r.left, oben: r.top, unten: r.bottom };
 }

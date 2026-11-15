@@ -111,6 +111,19 @@ describe("einzeln", () => {
     expect(aufrufe).toBe(2);
   });
 
+  it("meldet, wenn ein Aufruf wegen der Sperre nicht läuft", async () => {
+    let besetzt = 0;
+    const einzeln = sperre(() => besetzt++);
+    let fertig!: () => void;
+    const erster = einzeln(() => new Promise<void>((r) => (fertig = r)));
+    expect(await einzeln(async () => {})).toBe(false);
+    expect(besetzt).toBe(1);
+    fertig();
+    await erster;
+    expect(await einzeln(async () => {})).toBe(true);
+    expect(besetzt).toBe(1);
+  });
+
   it("gibt auch nach einem Fehler frei", async () => {
     const einzeln = sperre();
     await expect(einzeln(async () => Promise.reject(new Error("x")))).rejects.toThrow("x");

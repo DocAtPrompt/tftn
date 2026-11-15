@@ -75,6 +75,22 @@ impl Rechner {
         let text = toml::to_string(self).map_err(io::Error::other)?;
         schreiben(&app_konfig.join(RECHNER), &text)
     }
+
+    /// Laden, `f` anwenden, speichern – in einem Zug; gibt zurück, was `f` liefert.
+    pub fn aendern<T>(app_konfig: &Path, f: impl FnOnce(&mut Rechner) -> T) -> io::Result<T> {
+        let mut r = Rechner::laden(app_konfig);
+        let wert = f(&mut r);
+        r.speichern(app_konfig)?;
+        Ok(wert)
+    }
+
+    /// Setzt die nächste Stufe zu `prozent` und gibt sie zurück; 100 bleibt ungeschrieben.
+    pub fn oberflaeche_setzen(&mut self, prozent: u16) -> u16 {
+        self.oberflaeche = Some(prozent);
+        let gilt = self.oberflaeche_prozent();
+        self.oberflaeche = (gilt != 100).then_some(gilt);
+        gilt
+    }
 }
 
 /// Wo die synchronisierten Dateien gerade liegen.
@@ -317,6 +333,36 @@ mod tests {
             toml::from_str::<Rechner>(&t).unwrap().oberflaeche,
             Some(130)
         );
+    }
+
+    #[test]
+    fn oberflaeche_setzen_nimmt_die_naechste_stufe_und_laesst_100_weg() {
+        let mut r = Rechner::default();
+        assert_eq!(r.oberflaeche_setzen(117), 115);
+        assert_eq!(r.oberflaeche, Some(115));
+        assert_eq!(r.oberflaeche_setzen(100), 100);
+        assert_eq!(r.oberflaeche, None);
+        assert_eq!(r.oberflaeche_setzen(97), 100);
+        assert_eq!(r.oberflaeche, None);
+    }
+
+    #[test]
+    fn aendern_laedt_aendert_und_speichert() {
+        let o = std::env::temp_dir().join(format!("tftn-einst-aendern-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&o);
+        std::fs::create_dir_all(&o).unwrap();
+        let alt = Rechner::aendern(&o, |r| {
+            r.ganz_offline = true;
+            r.mcp
+        })
+        .unwrap();
+        assert!(!alt);
+        let r = Rechner::laden(&o);
+        assert!(r.ganz_offline);
+        Rechner::aendern(&o, |r| r.mcp = true).unwrap();
+        let r = Rechner::laden(&o);
+        assert!(r.ganz_offline && r.mcp, "frühere Änderung bleibt");
+        let _ = std::fs::remove_dir_all(&o);
     }
 
     /// Abschlussprüfung AP3: Scheitert das Umbenennen, bleibt keine temporäre Datei liegen.

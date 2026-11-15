@@ -12,6 +12,7 @@ import {
   type Meldung,
   type Pfad,
   type ProjektJs,
+  type TextInArbeit,
   type VergleichJs,
   Reihe,
   eingabeLesen,
@@ -20,6 +21,7 @@ import {
   historieTaste,
   knopfNachEintrag,
   pfadText,
+  textVorWechsel,
   wertAn,
   zustandUebertragen,
 } from "./formular";
@@ -43,8 +45,10 @@ export interface DokumentAktionen {
   vergleichen(): Promise<VergleichJs>;
   /** Übernimmt sie: Patch der Importzeile im Editor, speichern; gibt den Hinweis zurück. */
   uebernehmen(): Promise<string>;
-  /** Kurzer Hinweis in der Statuszeile der App. */
+  /** Hinweis im Band unter der Kopfzeile (Fehler, Warnungen); bleibt, bis man ihn schließt. */
   hinweis(text: string): void;
+  /** Kurze Erfolgsmeldung; blendet sich nach ein paar Sekunden aus. */
+  meldung(text: string): void;
 }
 
 type Eingabe = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -73,7 +77,7 @@ export class DokumentFach {
   private laeuft: Promise<void> = Promise.resolve();
   private datalistNr = 0;
   /** „Als Text bearbeiten“: der Stand beim Öffnen, der Text in Arbeit und eine Fehlermeldung. */
-  private textModus: { stand: string; text: string; fehler: string } | null = null;
+  private textModus: (TextInArbeit & { fehler: string }) | null = null;
   /** Schreibanfragen nacheinander, jede mit dem Stand der vorigen Antwort. */
   private reihe = new Reihe(() => this.js?.stand ?? "");
 
@@ -111,12 +115,9 @@ export class DokumentFach {
   /** Ereignis `dokument-geaendert`: neu laden, außer es ist der eigene Stand oder ein Feld ist in Arbeit. */
   aussen(stand: string) {
     if (this.js?.stand === stand) return;
-    if (this.textModus) {
-      // Nicht über den Text in Arbeit zeichnen; „Übernehmen“ merkt einen veralteten Stand.
-      this.ausstehend = true;
-      return;
-    }
-    if (this.feldGeaendert()) {
+    // Nicht über Eingaben in Arbeit zeichnen (Text oder Feld); „Übernehmen“ merkt einen veralteten
+    // Stand, ein Feld wird beim Verlassen neu gezeichnet.
+    if (this.textModus || this.feldGeaendert()) {
       this.ausstehend = true;
       return;
     }
@@ -289,7 +290,7 @@ export class DokumentFach {
   private async textOeffnen() {
     try {
       const [stand, text] = await this.a.textLesen();
-      this.textModus = { stand, text, fehler: "" };
+      this.textModus = { stand, start: text, text, fehler: "" };
       this.darstellen();
       this.huelle.querySelector<HTMLTextAreaElement>(".dok-text")?.focus();
     } catch (fehler) {
@@ -310,14 +311,31 @@ export class DokumentFach {
       this.textModus = null;
       this.ausstehend = false;
       this.darstellen();
-      this.a.hinweis(t("{datei} übernommen.", { datei: this.js.datei }));
+      this.a.meldung(t("{datei} übernommen.", { datei: this.js.datei }));
     } catch (fehler) {
-      m.fehler =
-        String(fehler) === "veraltet"
-          ? t("Die Datei wurde inzwischen anderswo geändert. Text kopieren, „Zum Formular“ und neu öffnen.")
-          : String(fehler);
-      this.darstellen();
+      this.textFehler(m, String(fehler));
     }
+  }
+
+  private textFehler(m: { fehler: string }, fehler: string) {
+    m.fehler =
+      fehler === "veraltet"
+        ? t("Die Datei wurde inzwischen anderswo geändert. Text kopieren, „Zum Formular“ und neu öffnen.")
+        : fehler;
+    this.darstellen();
+  }
+
+  /**
+   * Vor einem Dokumentwechsel: Geänderter Text wird übernommen. Scheitert das, bleibt das Dokument
+   * offen (`false`) und das Fach zeigt den Grund.
+   */
+  async vorWechsel(): Promise<boolean> {
+    const m = this.textModus;
+    const fehler = await textVorWechsel(m, (stand, text) => this.a.textSetzen(stand, text));
+    if (fehler === null) return true;
+    this.textFehler(m!, fehler);
+    this.a.hinweis(t("Der Text im Fach „Dokument“ ist noch nicht übernommen: {fehler}", { fehler: m!.fehler }));
+    return false;
   }
 
   private textTeil(datei: string, m: { text: string; fehler: string }): HTMLElement {

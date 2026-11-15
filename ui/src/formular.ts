@@ -271,6 +271,30 @@ export class Reihe<S> {
   }
 }
 
+/** „Als Text bearbeiten“: Stand und Text beim Öffnen, der Text in Arbeit. */
+export interface TextInArbeit {
+  stand: string;
+  start: string;
+  text: string;
+}
+
+/**
+ * Vor einem Dokumentwechsel (Neuladen des Fensters): Geänderter Text im Fach „Dokument“ wird erst
+ * übernommen. `null` heißt wechseln; sonst der Grund, warum das Dokument offen bleiben muss.
+ */
+export async function textVorWechsel(
+  m: TextInArbeit | null,
+  setzen: (stand: string, text: string) => Promise<unknown>,
+): Promise<string | null> {
+  if (!m || m.text === m.start) return null;
+  try {
+    await setzen(m.stand, m.text);
+    return null;
+  } catch (fehler) {
+    return String(fehler);
+  }
+}
+
 /** Was ein Eingabefeld über das Neuzeichnen hinweg behalten soll. */
 export interface FeldZustand {
   value: string;

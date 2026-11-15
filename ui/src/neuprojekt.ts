@@ -59,11 +59,15 @@ export async function wechselNachSpeichern(speichern: () => Promise<boolean>, we
 }
 
 /** Eine gemeinsame Sperre: Solange ein Aufruf läuft, werden weitere übergangen (`false`), etwa
- *  mehrfaches Klicken auf „Öffnen“, das sonst mehrere Systemdialoge öffnet. */
-export function sperre(): (f: () => Promise<unknown>) => Promise<boolean> {
+ *  mehrfaches Klicken auf „Öffnen“, das sonst mehrere Systemdialoge öffnet. `besetzt` sagt dem
+ *  Benutzer, warum nichts geschieht. */
+export function sperre(besetzt?: () => void): <T>(f: () => Promise<T>) => Promise<boolean> {
   let laeuft = false;
   return async (f) => {
-    if (laeuft) return false;
+    if (laeuft) {
+      besetzt?.();
+      return false;
+    }
     laeuft = true;
     try {
       await f();

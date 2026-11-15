@@ -11,8 +11,15 @@ use tftn_sprachen::tr;
 
 use crate::typen::{Herkunft, Typquelle, finden_in};
 
+/// Unter Windows reservierte Datei- und Ordnernamen (ohne Endung, klein).
+pub const RESERVIERT: [&str; 22] = [
+    "con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8",
+    "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+];
+
 /// Paketname aus dem Titel: klein, Umlaute ausgeschrieben, sonst nur `a-z`, `0-9` und `-`.
-/// `None`, wenn nichts übrig bleibt.
+/// `None`, wenn nichts übrig bleibt. Beginnt er mit einer Ziffer oder ist er unter Windows
+/// reserviert (`con`, `nul` …), kommt `eigen-` davor.
 pub fn kennung_aus_titel(titel: &str) -> Option<String> {
     let mut k = String::new();
     for c in titel.trim().to_lowercase().chars() {
@@ -29,7 +36,7 @@ pub fn kennung_aus_titel(titel: &str) -> Option<String> {
     let k = k.trim_end_matches('-').to_string();
     if k.is_empty() {
         None
-    } else if k.starts_with(|c: char| c.is_ascii_digit()) {
+    } else if k.starts_with(|c: char| c.is_ascii_digit()) || RESERVIERT.contains(&k.as_str()) {
         Some(format!("eigen-{k}"))
     } else {
         Some(k)
@@ -78,7 +85,32 @@ fn kopie_anpassen(
     vorbild: &crate::Typpaket,
 ) -> Result<(), String> {
     let e = |e: std::io::Error| e.to_string();
-    ordner_kopieren(von, ziel).map_err(e)?;
+    // Vorlagenordner kommen aus dem Manifest: nur Pfade innerhalb des Typs (sonst schriebe
+    // `importe_ersetzen` fremde Dateien um).
+    let vorlagen = vorbild.toml.template.iter().map(|t| t.path.clone()).chain(
+        vorbild
+            .toml
+            .tool
+            .tftn
+            .iter()
+            .flat_map(|m| m.vorlagen.values().cloned()),
+    );
+    for o in vorlagen {
+        let innen = Path::new(&o).components().all(|k| {
+            matches!(
+                k,
+                std::path::Component::Normal(_) | std::path::Component::CurDir
+            )
+        });
+        if !innen {
+            return Err(tr!(
+                "Vorlagenpfad {pfad} liegt außerhalb des Dokumenttyps.",
+                pfad = o
+            ));
+        }
+    }
+    // Wie beim Anlegen eines Projekts: ohne `.DS_Store`.
+    crate::anlegen::kopieren(von, ziel, &Default::default()).map_err(|f| f.to_string())?;
 
     // Manifest mit toml_edit: Kommentare und Reihenfolge bleiben.
     let pfad = ziel.join("typst.toml");
@@ -136,20 +168,6 @@ fn kopie_anpassen(
     }
     for o in ordner {
         importe_ersetzen(&ziel.join(o), &alt, &neu).map_err(e)?;
-    }
-    Ok(())
-}
-
-fn ordner_kopieren(von: &Path, nach: &Path) -> std::io::Result<()> {
-    std::fs::create_dir_all(nach)?;
-    for eintrag in std::fs::read_dir(von)? {
-        let eintrag = eintrag?;
-        let ziel = nach.join(eintrag.file_name());
-        if eintrag.file_type()?.is_dir() {
-            ordner_kopieren(&eintrag.path(), &ziel)?;
-        } else {
-            std::fs::copy(eintrag.path(), ziel)?;
-        }
     }
     Ok(())
 }

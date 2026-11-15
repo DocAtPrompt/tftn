@@ -296,6 +296,7 @@ name = "English"
 "Einen Dokumenttyp {kennung} gibt es schon – bitte einen anderen Namen wählen." = "A document type {kennung} already exists – choose another name."
 "Kein Ordner für eigene Dokumenttypen." = "No folder for custom document types."
 "Schrift {pfad} ohne Dateinamen" = "Font {pfad} has no file name"
+"Vorlagenpfad {pfad} liegt außerhalb des Dokumenttyps." = "Template path {pfad} lies outside the document type."
 "{basis} ist kein wählbarer Dokumenttyp." = "{basis} is not a selectable document type."
 
 # crates/tftn-manifest/src/lib.rs
@@ -541,6 +542,7 @@ name = "English"
 "Ziehen ändert die Breite, Doppelklick setzt sie zurück" = "Drag to change the width, double-click to reset"
 
 # ui/src/dialoge.ts
+"Schließen" = "Close"
 "Schließen (Esc)" = "Close (Esc)"
 
 # ui/src/dokumentfach.ts
@@ -549,6 +551,7 @@ name = "English"
 "Abnehmen …" = "Approve …"
 "Als Text bearbeiten" = "Edit as text"
 "Das Formular-Schema des Dokumenttyps verletzt das Profil TFTN-Schema 1:" = "The form schema of the document type violates the TFTN-Schema 1 profile:"
+"Der Text im Fach „Dokument“ ist noch nicht übernommen: {fehler}" = "The text in the “Document” pane has not been applied yet: {fehler}"
 "Die Datei wurde inzwischen anderswo geändert. Text kopieren, „Zum Formular“ und neu öffnen." = "The file was changed elsewhere in the meantime. Copy your text, choose “Back to form” and open it again."
 "Dieser Dokumenttyp (Version {version}) liest die Literatur aus main.typ." = "This document type (version {version}) reads the references from main.typ."
 "Dieser Dokumenttyp hat kein Formular." = "This document type has no form."
@@ -732,6 +735,7 @@ name = "English"
 "Die Sprache gilt ab dem nächsten Start." = "The language takes effect at the next start."
 "Diese Stelle steht in {datei}; TFTN öffnet derzeit nur die Hauptdatei." = "This spot is in {datei}; TFTN currently opens only the main file."
 "Dieses Dokument hat ein KI-Assistent über MCP geöffnet. Soll MCP aktiv bleiben?" = "An AI assistant opened this document via MCP. Should MCP stay active?"
+"Ein Dokumentwechsel läuft noch – bitte die offene Frage beantworten oder kurz warten." = "A document switch is still in progress – please answer the open question or wait a moment."
 "Export {profil}: {fehler}" = "Export {profil}: {fehler}"
 "Exportiert: {datei}" = "Exported: {datei}"
 "Exportiert: {datei} (1 Warnung)" = "Exported: {datei} (1 warning)"
