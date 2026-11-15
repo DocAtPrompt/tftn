@@ -42,8 +42,8 @@ as plain files. New documents follow the interface language.
 |---|---|
 | ![Dark skin](docs/images/dark.png) | ![Blocks menu after typing “/”](docs/images/blocks.png) |
 | Dark skin | Type “/” on an empty line for blocks |
-| ![Invoice with its form](docs/images/invoice.png) | |
-| Invoice: fill in the form, the totals are computed | |
+| ![Invoice with its form](docs/images/invoice.png) | ![Equation pane with palette and live rendering](docs/images/equation.png) |
+| Invoice: fill in the form, the totals are computed | Equations: edit with a palette, rendered as you type |
 
 **Status:** early but usable day to day on macOS (Apple silicon). The Windows build passes the test
 suite and an automated install check, but has hardly been used by hand yet.
