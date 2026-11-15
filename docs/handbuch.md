@@ -146,7 +146,10 @@ Fachartikel legen das selbst fest. Mit „Schriften einbinden“ kommen die benu
 Autorinnen und Autoren, Datum (`31.12.2026`), Zusammenfassung, Schlagwörter, Literaturdateien und
 Zitierstil (eingebauter Name wie `ieee` oder eine `.csl`-Datei im Projekt). Jeder Wert wird geprüft und
 erst dann in `dokument.toml` geschrieben; der Text in `main.typ` bleibt unberührt. Ein Klick auf die
-Titelei in der Vorschau öffnet das Fach am passenden Feld.
+Titelei in der Vorschau öffnet das Fach am passenden Feld. „Als Text bearbeiten“ zeigt
+`dokument.toml` als Text, etwa für Felder, die das Formular nicht kennt, oder um eine fehlerhafte Datei
+zu reparieren: „Übernehmen“ (Cmd/Strg+Eingabe) schreibt nur gültiges TOML, „Rückgängig“ nimmt es
+zurück.
 
 **Dokumenttyp aktualisieren:** Gibt es eine neuere Version des Dokumenttyps, zeigt sie das Fach
 „Dokument“. „Vergleichen …“ zeigt die geänderten Seiten vorher und nachher, „Übernehmen“ stellt um.

@@ -52,7 +52,22 @@ body {
 
 body {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+/* Feste Zeilen: Ein ausgeblendeter Hinweis belegt keine Zeile; ohne Zuweisung rutschte die
+   Statusleiste in die wachsende Zeile und wurde mit dem Fenster höher. */
+#kopf {
+  grid-row: 1;
+}
+#hinweis {
+  grid-row: 2;
+}
+#arbeit {
+  grid-row: 3;
+}
+#status {
+  grid-row: 4;
 }
 
 #kopf,
@@ -1364,7 +1379,7 @@ body {
 }
 
 body.schreibansicht {
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: 0 0 minmax(0, 1fr) auto;
 }
 
 body.schreibansicht #kopf {
@@ -1622,4 +1637,25 @@ button:hover .ikone {
 #export-menue .neu-kopf h2 {
   margin: 0;
   font-size: 14px;
+}
+
+/* Fach „Dokument“ → „Als Text bearbeiten“ */
+.dok-text {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--editor-schrift);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--grund);
+  border: 1px solid var(--linie);
+  border-radius: 6px;
+  padding: 6px 8px;
+  resize: vertical;
+  tab-size: 2;
+}
+.dok-text-knoepfe {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0;
 }

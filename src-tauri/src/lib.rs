@@ -1607,6 +1607,22 @@ fn formular_eintrag(
     mit_formular(&zustand, |f| f.eintrag(&stand, pfad, aktion, stile()))
 }
 
+/// Stand und Text der Datendatei (Fach „Dokument“ → „Als Text bearbeiten“).
+#[tauri::command]
+fn formular_text(zustand: State<'_, Zustand>) -> Result<(String, String), String> {
+    mit_formular(&zustand, |f| f.text_lesen())
+}
+
+/// Schreibt die Datendatei als Ganzes; `Err("veraltet")` wie beim Formular, Fehler mit Zeile.
+#[tauri::command]
+fn formular_text_setzen(
+    stand: String,
+    text: String,
+    zustand: State<'_, Zustand>,
+) -> Result<formular::FormularJs, String> {
+    mit_formular(&zustand, |f| f.text_setzen(&stand, &text, stile()))
+}
+
 #[tauri::command]
 fn formular_rueckgaengig(
     stand: String,
@@ -3253,6 +3269,8 @@ pub fn run() {
             formular_setzen,
             formular_eintrag,
             formular_rueckgaengig,
+            formular_text,
+            formular_text_setzen,
             formular_wiederholen,
             projekt_info,
             typen_liste,

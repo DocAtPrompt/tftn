@@ -1379,6 +1379,8 @@ async function start() {
     eintrag: (stand, pfad, aktion) => invoke<FormularJs>("formular_eintrag", { stand, pfad, aktion }).then(texteUebersetzen),
     rueckgaengig: (stand) => invoke<FormularJs>("formular_rueckgaengig", { stand }).then(texteUebersetzen),
     wiederholen: (stand) => invoke<FormularJs>("formular_wiederholen", { stand }).then(texteUebersetzen),
+    textLesen: () => invoke<[string, string]>("formular_text"),
+    textSetzen: (stand, text) => invoke<FormularJs>("formular_text_setzen", { stand, text }).then(texteUebersetzen),
     projekt: () => invoke<ProjektJs>("projekt_info"),
     profile: () => invoke<ProfilJs[]>("export_profile"),
     exportieren: async (profil, abnehmen) => {

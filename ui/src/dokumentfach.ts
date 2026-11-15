@@ -32,6 +32,10 @@ export interface DokumentAktionen {
   eintrag(stand: string, pfad: Pfad, aktion: EintragAktion): Promise<FormularJs>;
   rueckgaengig(stand: string): Promise<FormularJs>;
   wiederholen(stand: string): Promise<FormularJs>;
+  /** Stand und Text der Datendatei („Als Text bearbeiten“). */
+  textLesen(): Promise<[string, string]>;
+  /** Schreibt sie als Ganzes; Fehler (kaputtes TOML, „veraltet“) als Ausnahme, nichts geschrieben. */
+  textSetzen(stand: string, text: string): Promise<FormularJs>;
   projekt(): Promise<ProjektJs>;
   profile(): Promise<ProfilJs[]>;
   exportieren(profil: string, abnehmen: boolean): Promise<ExportJs>;
@@ -68,6 +72,8 @@ export class DokumentFach {
   private ausstehend = false;
   private laeuft: Promise<void> = Promise.resolve();
   private datalistNr = 0;
+  /** „Als Text bearbeiten“: der Stand beim Öffnen, der Text in Arbeit und eine Fehlermeldung. */
+  private textModus: { stand: string; text: string; fehler: string } | null = null;
   /** Schreibanfragen nacheinander, jede mit dem Stand der vorigen Antwort. */
   private reihe = new Reihe(() => this.js?.stand ?? "");
 
@@ -105,6 +111,11 @@ export class DokumentFach {
   /** Ereignis `dokument-geaendert`: neu laden, außer es ist der eigene Stand oder ein Feld ist in Arbeit. */
   aussen(stand: string) {
     if (this.js?.stand === stand) return;
+    if (this.textModus) {
+      // Nicht über den Text in Arbeit zeichnen; „Übernehmen“ merkt einen veralteten Stand.
+      this.ausstehend = true;
+      return;
+    }
     if (this.feldGeaendert()) {
       this.ausstehend = true;
       return;
@@ -210,6 +221,11 @@ export class DokumentFach {
     const altesFeld =
       aktiv instanceof HTMLTextAreaElement || (aktiv instanceof HTMLInputElement && aktiv.type === "text") ? aktiv : null;
     const teile: HTMLElement[] = [this.kopf(js)];
+    if (this.textModus) {
+      teile.push(this.textTeil(js.datei, this.textModus));
+      this.huelle.replaceChildren(...teile);
+      return;
+    }
     if (js.formular && !js.dateifehler) {
       for (const g of gruppen(js.formular)) {
         const s = el("section", "dok-gruppe");
@@ -252,7 +268,10 @@ export class DokumentFach {
     const vor = el("button", "", t("Wiederholen"));
     vor.disabled = !js.vor;
     vor.addEventListener("click", () => void this.historie("vor"));
-    k.append(rueck, vor);
+    const alsText = el("button", "", this.textModus ? t("Zum Formular") : t("Als Text bearbeiten"));
+    alsText.title = t("{datei} direkt als TOML bearbeiten", { datei: js.datei });
+    alsText.addEventListener("click", () => void (this.textModus ? this.textSchliessen() : this.textOeffnen()));
+    k.append(rueck, vor, alsText);
     if (js.sensibel) k.append(el("p", "dok-warnung", js.sensibel));
     if (js.dateifehler) k.append(el("p", "dok-warnung", js.dateifehler));
     if (js.profilfehler.length) {
@@ -263,6 +282,71 @@ export class DokumentFach {
       k.append(p);
     }
     return k;
+  }
+
+  // --- Als Text bearbeiten ---------------------------------------------------------------
+
+  private async textOeffnen() {
+    try {
+      const [stand, text] = await this.a.textLesen();
+      this.textModus = { stand, text, fehler: "" };
+      this.darstellen();
+      this.huelle.querySelector<HTMLTextAreaElement>(".dok-text")?.focus();
+    } catch (fehler) {
+      this.a.hinweis(String(fehler));
+    }
+  }
+
+  private textSchliessen() {
+    this.textModus = null;
+    void this.zeichnen();
+  }
+
+  private async textUebernehmen() {
+    const m = this.textModus;
+    if (!m) return;
+    try {
+      this.js = await this.a.textSetzen(m.stand, m.text);
+      this.textModus = null;
+      this.ausstehend = false;
+      this.darstellen();
+      this.a.hinweis(t("{datei} übernommen.", { datei: this.js.datei }));
+    } catch (fehler) {
+      m.fehler =
+        String(fehler) === "veraltet"
+          ? t("Die Datei wurde inzwischen anderswo geändert. Text kopieren, „Zum Formular“ und neu öffnen.")
+          : String(fehler);
+      this.darstellen();
+    }
+  }
+
+  private textTeil(datei: string, m: { text: string; fehler: string }): HTMLElement {
+    const s = el("section", "dok-gruppe dok-als-text");
+    s.append(el("h3", "", datei));
+    const feld = el("textarea", "dok-text");
+    feld.spellcheck = false;
+    feld.value = m.text;
+    feld.rows = 24;
+    feld.addEventListener("input", () => (m.text = feld.value));
+    // Eigenes Rückgängig des Textfelds statt dem des Formulars; Cmd/Strg+Eingabe übernimmt.
+    feld.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter" && (MAC ? e.metaKey : e.ctrlKey)) {
+        e.preventDefault();
+        void this.textUebernehmen();
+      }
+    });
+    const knoepfe = el("div", "dok-text-knoepfe");
+    const ok = el("button", "", t("Übernehmen"));
+    ok.title = MAC ? "⌘↩" : t("Strg+Eingabe");
+    ok.addEventListener("click", () => void this.textUebernehmen());
+    const ab = el("button", "", t("Abbrechen"));
+    ab.addEventListener("click", () => this.textSchliessen());
+    knoepfe.append(ok, ab);
+    s.append(feld, knoepfe);
+    if (m.fehler) s.append(el("p", "dok-warnung", m.fehler));
+    s.append(el("p", "leiste-hilfe", t("Gültiges TOML wird geschrieben und ist mit „Rückgängig“ zurückzunehmen; fehlerhaftes wird nicht geschrieben.")));
+    return s;
   }
 
   private meldungen(pfad: Pfad): Meldung[] {

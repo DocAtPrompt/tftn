@@ -151,7 +151,7 @@ impl FormularSitzung {
             (None, Err(e)) => (
                 Json::Object(Default::default()),
                 Some(tr!(
-                    "{datei} ist fehlerhaft ({fehler}) – bitte im Texteditor beheben",
+                    "{datei} ist fehlerhaft ({fehler}) – mit „Als Text bearbeiten“ beheben",
                     datei = self.name(),
                     fehler = e
                 )),
@@ -204,7 +204,7 @@ impl FormularSitzung {
             .ok_or_else(|| tr!("Dieser Dokumenttyp hat kein Formular"))?;
         let mut daten = Daten::lesen(&text).map_err(|e| {
             tr!(
-                "{datei} ist fehlerhaft ({fehler}) – bitte im Texteditor beheben",
+                "{datei} ist fehlerhaft ({fehler}) – mit „Als Text bearbeiten“ beheben",
                 datei = self.name(),
                 fehler = e
             )
@@ -256,6 +256,45 @@ impl FormularSitzung {
     ) -> Result<FormularJs, String> {
         let p = pfad.clone();
         self.aendern(stand_ui, pfad, stile, |d, f, _| d.eintrag(f, &p, aktion))
+    }
+
+    /// Stand und Text der Datendatei für „Als Text bearbeiten“.
+    pub fn text_lesen(&self) -> Result<(String, String), String> {
+        let text = self.text()?;
+        Ok((stand(&text), text))
+    }
+
+    /// Schreibt den ganzen Text („Als Text bearbeiten“), wenn er gültiges TOML ist und `stand_ui`
+    /// noch gilt; ein Rückgängig-Schritt wie jede Änderung im Formular. Was das Formular am Inhalt
+    /// beanstandet, zeigt es danach als Meldung – geschrieben wird trotzdem, der Text ist der Wille.
+    pub fn text_setzen(
+        &mut self,
+        stand_ui: &str,
+        neu: &str,
+        stile: &[&str],
+    ) -> Result<FormularJs, String> {
+        let text = self.text()?;
+        if stand(&text) != stand_ui {
+            return Err("veraltet".into());
+        }
+        Daten::lesen(neu).map_err(|e| {
+            tr!(
+                "{datei} nicht übernommen: {fehler}",
+                datei = self.name(),
+                fehler = e
+            )
+        })?;
+        if neu != text {
+            atomar_schreiben(&self.datei, neu).map_err(|e| {
+                tr!(
+                    "{datei} nicht geschrieben: {fehler}",
+                    datei = self.name(),
+                    fehler = e
+                )
+            })?;
+            self.historie.geschrieben(text, neu);
+        }
+        Ok(self.laden(stile))
     }
 
     pub fn rueckgaengig(&mut self, stand_ui: &str, stile: &[&str]) -> Result<FormularJs, String> {
@@ -500,6 +539,55 @@ mod tests {
         let js = f.rueckgaengig(&js.stand, STILE).unwrap();
         assert!(lesen(&p).contains("Fremd"));
         assert!(!js.rueck);
+    }
+
+    /// „Als Text bearbeiten“: schreibt den ganzen Text, Rückgängig gilt auch dafür.
+    #[test]
+    fn text_setzen_schreibt_und_ist_rueckgaengig() {
+        let p = projekt("text");
+        let mut f = FormularSitzung::neu(&p);
+        let vorher = lesen(&p);
+        let (stand_ui, text) = f.text_lesen().unwrap();
+        assert_eq!(text, vorher);
+        let neu = text.replace("Titel des Artikels", "Von Hand");
+        let js = f.text_setzen(&stand_ui, &neu, STILE).unwrap();
+        assert_eq!(lesen(&p), neu);
+        assert_eq!(js.werte["titel"], "Von Hand");
+        assert!(js.rueck);
+        f.rueckgaengig(&js.stand, STILE).unwrap();
+        assert_eq!(lesen(&p), vorher);
+    }
+
+    /// Kaputtes TOML oder ein veralteter Stand: nichts geschrieben, eine Meldung mit Zeile.
+    #[test]
+    fn text_setzen_lehnt_ab() {
+        let p = projekt("text-ab");
+        let mut f = FormularSitzung::neu(&p);
+        let vorher = lesen(&p);
+        let (stand_ui, _) = f.text_lesen().unwrap();
+        let fehler = f.text_setzen(&stand_ui, "titel = ", STILE).unwrap_err();
+        assert!(fehler.contains("Zeile 1"), "{fehler}");
+        assert_eq!(lesen(&p), vorher);
+        assert_eq!(
+            f.text_setzen("alt", "titel = \"x\"\n", STILE).err(),
+            Some("veraltet".into())
+        );
+        assert_eq!(lesen(&p), vorher);
+    }
+
+    /// Eine kaputte Datei lässt sich als Text reparieren.
+    #[test]
+    fn text_setzen_repariert_kaputte_datei() {
+        let p = projekt("text-heil");
+        std::fs::write(p.wurzel.join("dokument.toml"), "titel = ").unwrap();
+        let mut f = FormularSitzung::neu(&p);
+        let (stand_ui, text) = f.text_lesen().unwrap();
+        assert_eq!(text, "titel = ");
+        let js = f
+            .text_setzen(&stand_ui, "titel = \"Heil\"\n", STILE)
+            .unwrap();
+        assert!(js.dateifehler.is_none());
+        assert_eq!(js.werte["titel"], "Heil");
     }
 
     #[test]

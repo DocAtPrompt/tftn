@@ -149,7 +149,9 @@ the project.
 authors, date, abstract, keywords, bibliography files and citation style (a built-in name such as
 `ieee` or a `.csl` file in the project). Each value is checked before it is written to
 `dokument.toml`; the text in `main.typ` is never touched. Clicking the front matter in the preview
-opens the panel at the matching field.
+opens the panel at the matching field. “Edit as text” shows `dokument.toml` as text, for fields the
+form doesn't know or to repair a broken file: “Apply” (Cmd/Ctrl+Enter) only writes valid TOML, and
+“Undo” takes it back.
 
 **Updating the document type:** when a newer version of the document type is available, the
 “Document” panel shows it. “Compare …” shows the changed pages before and after, “Apply” switches.
