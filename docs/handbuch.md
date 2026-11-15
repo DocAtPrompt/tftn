@@ -35,13 +35,13 @@ nicht notarisiert: Beim ersten Start Rechtsklick → „Öffnen“. Die passende
 für den aktuellen Benutzer, ohne Administratorrechte. Der Installer ist nicht signiert: Warnt
 SmartScreen, „Weitere Informationen“ → „Trotzdem ausführen“.
 
-**Ausprobieren:** Mit „Öffnen …“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
+**Ausprobieren:** Mit „Öffnen“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
 zeigt Formeln, eine Abbildung, eine Tabelle, Fußnoten, Querverweise und Zitate. Ändern ist
 ausdrücklich erwünscht.
 
 **Ein neues Dokument:** TFTN startet mit einem leeren Entwurf. Einfach losschreiben; Cmd/Strg+S gibt
-ihm einen Namen und legt es im Ordner „Dokumente“ ab. „Vorlage …“ legt stattdessen ein Dokument eines
-Dokumenttyps an. Mitgeliefert sind: leeres Dokument, Brief, Rechnung, Befund/Arztbrief, Bericht,
+ihm einen Namen und legt es im Ordner „Dokumente“ ab. „Neu“ → „Aus Vorlage …“ legt stattdessen ein
+Dokument eines Dokumenttyps an. Mitgeliefert sind: leeres Dokument, Brief, Rechnung, Befund/Arztbrief, Bericht,
 Fachartikel, Fachbuch, Plakat und Lebenslauf, jeweils auf Deutsch und Englisch.
 
 **Sprache eines neuen Dokuments:** Neue Dokumente und der leere Entwurf folgen der Sprache der
@@ -65,10 +65,15 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
 
 ## 2. Die Oberfläche
 
-- **Kopf:** Vorlage, Importieren, Öffnen, Fassungen, Export, Seitenleiste, Schreibansicht,
-  Einstellungen. Hinweise erscheinen hier.
-- **Editor** (links): Typst-Quelltext mit Hervorhebung. Darüber die Knöpfe „Baustein …“, „Zitat
-  einfügen“, „Gliederung“ und „Seite …“.
+- **Kopf:** links das Projekt (der volle Pfad erscheint beim Darüberfahren), rechts „Neu“ (leeres
+  Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“ und als Symbole Seitenleiste,
+  Schreibansicht und Einstellungen (Zahnrad). In einem schmalen Fenster bleiben nur die Symbole.
+- **Hinweise** erscheinen in einem Band unter dem Kopf. Kurze Meldungen verschwinden von selbst;
+  Fehler und Fragen bleiben, bis man sie mit × schließt oder beantwortet.
+- **Fenster wie Export, Neu oder Fassungen** schließen mit ×, Esc oder einem Klick daneben. Hat man
+  in einem Dialog schon etwas eingetippt (etwa einen Projektnamen), schließt ihn nur × oder Esc.
+- **Editor** (links): Typst-Quelltext mit Hervorhebung. Darüber die Knöpfe „Baustein“, „Zitat“,
+  „Gliederung“ und „Seite“.
 - **Vorschau** (rechts): die fertigen Seiten. Ein Klick in die Vorschau springt an die Stelle im Text;
   die Vorschau folgt der Schreibmarke. Rechtsklick öffnet ein Menü mit „Ändern …“ und „Im Code zeigen“.
 - **Seitenleiste** (Cmd/Strg+Umschalt+P): Fächer „Hier“, „Einfügen“, „Formel“, „Seite“, „Dokument“,
@@ -79,7 +84,7 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
 ## 3. Schreiben
 
 **Bausteine:** In einer leeren Zeile „/“ tippen öffnet die Bausteinliste (weitertippen filtert,
-Enter fügt ein, Esc schließt). Cmd/Strg+Umschalt+B oder „Baustein …“ öffnen sie mit Suchfeld; markierter
+Enter fügt ein, Esc schließt). Cmd/Strg+Umschalt+B oder „Baustein“ öffnen sie mit Suchfeld; markierter
 Text wandert in den Baustein. Danach springt Tab von Feld zu Feld, Umschalt+Tab zurück, Esc beendet.
 Cmd/Strg+Z nimmt den ganzen Baustein in einem Schritt zurück.
 
@@ -99,7 +104,7 @@ sie in einem Schritt; sonst fügt „Einfügen“ eine neue ein.
 (etwa ein Bildschirmfoto). TFTN legt es unter `bilder/` ab und setzt eine Abbildung mit 80 % Breite
 ein; die Schreibmarke steht in der Unterschrift. Formate: png, jpg, gif, svg, webp, pdf (bis 50 MB).
 
-**Zitieren:** Cmd/Strg+Umschalt+L oder „Zitat einfügen“ durchsucht die Literaturdatei. Ein
+**Zitieren:** Cmd/Strg+Umschalt+L oder „Zitat“ durchsucht die Literaturdatei. Ein
 vorhandenes Zitat ändern: Schreibmarke ins Zitat und die Seitenleiste öffnen (oder Rechtsklick in der
 Vorschau → „Ändern …“). Dort lassen sich Seitenangabe und Quelle wechseln.
 
@@ -132,7 +137,7 @@ Typst-Kenntnisse ändern. Jede Änderung ist geprüft und ein Rückgängig-Schri
 
 ## 5. Seite, Titelei und Literatur
 
-**Seite** (Knopf „Seite …“): Format, Querformat, doppelseitig, Spalten, Ränder, Schrift, Größe,
+**Seite** (Knopf „Seite“): Format, Querformat, doppelseitig, Spalten, Ränder, Schrift, Größe,
 Zeilenabstand, Blocksatz, nummerierte Überschriften, Sprache, Seitenzahl, Kopf- und Fußzeile (mit
 `{seite}` und `{kapitel}`). Jede Einstellung steht als `#set`-Zeile oben im Text. Vorlagen wie der
 Fachartikel legen das selbst fest. Mit „Schriften einbinden“ kommen die benutzten Schriften ins Projekt.
@@ -164,16 +169,16 @@ wirken sofort.
 
 ## 7. Importieren und Exportieren
 
-**Importieren** (Knopf „Importieren …“, braucht [Pandoc](https://pandoc.org) ab 3.1.2): Word (.docx),
+**Importieren** („Neu“ → „Importieren …“, braucht [Pandoc](https://pandoc.org) ab 3.1.2): Word (.docx),
 OpenDocument (.odt), Markdown, HTML, EPUB, LaTeX und RTF werden zu einem neuen Dokument. Überschriften,
 Listen, Tabellen, Fußnoten, Formeln und Bilder kommen mit; Layout, Kommentare und Änderungsverfolgung
 nicht. Das Original bleibt unberührt. Pandoc läuft abgeschottet und holt nichts aus dem Netz.
 Installieren: Mac `brew install pandoc`, Windows `winget install --id JohnMacFarlane.Pandoc`.
 
-**PDF** („Export ▾“): Die Profile kommen vom Dokumenttyp, beim Fachartikel etwa „vorschau“ und
+**PDF** („Export“): Die Profile kommen vom Dokumenttyp, beim Fachartikel etwa „vorschau“ und
 „archiv“ (PDF/A-2b). Das PDF entsteht mit der beigelegten typst-CLI und ist reproduzierbar.
 
-**Word (.docx) zum Gegenlesen** („Export ▾“, braucht Pandoc): Titel, Überschriften, Listen, Tabellen,
+**Word (.docx) zum Gegenlesen** („Export“, braucht Pandoc): Titel, Überschriften, Listen, Tabellen,
 Abbildungen, echte Fußnoten, Formeln, Zitate und Literaturverzeichnis kommen mit, das Seitenlayout
 nicht. Die Datei liegt als `<Dokumentname>.docx` im Dokumentordner und wird beim nächsten Export
 überschrieben.
@@ -183,7 +188,7 @@ nicht. Die Datei liegt als `<Dokumentname>.docx` im Dokumentordner und wird beim
 Jedes Dokument sichert sich eine Sekunde nach der letzten Änderung von selbst, auch beim Schließen und
 Beenden. Cmd/Strg+S braucht man nur, um einem neuen Dokument einen Namen zu geben.
 
-**Fassungen …** zeigt frühere Stände: Höchstens alle zehn Minuten hält TFTN eine Fassung in
+**Fassungen** zeigt frühere Stände: Höchstens alle zehn Minuten hält TFTN eine Fassung in
 `.fassungen/` im Dokumentordner fest (vom letzten Tag alle, davor eine je Tag, 60 Tage lang).
 Zurückholen ersetzt den Text in einem Schritt; Cmd/Strg+Z bringt den vorigen zurück.
 
@@ -202,7 +207,7 @@ Solange ein Fehler besteht, zeigt die Vorschau den letzten fehlerfreien Stand.
 
 ## 10. Einstellungen und Tastenkürzel
 
-„Einstellungen …“ (Cmd/Strg+,) zeigt alle Aktionen mit ihren Kürzeln: Zeile anklicken, neues Kürzel
+Das Zahnrad (Einstellungen, Cmd/Strg+,) zeigt alle Aktionen mit ihren Kürzeln: Zeile anklicken, neues Kürzel
 drücken; Entf heißt „keine Belegung“, „Standard“ setzt zurück. Konflikte mit System- und
 Programmkürzeln werden für Mac **und** Windows angezeigt.
 
@@ -237,6 +242,10 @@ Syntaxhervorhebung und Schrift, Größe und Zeilenabstand des Editors fest; die 
 das gedruckte Dokument. „Eigener Skin …“ legt im Ordner `skins/` eine Vorlage an; nach dem Ändern
 wählt man sie unter „Aussehen“. Werte, die nicht passen, nennt der Dialog und überspringt sie. Die
 Wahl gilt je Rechner.
+
+**Größe der Oberfläche:** Klein, Normal, Groß oder Sehr groß vergrößert Leisten, Knöpfe und Dialoge
+sofort. Editor und Vorschau bleiben, wie sie sind: Die Editorschrift legt der Skin fest, die
+Vorschau passt sich ihrer Breite an. Die Wahl gilt je Rechner.
 
 ## 11. Netz, Updates, Datenschutz
 

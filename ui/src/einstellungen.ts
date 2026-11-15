@@ -5,7 +5,7 @@
 
 import { kuerzelText } from "./bausteine";
 import { type Aktion, type Belegung, type Konflikt, type Plattform, PLATTFORM, kuerzelAusTaste } from "./tasten";
-import { dialogAnmelden } from "./dialoge";
+import { dialogAnmelden, bereich } from "./dialoge";
 import { type McpJs, mcpBefehl } from "./mcp";
 import { type SkinsJs, skinOptionen } from "./skin";
 import { t } from "./sprache";
@@ -46,6 +46,9 @@ export interface EinstellAktionen {
   skinSetzen(kennung: string | null): Promise<SkinsJs>;
   /** Legt die Vorlage für einen eigenen Skin an und zeigt sie; gibt den Pfad zurück. */
   skinvorlage(): Promise<string>;
+  oberflaecheLesen(): Promise<number>;
+  /** Prozent, eine der Stufen; gibt die geltende zurück. Gilt sofort. */
+  oberflaecheSetzen(prozent: number): Promise<number>;
   mcpLesen(): Promise<McpJs>;
   mcpSetzen(an: boolean): Promise<McpJs>;
   mcpBeimWechsel(aus: boolean): Promise<McpJs>;
@@ -124,6 +127,7 @@ export class EinstellDialog {
   private sprache: HTMLSelectElement;
   private spracheText: HTMLSpanElement;
   private skin: HTMLSelectElement;
+  private groesse!: HTMLSelectElement;
   private skinText: HTMLSpanElement;
   private mcpAn: HTMLInputElement;
   private mcpWechsel: HTMLInputElement;
@@ -143,6 +147,9 @@ export class EinstellDialog {
         <div class="einst-zeile einst-updates"><button class="einst-updates-knopf" title="${t("Fragt GitHub nach den neuesten Versionen von TFTN und typst – nur auf Klick")}">${t("Nach Updates suchen")}</button><span class="einst-updates-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-sprache"><label>${t("Sprache der Oberfläche")} <select class="einst-sprache-wahl"></select></label><button class="einst-sprachvorlage" title="${t("Legt eine Vorlage zum Übersetzen an und zeigt sie; übersetzt als <kennung>.toml speichern, etwa fr.toml")}">${t("Weitere Sprache …")}</button><span class="einst-sprache-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-skin"><label>${t("Aussehen")} <select class="einst-skin-wahl"></select></label><button class="einst-skinvorlage" title="${t("Legt eine Vorlage für einen eigenen Skin an und zeigt sie; Farben und Editorschrift lassen sich darin ändern")}">${t("Eigener Skin …")}</button><span class="einst-skin-text leiste-hilfe"></span></div>
+        <div class="einst-zeile einst-groesse"><label>${t("Größe der Oberfläche")} <select class="einst-groesse-wahl" title="${t("Leisten, Knöpfe und Dialoge; Editor und Vorschau bleiben, wie sie sind")}">
+          <option value="90">${t("Klein")}</option><option value="100">${t("Normal")}</option><option value="115">${t("Groß")}</option><option value="130">${t("Sehr groß")}</option>
+        </select></label></div>
         <label class="einst-offline"><input type="checkbox" /> ${t("Ganz offline (nur dieser Rechner): TFTN holt keine Pakete aus dem Netz")}</label>
         <div class="einst-mcp">
           <label><input type="checkbox" class="einst-mcp-an" /> ${t("MCP: KI-Assistenten (lokal oder in der Cloud) dürfen im offenen Dokument lesen und schreiben")}</label>
@@ -203,6 +210,11 @@ export class EinstellDialog {
         this.spracheText.textContent = String(fehler);
       }
     });
+    const groesse = q<HTMLSelectElement>(".einst-groesse-wahl");
+    groesse.addEventListener("change", async () => {
+      groesse.value = String(await this.a.oberflaecheSetzen(Number(groesse.value)).catch(() => 100));
+    });
+    this.groesse = groesse;
     this.skin = q(".einst-skin-wahl");
     this.skinText = q(".einst-skin-text");
     this.skin.addEventListener("change", async () => {
@@ -274,6 +286,11 @@ export class EinstellDialog {
     window.addEventListener("keydown", (e) => this.taste(e), true);
   }
 
+  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
+  enthaelt(ziel: Node): boolean {
+    return bereich(this.huelle, document.getElementById("einstellungen-knopf"))(ziel);
+  }
+
   get offen(): boolean {
     return !this.huelle.hidden;
   }
@@ -285,6 +302,10 @@ export class EinstellDialog {
     this.zeichnen();
     this.suche.focus();
     void this.sprachenZeichnen();
+    void this.a.oberflaecheLesen().then(
+      (p) => (this.groesse.value = String(p)),
+      () => {},
+    );
     void this.a.skinsLesen().then(
       (s) => this.skinZeigen(s),
       (fehler) => (this.skinText.textContent = String(fehler)),

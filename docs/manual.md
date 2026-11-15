@@ -39,12 +39,12 @@ notarized: on first launch, right-click → “Open”. The matching typst CLI i
 current user without admin rights. The installer is not signed: if SmartScreen warns, choose
 “More info” → “Run anyway”.
 
-**Try it:** use “Open …” and choose the `demo/` folder from the source. The sample article shows
+**Try it:** use “Open” and choose the `demo/` folder from the source. The sample article shows
 equations, a figure, a table, footnotes, cross-references and citations. Feel free to change
 anything.
 
 **A new document:** TFTN starts with an empty draft. Just start writing; Cmd/Ctrl+S gives it a
-name and saves it in your Documents folder. “Template …” instead creates a document of a document
+name and saves it in your Documents folder. “New” → “From template …” instead creates a document of a document
 type, for example a journal article with front matter and bibliography.
 
 **Language of a new document:** new documents and the empty draft use the interface language –
@@ -68,10 +68,15 @@ sync it and keep working on another computer without a network.
 
 ## 2. The window
 
-- **Header:** Template, Import, Open, Versions, Export, Sidebar, Focus view, Settings. Notes appear
-  here.
-- **Editor** (left): Typst source with highlighting. Above it: “Block …”, “Insert citation”,
-  “Outline” and “Page …”.
+- **Header:** the project on the left (hover for the full path); on the right “New” (blank document,
+  from template, import), “Open”, “Versions”, “Export” and, as icons, sidebar, focus view and
+  settings (gear). In a narrow window only the icons remain.
+- **Messages** appear in a band below the header. Short notices disappear by themselves; errors and
+  questions stay until you close them with × or answer them.
+- **Panels such as Export, New or Versions** close with ×, Esc or a click outside. Once you have
+  typed something into a dialog (a project name, say), only × or Esc closes it.
+- **Editor** (left): Typst source with highlighting. Above it: “Block”, “Citation”, “Outline” and
+  “Page”.
 - **Preview** (right): the finished pages. Clicking in the preview jumps to the matching place in
   the text; the preview follows the cursor. Right-click opens a menu with “Edit …” and “Show in
   code”.
@@ -83,7 +88,7 @@ sync it and keep working on another computer without a network.
 ## 3. Writing
 
 **Blocks:** typing “/” on an empty line opens the block list (keep typing to filter, Enter inserts,
-Esc closes). Cmd/Ctrl+Shift+B or “Block …” open it with a search field; selected text moves into
+Esc closes). Cmd/Ctrl+Shift+B or “Block” open it with a search field; selected text moves into
 the block. Afterwards Tab jumps from field to field, Shift+Tab back, Esc finishes. Cmd/Ctrl+Z undoes
 the whole block in one step.
 
@@ -102,7 +107,7 @@ otherwise “Insert” adds a new one.
 screenshot). TFTN stores it under `bilder/` and inserts a figure at 80 % width with the cursor in
 the caption. Formats: png, jpg, gif, svg, webp, pdf (up to 50 MB).
 
-**Citing:** Cmd/Ctrl+Shift+L or “Insert citation” searches the bibliography file. To change an
+**Citing:** Cmd/Ctrl+Shift+L or “Citation” searches the bibliography file. To change an
 existing citation, put the cursor in it and open the sidebar (or right-click it in the preview →
 “Edit …”); there you can change the page reference and the source.
 
@@ -134,7 +139,7 @@ Every change is checked and is one undo step.
 
 ## 5. Page, front matter and references
 
-**Page** (“Page …” button): paper size, landscape, two-sided, columns, margins, font, size, line
+**Page** (“Page” button): paper size, landscape, two-sided, columns, margins, font, size, line
 spacing, justification, numbered headings, language, page numbers, header and footer (with `{seite}`
 for the page and `{kapitel}` for the chapter). Each setting is a `#set` line at the top of the text.
 Templates such as the journal article set this themselves. “Embed fonts” copies the fonts in use into
@@ -168,16 +173,16 @@ effect immediately.
 
 ## 7. Import and export
 
-**Import** (“Import …” button, requires [Pandoc](https://pandoc.org) 3.1.2 or later): Word (.docx),
+**Import** (“New” → “Import …”, requires [Pandoc](https://pandoc.org) 3.1.2 or later): Word (.docx),
 OpenDocument (.odt), Markdown, HTML, EPUB, LaTeX and RTF become a new document. Headings, lists,
 tables, footnotes, equations and images come along; layout, comments and tracked changes do not.
 The original stays untouched. Pandoc runs sandboxed and fetches nothing from the network. Install:
 Mac `brew install pandoc`, Windows `winget install --id JohnMacFarlane.Pandoc`.
 
-**PDF** (“Export ▾”): the profiles come from the document type, for the journal article “vorschau”
+**PDF** (“Export”): the profiles come from the document type, for the journal article “vorschau”
 (preview) and “archiv” (PDF/A-2b). The PDF is produced by the bundled typst CLI and is reproducible.
 
-**Word (.docx) for proofreading** (“Export ▾”, requires Pandoc): title, headings, lists, tables, figures,
+**Word (.docx) for proofreading** (“Export”, requires Pandoc): title, headings, lists, tables, figures,
 real footnotes, equations, citations and bibliography come along; the page layout does not. The file
 is saved as `<document name>.docx` in the document folder and overwritten by the next export.
 
@@ -186,7 +191,7 @@ is saved as `<document name>.docx` in the document folder and overwritten by the
 Every document saves itself one second after the last change, also when closing the window and
 quitting. Cmd/Ctrl+S is only needed to name a new document.
 
-**Versions …** shows earlier states: at most every ten minutes TFTN keeps a version in `.fassungen/`
+**Versions** shows earlier states: at most every ten minutes TFTN keeps a version in `.fassungen/`
 in the document folder (all from the last day, before that one per day, for 60 days). Restoring
 replaces the text in one step; Cmd/Ctrl+Z brings the previous text back.
 
@@ -206,7 +211,7 @@ to fix it. While an error persists, the preview keeps showing the last good stat
 
 ## 10. Settings and keyboard shortcuts
 
-“Settings …” (Cmd/Ctrl+,) lists every action with its shortcut: click a row and press the new
+The gear (settings, Cmd/Ctrl+,) lists every action with its shortcut: click a row and press the new
 shortcut; Delete means “no shortcut”, “Default” resets it. Conflicts with system and application
 shortcuts are shown for Mac **and** Windows.
 
@@ -241,6 +246,10 @@ and the editor's font, size and line spacing; the preview stays white like the p
 “Custom skin …” creates a template in the `skins/` folder; after editing it, choose it under
 “Appearance”. Values that don't fit are listed in the dialog and skipped. The choice applies per
 computer.
+
+**Interface size:** Small, Normal, Large or Extra large scales bars, buttons and dialogs right away.
+The editor and preview stay as they are: the skin sets the editor font, and the preview fits its
+width. The choice applies per computer.
 
 ## 11. Network, updates, privacy
 

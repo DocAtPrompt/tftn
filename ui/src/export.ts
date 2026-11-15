@@ -1,7 +1,7 @@
 // Export-Menü (PLAN-M1 AP8): Profile aus dem Manifest, „Probe“ nach _renders/, „Abnehmen“ nach
 // export/ (setzt den Zeitstempel; zweiter Klick bestätigt). Vor dem Export wird gespeichert.
 
-import { dialogAnmelden } from "./dialoge";
+import { dialogAnmelden, bereich, schliessenKnopf } from "./dialoge";
 import { t } from "./sprache";
 
 export interface ProfilJs {
@@ -52,6 +52,11 @@ export class ExportMenue {
     dialogAnmelden(this);
   }
 
+  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
+  enthaelt(ziel: Node): boolean {
+    return bereich(this.menue, document.getElementById("export-knopf"))(ziel);
+  }
+
   get offen(): boolean {
     return !this.menue.hidden;
   }
@@ -70,7 +75,12 @@ export class ExportMenue {
       this.menue.textContent = String(fehler);
       return;
     }
-    this.menue.replaceChildren();
+    const kopf = document.createElement("div");
+    kopf.className = "neu-kopf";
+    const titel = document.createElement("h2");
+    titel.textContent = t("Export");
+    kopf.append(titel, schliessenKnopf(() => this.schliessen()));
+    this.menue.replaceChildren(kopf);
     const w = document.createElement("div");
     w.className = "export-zeile";
     const wName = document.createElement("span");

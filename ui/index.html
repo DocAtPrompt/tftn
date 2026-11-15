@@ -8,25 +8,29 @@
   </head>
   <body>
     <header id="kopf">
-      <span id="datei">…</span><span id="hinweis" hidden></span>
-      <button id="neu-knopf" title="Neues Dokument aus einer Vorlage, etwa Fachartikel">Vorlage …</button>
-      <button id="import-knopf" title="Word, OpenDocument, Markdown, HTML, EPUB oder LaTeX über Pandoc übernehmen">Importieren …</button>
-      <button id="oeffnen-knopf" title="Anderes Projekt öffnen (Cmd/Strg+O)">Öffnen …</button>
-      <button id="fassungen-knopf" title="Frühere Fassungen ansehen und zurückholen">Fassungen …</button>
-      <button id="export-knopf" title="Export-Profile des Dokumenttyps">Export ▾</button>
-      <button id="seitenleiste-knopf" title="Seitenleiste">Seitenleiste</button>
-      <button id="schreibansicht-knopf" title="Nur der Text, ohne Ablenkung">Schreibansicht</button>
-      <button id="einstellungen-knopf" title="Einstellungen und Tastenkürzel">Einstellungen …</button>
+      <span id="datei"><b id="projekt">…</b><span id="datei-rest"></span></span>
+      <nav class="kopf-knoepfe" aria-label="Dokument">
+        <button id="neu-knopf" data-ikone="neu" title="Neues Dokument: leer, aus einer Vorlage oder importiert"><span class="knopf-text">Neu</span></button>
+        <button id="oeffnen-knopf" data-ikone="oeffnen" title="Anderes Projekt öffnen (Cmd/Strg+O)"><span class="knopf-text">Öffnen</span></button>
+        <span class="trenn"></span>
+        <button id="fassungen-knopf" data-ikone="fassungen" title="Frühere Fassungen ansehen und zurückholen"><span class="knopf-text">Fassungen</span></button>
+        <button id="export-knopf" data-ikone="export" title="Export-Profile des Dokumenttyps"><span class="knopf-text">Export</span></button>
+        <span class="trenn"></span>
+        <button id="seitenleiste-knopf" class="nur-ikone" data-ikone="seitenleiste" aria-label="Seitenleiste" title="Seitenleiste"></button>
+        <button id="schreibansicht-knopf" class="nur-ikone" data-ikone="schreibansicht" aria-label="Schreibansicht" title="Nur der Text, ohne Ablenkung"></button>
+        <button id="einstellungen-knopf" class="nur-ikone" data-ikone="zahnrad" aria-label="Einstellungen" title="Einstellungen und Tastenkürzel"></button>
+      </nav>
     </header>
+    <div id="hinweis" role="status" hidden><span id="hinweis-text"></span><span id="hinweis-knoepfe"></span><button id="hinweis-zu" class="nur-ikone" data-ikone="schliessen" aria-label="Hinweis schließen" title="Hinweis schließen"></button></div>
     <main id="arbeit">
       <section id="links">
         <nav id="gliederung" aria-label="Gliederung"></nav>
         <div id="schreiben">
           <div id="editor-knoepfe">
-            <button id="baustein-knopf" title="Baustein einfügen (Cmd/Strg+Umschalt+B; in einer Leerzeile auch „/“)">Baustein …</button>
-            <button id="zitat-knopf" title="Zitat einfügen (Cmd/Strg+Umschalt+L)">Zitat einfügen</button>
-            <button id="gliederung-knopf" title="Überschriften neben dem Text: hinspringen, Abschnitte verschieben">Gliederung</button>
-            <button id="seite-knopf" title="Format, Schrift und Sprache">Seite …</button>
+            <button id="baustein-knopf" data-ikone="baustein" title="Baustein einfügen (Cmd/Strg+Umschalt+B; in einer Leerzeile auch „/“)"><span class="knopf-text">Baustein</span></button>
+            <button id="zitat-knopf" data-ikone="zitat" title="Zitat einfügen (Cmd/Strg+Umschalt+L)"><span class="knopf-text">Zitat</span></button>
+            <button id="gliederung-knopf" data-ikone="gliederung" title="Überschriften neben dem Text: hinspringen, Abschnitte verschieben"><span class="knopf-text">Gliederung</span></button>
+            <button id="seite-knopf" data-ikone="seite" title="Format, Schrift und Sprache"><span class="knopf-text">Seite</span></button>
           </div>
           <div id="editor"></div>
         </div>

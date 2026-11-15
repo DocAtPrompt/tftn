@@ -45,9 +45,24 @@ pub struct Rechner {
     /// MCP ausschalten, sobald ein anderes Dokument geöffnet wird (öffnet MCP es selbst: nachfragen).
     #[serde(default)]
     pub mcp_beim_wechsel_aus: bool,
+    /// Größe der Oberfläche in Prozent (Leisten, Knöpfe, Dialoge); fehlt sie, 100.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub oberflaeche: Option<u16>,
 }
 
+/// Stufen der Oberflächengröße in Prozent.
+pub const OBERFLAECHE_STUFEN: [u16; 4] = [90, 100, 115, 130];
+
 impl Rechner {
+    /// Die geltende Stufe; ein von Hand eingetragener Wert zählt als die nächste.
+    pub fn oberflaeche_prozent(&self) -> u16 {
+        let p = self.oberflaeche.unwrap_or(100);
+        OBERFLAECHE_STUFEN
+            .into_iter()
+            .min_by_key(|s| s.abs_diff(p))
+            .unwrap_or(100)
+    }
+
     /// Fehlt die Datei oder ist sie fehlerhaft, gilt der Standard.
     pub fn laden(app_konfig: &Path) -> Rechner {
         std::fs::read_to_string(app_konfig.join(RECHNER))
@@ -284,6 +299,25 @@ pub fn beobachten(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn oberflaechengroesse_nur_aus_den_stufen() {
+        let mit = |p| Rechner {
+            oberflaeche: p,
+            ..Rechner::default()
+        };
+        assert_eq!(mit(None).oberflaeche_prozent(), 100);
+        assert_eq!(mit(Some(115)).oberflaeche_prozent(), 115);
+        // Von Hand verstellt: die nächste Stufe.
+        assert_eq!(mit(Some(120)).oberflaeche_prozent(), 115);
+        assert_eq!(mit(Some(10)).oberflaeche_prozent(), 90);
+        assert_eq!(mit(Some(999)).oberflaeche_prozent(), 130);
+        let t = toml::to_string(&mit(Some(130))).unwrap();
+        assert_eq!(
+            toml::from_str::<Rechner>(&t).unwrap().oberflaeche,
+            Some(130)
+        );
+    }
 
     /// Abschlussprüfung AP3: Scheitert das Umbenennen, bleibt keine temporäre Datei liegen.
     #[test]

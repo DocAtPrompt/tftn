@@ -3013,6 +3013,24 @@ fn skins_lesen(app: tauri::AppHandle) -> Result<SkinsJs, String> {
     skins_js(&app)
 }
 
+/// Größe der Oberfläche (Prozent) für diesen Rechner.
+#[tauri::command]
+fn oberflaeche_lesen(app: tauri::AppHandle) -> Result<u16, String> {
+    Ok(tftn_einstellungen::Rechner::laden(&app_konfig(&app)?).oberflaeche_prozent())
+}
+
+/// Setzt die Größe der Oberfläche (eine der Stufen); gibt die geltende zurück. Gilt sofort.
+#[tauri::command]
+fn oberflaeche_setzen(app: tauri::AppHandle, prozent: u16) -> Result<u16, String> {
+    let konfig = app_konfig(&app)?;
+    let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
+    rechner.oberflaeche = (prozent != 100).then_some(prozent);
+    let gilt = rechner.oberflaeche_prozent();
+    rechner.oberflaeche = (gilt != 100).then_some(gilt);
+    rechner.speichern(&konfig).map_err(|e| e.to_string())?;
+    Ok(gilt)
+}
+
 /// Skin für diesen Rechner; `None` = wie das System. Gilt sofort.
 #[tauri::command]
 fn skin_setzen(app: tauri::AppHandle, kennung: Option<String>) -> Result<SkinsJs, String> {
@@ -3264,6 +3282,8 @@ pub fn run() {
             mcp_bestaetigen,
             mcp_antwort,
             mcp_wechsel_vormerken,
+            oberflaeche_lesen,
+            oberflaeche_setzen,
         ])
         .on_window_event(|fenster, ereignis| {
             if let tauri::WindowEvent::CloseRequested { .. } = ereignis {

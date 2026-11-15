@@ -52,7 +52,7 @@ body {
 
 body {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
 }
 
 #kopf,
@@ -1364,28 +1364,19 @@ body {
 }
 
 body.schreibansicht {
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 body.schreibansicht #kopf {
+  display: none;
+}
+
+body.schreibansicht #hinweis {
   position: fixed;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
-  padding: 0;
-  border: none;
-  pointer-events: none;
-}
-
-body.schreibansicht #kopf > :not(#hinweis) {
-  display: none;
-}
-
-body.schreibansicht #hinweis {
-  pointer-events: auto;
-  padding: 4px 10px;
-  background: var(--grund);
   border: 1px solid var(--linie);
   border-radius: 6px;
 }
@@ -1447,4 +1438,188 @@ body.schreibansicht #schreibansicht-ende {
 body.schreibansicht #schreibansicht-ende:hover,
 body.schreibansicht #schreibansicht-ende:focus-visible {
   opacity: 1;
+}
+
+/* --- Knöpfe, Kopfzeile, Hinweisband (Oberfläche 0.2) ---------------------------------------- */
+
+/* Grundform aller Knöpfe; :where hält die Spezifität bei null, eigene Klassen gehen vor. */
+:where(button) {
+  font: inherit;
+  min-height: 28px;
+  padding: 0 10px;
+  color: var(--text);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: 6px;
+  cursor: pointer;
+}
+:where(button):hover:not(:disabled) {
+  border-color: var(--leise);
+}
+:where(button):disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+:where(button):focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 1px;
+}
+
+/* Oberflächengröße (Einstellungen): skaliert Leisten, Knöpfe und Dialoge, nicht Editor und Vorschau. */
+:root {
+  --ui-zoom: 1;
+}
+#kopf,
+#hinweis,
+#status,
+#editor-knoepfe,
+.neu-dialog,
+#export-menue,
+#baustein-palette,
+.knopf-menue,
+#seitenleiste {
+  zoom: var(--ui-zoom);
+}
+
+#kopf {
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#datei {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--leise);
+}
+#projekt {
+  color: var(--text);
+  font-weight: 600;
+  margin-right: 0.6em;
+}
+.kopf-knoepfe {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#kopf button,
+#editor-knoepfe button,
+.knopf-menue button,
+#hinweis button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+button.nur-ikone {
+  width: 30px;
+  padding: 0;
+}
+#kopf button {
+  min-height: 30px;
+}
+.trenn {
+  width: 1px;
+  height: 20px;
+  background: var(--linie);
+  margin: 0 4px;
+}
+.ikone {
+  flex: none;
+  color: var(--leise);
+}
+button:hover .ikone {
+  color: var(--text);
+}
+/* Schmales Fenster: nur noch Symbole, der volle Name steht im Titel. */
+@container (max-width: 640px) {
+  .kopf-knoepfe .knopf-text {
+    display: none;
+  }
+  .kopf-knoepfe button {
+    width: 30px;
+    padding: 0;
+  }
+}
+
+#editor-knoepfe {
+  container-type: inline-size;
+  align-items: center;
+  overflow: hidden;
+}
+@container (max-width: 380px) {
+  #editor-knoepfe .knopf-text {
+    display: none;
+  }
+}
+
+#hinweis {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 4px 12px;
+  color: var(--warn);
+  background: var(--grund);
+  border-bottom: 1px solid var(--linie);
+}
+#hinweis[hidden] {
+  display: none;
+}
+#hinweis.kurz {
+  color: var(--text);
+}
+#hinweis-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+#hinweis-knoepfe {
+  display: flex;
+  gap: 6px;
+}
+#hinweis-zu {
+  border: none;
+  background: none;
+  min-height: 24px;
+  width: 24px;
+}
+
+.knopf-menue {
+  position: fixed;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 4px;
+  background: var(--grund);
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.2);
+}
+.knopf-menue[hidden] {
+  display: none;
+}
+.knopf-menue button {
+  justify-content: flex-start;
+  border: none;
+  background: none;
+  text-align: left;
+}
+.knopf-menue button:hover,
+.knopf-menue button:focus-visible {
+  background: var(--flaeche);
+}
+
+#export-menue .neu-kopf {
+  margin-bottom: 4px;
+}
+#export-menue .neu-kopf h2 {
+  margin: 0;
+  font-size: 14px;
 }

@@ -42,6 +42,9 @@ import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellun
 import { editorKeymaps } from "./reserviert";
 import { type SkinsJs, skinAnwenden } from "./skin";
 import { type McpAuftrag, type McpJs, mcpAnzeige, mcpFragtNoch } from "./mcp";
+import { ikonenSetzen } from "./ikonen";
+import { KnopfMenue } from "./knopfmenue";
+import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
@@ -464,7 +467,7 @@ async function bausteinEinsetzen(id: string, von: number, bis: number, auswahl: 
 async function bausteinPaletteOeffnen() {
   const m = await modusAn(view.state.selection.main.from);
   if (m === null) {
-    hinweis(t("Hier lässt sich kein Baustein einfügen (Kommentar oder Raw-Text)."));
+    hinweis(t("Hier lässt sich kein Baustein einfügen (Kommentar oder Raw-Text)."), undefined, "kurz");
     return;
   }
   bausteinPalette.oeffnen(m);
@@ -894,7 +897,7 @@ async function klick(seite: number, x: number, y: number) {
       hinweis(t("Diese Stelle steht in {datei}; TFTN öffnet derzeit nur die Hauptdatei.", { datei: a.datei }));
       break;
     case "url":
-      hinweis(t("Verweis auf {url}", { url: a.url }));
+      hinweis(t("Verweis auf {url}", { url: a.url }), undefined, "kurz");
       break;
     case "position":
       vorschau.scrollen(a.seite, a.y);
@@ -927,7 +930,7 @@ async function bilderEinfuegen(dateien: File[], pos: number) {
         scrollIntoView: true,
       });
       pos = b.von + b.text.length;
-      hinweis(t("{pfad} übernommen. Die Unterschrift kommt in die eckigen Klammern.", { pfad }));
+      hinweis(t("{pfad} übernommen. Die Unterschrift kommt in die eckigen Klammern.", { pfad }), undefined, "kurz");
     } catch (fehler) {
       hinweis(t("Bild nicht übernommen: {fehler}", { fehler: String(fehler) }));
     }
@@ -948,7 +951,7 @@ const bildAblage = EditorView.domEventHandlers({
     e.preventDefault();
     const bilder = bilderAus(e.dataTransfer?.files);
     if (bilder.length < alle.length) {
-      hinweis(t("Nur Bilder lassen sich in den Text ziehen (png, jpg, gif, svg, webp, pdf). Andere Dokumente über „Importieren …“."));
+      hinweis(t("Nur Bilder lassen sich in den Text ziehen (png, jpg, gif, svg, webp, pdf). Andere Dokumente über „Neu“ → „Importieren …“."));
     }
     const pos = v.posAtCoords({ x: e.clientX, y: e.clientY }) ?? v.state.selection.main.head;
     if (bilder.length) void bilderEinfuegen(bilder, pos);
@@ -1204,17 +1207,28 @@ type HinweisKnopf = { titel: string; aktion: () => void };
 
 let mcpStand: McpJs | null = null;
 
-function hinweis(text: string, knopf?: HinweisKnopf | HinweisKnopf[]) {
+let hinweisZeitgeber = 0;
+
+/** Hinweisband unter der Kopfzeile. `kurz`: blendet sich nach ein paar Sekunden aus; Fehler,
+ *  Warnungen und Fragen mit Knöpfen bleiben, bis man sie schließt oder beantwortet. */
+function hinweis(text: string, knopf?: HinweisKnopf | HinweisKnopf[], art: HinweisArt = "bleibt") {
   if (text === "" && mcpFragtNoch(mcpStand)) return mcpNachfragen();
+  clearTimeout(hinweisZeitgeber);
+  const knoepfe = knopf === undefined ? [] : Array.isArray(knopf) ? knopf : [knopf];
   const h = document.getElementById("hinweis")!;
   h.hidden = text === "";
-  h.textContent = text;
-  for (const k of knopf === undefined ? [] : Array.isArray(knopf) ? knopf : [knopf]) {
-    const b = document.createElement("button");
-    b.textContent = k.titel;
-    b.onclick = k.aktion;
-    h.append(" ", b);
-  }
+  h.classList.toggle("kurz", art === "kurz");
+  document.getElementById("hinweis-text")!.textContent = text;
+  document.getElementById("hinweis-knoepfe")!.replaceChildren(
+    ...knoepfe.map((k) => {
+      const b = document.createElement("button");
+      b.textContent = k.titel;
+      b.onclick = k.aktion;
+      return b;
+    }),
+  );
+  const ms = ausblendenNach(art, knoepfe.length);
+  if (text && ms !== null) hinweisZeitgeber = window.setTimeout(() => hinweis(""), ms);
 }
 
 // --- MCP ------------------------------------------------------------------------------------
@@ -1261,7 +1275,7 @@ async function mcpKlick() {
   }
   try {
     mcpZeigen(await invoke<McpJs>("mcp_setzen", { an: false }));
-    hinweis(t("MCP ausgeschaltet."));
+    hinweis(t("MCP ausgeschaltet."), undefined, "kurz");
   } catch (fehler) {
     hinweis(String(fehler));
   }
@@ -1325,6 +1339,11 @@ async function projektOeffnen(): Promise<Geoeffnet> {
 }
 
 /** CSS-Variablen, die der geltende Skin gesetzt hat (für den nächsten Wechsel). */
+/** Größe der Oberfläche (Prozent) als `--ui-zoom` (stil.css). */
+function oberflaecheAnwenden(prozent: number) {
+  document.documentElement.style.setProperty("--ui-zoom", String(prozent / 100));
+}
+
 let skinVariablen: string[] = [];
 
 function skinsSetzen(s: SkinsJs) {
@@ -1333,8 +1352,11 @@ function skinsSetzen(s: SkinsJs) {
 
 async function start() {
   escAktivieren();
+  ikonenSetzen(document.body);
+  document.getElementById("hinweis-zu")!.addEventListener("click", () => hinweis(""));
   // Skin zuerst, damit das Fenster nicht erst in den Standardfarben erscheint.
   await invoke<SkinsJs>("skins_lesen").then(skinsSetzen, () => {});
+  await invoke<number>("oberflaeche_lesen").then(oberflaecheAnwenden, () => {});
   palette = new ZitatPalette(
     (anfrage) => invoke<ZitatSuche>("zitate_suchen", { anfrage }),
     zitatEinfuegen,
@@ -1401,9 +1423,17 @@ async function start() {
       location.reload();
     },
   });
-  document.getElementById("neu-knopf")!.addEventListener("click", () => void neuDialog?.oeffnen());
+  new KnopfMenue(document.getElementById("neu-knopf")!, () => [
+    { text: t("Leeres Dokument"), titel: t("Neues Dokument ohne Namen (Cmd/Strg+N)"), ikone: "neu", aktion: () => void einzeln(neuesDokument) },
+    { text: t("Aus Vorlage …"), titel: t("Neues Dokument aus einer Vorlage, etwa Fachartikel"), ikone: "vorlage", aktion: () => void neuDialog?.oeffnen() },
+    {
+      text: t("Importieren …"),
+      titel: t("Word, OpenDocument, Markdown, HTML, EPUB oder LaTeX über Pandoc übernehmen"),
+      ikone: "importieren",
+      aktion: () => void einzeln(importieren),
+    },
+  ]);
   document.getElementById("oeffnen-knopf")!.addEventListener("click", () => void einzeln(projektWechseln));
-  document.getElementById("import-knopf")!.addEventListener("click", () => void einzeln(importieren));
   const fassungen = new FassungenDialog({
     liste: async () => {
       await kette;
@@ -1546,13 +1576,19 @@ async function start() {
         await invoke("sprache_setzen", { kennung });
         // Neu laden wie bei einem Projektwechsel; ein Dokument ohne Namen braucht vorher einen.
         if (!(await wechselNachSpeichern(vorWechsel, async () => location.reload()))) {
-          hinweis(t("Die Sprache gilt ab dem nächsten Start."));
+          hinweis(t("Die Sprache gilt ab dem nächsten Start."), undefined, "kurz");
         }
       } catch (fehler) {
         hinweis(String(fehler));
       }
     },
     sprachvorlage: () => invoke<string>("sprachvorlage_anlegen"),
+    oberflaecheLesen: () => invoke<number>("oberflaeche_lesen"),
+    oberflaecheSetzen: async (prozent) => {
+      const p = await invoke<number>("oberflaeche_setzen", { prozent });
+      oberflaecheAnwenden(p);
+      return p;
+    },
     skinsLesen: () => invoke<SkinsJs>("skins_lesen"),
     skinSetzen: async (kennung) => {
       const s = await invoke<SkinsJs>("skin_setzen", { kennung });
@@ -1645,7 +1681,10 @@ async function start() {
   const g = await projektOeffnen();
   entwurf = g.entwurf;
   namensVorschlag = g.vorschlag ?? "";
-  document.getElementById("datei")!.textContent = entwurf ? t("Ohne Namen") : `${g.ordner} / ${g.datei}`;
+  const kopf = kopfName(g.ordner, g.datei, entwurf, t("Ohne Namen"));
+  document.getElementById("projekt")!.textContent = kopf.name;
+  document.getElementById("datei-rest")!.textContent = kopf.rest;
+  document.getElementById("datei")!.title = kopf.titel;
   rev = g.rev;
   try {
     katalog = await invoke<EintragJs[]>("katalog").then(texteUebersetzen);
@@ -1729,7 +1768,7 @@ async function start() {
   await listen<string>("extern-geaendert", (e) => {
     if (!ungespeichert) {
       textErsetzen(e.payload);
-      hinweis(t("Datei wurde außerhalb von TFTN geändert und neu geladen."));
+      hinweis(t("Datei wurde außerhalb von TFTN geändert und neu geladen."), undefined, "kurz");
     } else {
       hinweis(t("Datei wurde außerhalb von TFTN geändert. Deine Änderungen sind noch nicht gespeichert."), {
         titel: t("Fremde Fassung laden"),

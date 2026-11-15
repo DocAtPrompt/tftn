@@ -42,6 +42,7 @@ fn rechner_ohne_datei_ist_standard() {
             skin: None,
             mcp: false,
             mcp_beim_wechsel_aus: false,
+            oberflaeche: None,
         }
     );
     let gesetzt = Rechner {
@@ -51,6 +52,7 @@ fn rechner_ohne_datei_ist_standard() {
         skin: Some("papier".into()),
         mcp: true,
         mcp_beim_wechsel_aus: true,
+        oberflaeche: None,
     };
     gesetzt.speichern(t.p()).unwrap();
     assert_eq!(Rechner::laden(t.p()), gesetzt);

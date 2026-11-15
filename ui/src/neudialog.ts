@@ -3,7 +3,7 @@
 // steht in neuprojekt.ts, angelegt wird in Rust.
 
 import { type TypJs, type TypenJs, namePruefen, typenOrdnen, zielPfad, brauchtListe } from "./neuprojekt";
-import { dialogAnmelden, schliessenKnopf } from "./dialoge";
+import { dialogAnmelden, schliessenKnopf, bereich } from "./dialoge";
 import { t } from "./sprache";
 
 export interface NeuAktionen {
@@ -62,6 +62,15 @@ export class NeuDialog {
       if (e.key === "Enter") void this.anlegen();
     });
     this.anlegenKnopf.addEventListener("click", () => void this.anlegen());
+  }
+
+  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
+  enthaelt(ziel: Node): boolean {
+    return bereich(this.huelle, document.getElementById("neu-knopf"))(ziel);
+  }
+
+  behalten(): boolean {
+    return this.name.value.trim() !== "";
   }
 
   get offen(): boolean {

@@ -1,7 +1,7 @@
 // Befehlspalette „Zitat einfügen“ (PLAN-M1 AP7): Suche in der .bib, optionale Seitenangabe,
 // Einfügen an der Schreibmarke. Tastatur: ↑/↓ wählen, Enter einfügen, Esc schließen.
 
-import { dialogAnmelden, schliessenKnopf } from "./dialoge";
+import { dialogAnmelden, schliessenKnopf, bereich } from "./dialoge";
 import { type DoiJs, doiAusEingabe } from "./doi";
 import { t } from "./sprache";
 
@@ -71,6 +71,11 @@ export class ZitatPalette {
         this.uebernehmen();
       }
     });
+  }
+
+  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
+  enthaelt(ziel: Node): boolean {
+    return bereich(this.huelle, document.getElementById("zitat-knopf"))(ziel);
   }
 
   get offen(): boolean {

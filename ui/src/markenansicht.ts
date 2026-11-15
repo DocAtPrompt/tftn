@@ -4,7 +4,7 @@
 
 import { type Extension, StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView, WidgetType } from "@codemirror/view";
-import { dialogAnmelden, schliessenKnopf } from "./dialoge";
+import { dialogAnmelden, schliessenKnopf, bereich } from "./dialoge";
 import { anAnker } from "./platz";
 
 /** Eine Marke wie in Rust (`MarkeJs`); Positionen UTF-16 = CodeMirror-Positionen. */
@@ -91,6 +91,11 @@ export class Popover {
         this.zurueck?.();
       }
     });
+  }
+
+  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
+  enthaelt(ziel: Node): boolean {
+    return bereich(this.huelle)(ziel);
   }
 
   get offen(): boolean {

@@ -1,6 +1,6 @@
 // Frühere Fassungen: Liste, Vorschau, Zurückholen. Abgelegt werden sie in Rust beim Speichern.
 
-import { dialogAnmelden, schliessenKnopf } from "./dialoge";
+import { dialogAnmelden, schliessenKnopf, bereich } from "./dialoge";
 import { t, zahl } from "./sprache";
 
 export interface FassungJs {
@@ -74,6 +74,11 @@ export class FassungenDialog {
     this.huelle.append(kopf, hilfe, rumpf, unten);
     document.body.append(this.huelle);
     dialogAnmelden(this);
+  }
+
+  /** Klick daneben schließt (dialoge.ts); der Auslöser zählt dazu. */
+  enthaelt(ziel: Node): boolean {
+    return bereich(this.huelle, document.getElementById("fassungen-knopf"))(ziel);
   }
 
   get offen(): boolean {
