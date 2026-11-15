@@ -3,6 +3,8 @@
 A native, offline writing app for [Typst](https://typst.app) on macOS and Windows: write on the
 left, see the finished page on the right as you type. Built with Rust, Tauri 2 and CodeMirror 6.
 
+![TFTN with a journal article: outline, Typst source, sidebar and live preview](docs/images/main.png)
+
 **Why offline, when Typst has an excellent web app?** Some texts must not leave your computer:
 reports about patients or clients, legal and HR documents, anything covered by professional
 secrecy or data protection law (such as the GDPR). TFTN keeps every document, every keystroke and
@@ -14,7 +16,8 @@ with Typst without handing them to a third party.
   line.
 - **Change values without code:** markers, a context sidebar, a table grid and an equation palette.
 - **Document types** as Typst packages, with a form for the front matter. TFTN ships a blank
-  document, letter, invoice, medical report, report, journal article, book, poster and CV.
+  document, letter, invoice, medical report, report, journal article, book, poster and CV – and
+  copies any of them into a custom type of your own in Settings.
 - **Citations** from your BibTeX/BibLaTeX file, or straight from a DOI (Crossref, DataCite).
 - **Typst Universe packages** vendored into the project with checksums – documents build offline,
   on any machine.
@@ -22,12 +25,25 @@ with Typst without handing them to a third party.
   PDF/A) and to Word for proofreading – both via Pandoc.
 - **Autosave with versions**, outline with drag-and-drop sections, spell checking, word count,
   distraction-free focus view.
+- **AI assistants via MCP** (opt-in): Claude Code or a local model can read and edit the open
+  document in the running app; every change shows up at once and can be undone. Off by default;
+  once you switch it on, the assistant you connect sees the document – with a cloud assistant it
+  leaves your machine.
+- **Skins and interface size:** light, dark, paper and high contrast, or your own; bars and dialogs
+  scale from small to extra large.
 - **Offline by design:** no network access except on explicit request, through one small helper
   with a fixed list of addresses. Your text stays plain Typst; `tftn gegenprobe` prints the
   `typst compile` command that produces the identical PDF without TFTN.
 
 Interface and bundled document types in English and German; more interface languages can be added
 as plain files. New documents follow the interface language.
+
+| | |
+|---|---|
+| ![Dark skin](docs/images/dark.png) | ![Blocks menu after typing “/”](docs/images/blocks.png) |
+| Dark skin | Type “/” on an empty line for blocks |
+| ![Invoice with its form](docs/images/invoice.png) | |
+| Invoice: fill in the form, the totals are computed | |
 
 **Status:** early but usable day to day on macOS (Apple silicon). The Windows build passes the test
 suite and an automated install check, but has hardly been used by hand yet.
