@@ -266,6 +266,8 @@ fn bedienen(app: &AppHandle, strom: TcpStream, schluessel: &str) {
                      geöffnete Dokument aktiv bleibt. Bitte den Benutzer darum bitten.",
                 )
             } else {
+                // Statusleiste: Der Assistent arbeitet gerade (zeigt, was er tut).
+                let _ = app.emit("mcp-zugriff", &a.werkzeug);
                 ausfuehren(app, &a.werkzeug, &a.argumente).unwrap_or_else(Ergebnis::fehler)
             }
         }

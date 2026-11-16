@@ -893,10 +893,21 @@ name = "English"
 "„{titel}“ passt hier nicht ({wo})." = "“{titel}” does not fit here ({wo})."
 
 # ui/src/mcp.ts
+"Dokument angelegt" = "document created"
+"Dokument geöffnet" = "document opened"
+"Dokumenttypen gelesen" = "document types read"
 "Ein über MCP geöffnetes Dokument wartet auf deine Bestätigung. Klicken zum Bestätigen." = "A document opened via MCP is waiting for your confirmation. Click to confirm."
+"Formular gelesen" = "form read"
+"Formular geändert" = "form changed"
 "KI-Assistenten dürfen im offenen Dokument arbeiten. Klicken schaltet MCP aus." = "AI assistants may work in the open document. Click to turn MCP off."
 "MCP an" = "MCP on"
 "MCP pausiert" = "MCP paused"
+"MCP: {was}" = "MCP: {was}"
+"Seite angesehen" = "page viewed"
+"Text gelesen" = "text read"
+"Text geändert" = "text changed"
+"Zuletzt: {was} ({zeit})" = "Last: {was} ({zeit})"
+"Zustand gelesen" = "status read"
 
 # ui/src/neudialog.ts
 "Angelegt; öffne das neue Projekt …" = "Created; opening the new project …"
@@ -1165,7 +1176,7 @@ name = "English"
 "nachher" = "after"
 "vorher" = "before"
 
-# ui/src/vorschau - a.erben@outlook.at's conflict 11.16.2026_09.54.05.ts
+# ui/src/vorschau.ts
 "Die Vorschau zeigt den letzten Stand ohne Fehler." = "The preview shows the last error-free state."
 "Fehler im Dokument." = "Error in the document."
 "Fehler in {datei}, Zeile {zeile}: {satz}" = "Error in {datei}, line {zeile}: {satz}"

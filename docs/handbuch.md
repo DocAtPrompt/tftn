@@ -332,7 +332,9 @@ mit Rückgängig zurücknehmen.
 
 **Einschalten:** In den Einstellungen „MCP: KI-Assistenten … dürfen im offenen Dokument lesen und
 schreiben“ anhaken. Solange MCP an ist, steht „MCP an“ in der Statusleiste; ein Klick darauf schaltet
-es aus. Die Wahl gilt je Rechner und bleibt über einen Neustart erhalten.
+es aus. Greift ein Assistent zu, pulsiert der Punkt davor, und für ein paar Sekunden steht da, was er
+tut (etwa „MCP: Text geändert“); der Tooltip nennt den letzten Zugriff mit Uhrzeit. Auch in der
+Schreibansicht bleibt der Hinweis sichtbar. Die Wahl gilt je Rechner und bleibt über einen Neustart erhalten.
 
 **Im Assistenten eintragen:** Darunter steht die Zeile für Claude Code
 (`claude mcp add tftn -- "<Pfad zu TFTN>" --mcp`); „Kopieren“ und im Terminal ausführen. Andere

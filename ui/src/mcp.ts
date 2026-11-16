@@ -48,15 +48,47 @@ export async function mcpWechselAbschliessen(
   neuLaden();
 }
 
-/** Text und Erklärung für die Statusleiste; leer, wenn MCP aus ist. */
-export function mcpAnzeige(m: McpJs | null): { text: string; titel: string } {
+/** Ein Werkzeugaufruf des Assistenten (Ereignis `mcp-zugriff`). */
+export interface McpZugriff {
+  werkzeug: string;
+  zeit: Date;
+}
+
+/** Was ein Werkzeug tut, in Worten für die Statusleiste; Unbekanntes unter seinem Namen. */
+function zugriffWort(werkzeug: string): string {
+  const w: Record<string, string> = {
+    status: t("Zustand gelesen"),
+    quelltext_lesen: t("Text gelesen"),
+    text_ersetzen: t("Text geändert"),
+    quelltext_setzen: t("Text geändert"),
+    formular_lesen: t("Formular gelesen"),
+    formular_setzen: t("Formular geändert"),
+    seite_ansehen: t("Seite angesehen"),
+    typen_auflisten: t("Dokumenttypen gelesen"),
+    dokument_anlegen: t("Dokument angelegt"),
+    dokument_oeffnen: t("Dokument geöffnet"),
+  };
+  return w[werkzeug] ?? werkzeug;
+}
+
+/**
+ * Text und Erklärung für die Statusleiste; leer, wenn MCP aus ist. `aktiv`: Der Assistent hat eben
+ * zugegriffen – dann steht da, was er tut; danach nennt der Tooltip den letzten Zugriff.
+ */
+export function mcpAnzeige(m: McpJs | null, zuletzt: McpZugriff | null = null, aktiv = false): { text: string; titel: string } {
   if (!m?.an) return { text: "", titel: "" };
   if (m.wartet)
     return {
       text: t("MCP pausiert"),
       titel: t("Ein über MCP geöffnetes Dokument wartet auf deine Bestätigung. Klicken zum Bestätigen."),
     };
-  return { text: t("MCP an"), titel: t("KI-Assistenten dürfen im offenen Dokument arbeiten. Klicken schaltet MCP aus.") };
+  let titel = t("KI-Assistenten dürfen im offenen Dokument arbeiten. Klicken schaltet MCP aus.");
+  if (zuletzt) {
+    const zeit = `${String(zuletzt.zeit.getHours()).padStart(2, "0")}:${String(zuletzt.zeit.getMinutes()).padStart(2, "0")}`;
+    titel += `\n${t("Zuletzt: {was} ({zeit})", { was: zugriffWort(zuletzt.werkzeug), zeit })}`;
+  }
+  if (aktiv && zuletzt) return { text: t("MCP: {was}", { was: zugriffWort(zuletzt.werkzeug) }), titel };
+  return { text: t("MCP an"), titel };
 }
 
 /** Nach einem Wechsel durch MCP: Die Frage „aktiv lassen?“ bleibt stehen, bis der Benutzer antwortet;

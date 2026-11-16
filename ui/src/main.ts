@@ -46,7 +46,7 @@ import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
 import { type SkinsJs, skinAnwenden } from "./skin";
-import { type McpAuftrag, type McpJs, mcpAnzeige, mcpFragtNoch, mcpWechselAbschliessen } from "./mcp";
+import { type McpAuftrag, type McpJs, type McpZugriff, mcpAnzeige, mcpFragtNoch, mcpWechselAbschliessen } from "./mcp";
 import { ikonenSetzen } from "./ikonen";
 import { KnopfMenue } from "./knopfmenue";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
@@ -1471,16 +1471,37 @@ function meldung(text: string) {
 // --- MCP ------------------------------------------------------------------------------------
 
 
+let mcpZuletzt: McpZugriff | null = null;
+let mcpRuhe: ReturnType<typeof setTimeout> | undefined;
+
+/** Abzeichen in der Statusleiste: an, pausiert oder gerade beim Zugriff (pulsiert). */
+function mcpAbzeichen() {
+  const el = document.getElementById("mcp")!;
+  const aktiv = mcpRuhe !== undefined;
+  const a = mcpAnzeige(mcpStand, mcpZuletzt, aktiv);
+  el.hidden = a.text === "";
+  el.textContent = a.text;
+  el.title = a.titel;
+  el.classList.toggle("wartet", !!mcpStand?.an && mcpStand.wartet);
+  el.classList.toggle("zugriff", aktiv && !!mcpStand?.an && !mcpStand.wartet);
+}
+
+/** Ereignis `mcp-zugriff`: drei Sekunden nach dem letzten Aufruf wieder ruhig. */
+function mcpZugriff(werkzeug: string) {
+  mcpZuletzt = { werkzeug, zeit: new Date() };
+  clearTimeout(mcpRuhe);
+  mcpRuhe = setTimeout(() => {
+    mcpRuhe = undefined;
+    mcpAbzeichen();
+  }, 3000);
+  mcpAbzeichen();
+}
+
 /** Statusleiste und Einstellungen; pausiert nach einem Wechsel durch MCP: nachfragen. */
 function mcpZeigen(m: McpJs) {
   const vorher = mcpStand;
   mcpStand = m;
-  const el = document.getElementById("mcp")!;
-  const a = mcpAnzeige(m);
-  el.hidden = a.text === "";
-  el.textContent = a.text;
-  el.title = a.titel;
-  el.classList.toggle("wartet", m.an && m.wartet);
+  mcpAbzeichen();
   einstellDialog?.mcpZeigen(m);
   if (mcpFragtNoch(m) && !mcpFragtNoch(vorher)) mcpNachfragen();
   // Beantwortet, ausgeschaltet oder in den Einstellungen geändert: Die Frage verschwindet.
@@ -2050,6 +2071,7 @@ async function start() {
   });
   await listen<McpAuftrag>("mcp-auftrag", (e) => void mcpAuftrag(e.payload));
   await listen<McpJs>("mcp-geaendert", (e) => mcpZeigen(e.payload));
+  await listen<string>("mcp-zugriff", (e) => mcpZugriff(e.payload));
   document.getElementById("mcp")!.addEventListener("click", () => void mcpKlick());
   mcpZeigen(await invoke<McpJs>("mcp_stand"));
   status();

@@ -1015,14 +1015,56 @@ body {
   color: var(--warn);
 }
 
-/* MCP: an oder pausiert, klickbar */
+/* MCP: Abzeichen mit Punkt, an oder pausiert, klickbar; pulsiert, während ein Assistent zugreift */
 #mcp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 9px 1px 7px;
+  border-radius: 999px;
   color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+#mcp[hidden] {
+  display: none;
+}
+
+#mcp::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 #mcp.wartet {
   color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+
+#mcp.zugriff {
+  background: color-mix(in srgb, var(--akzent) 26%, transparent);
+}
+
+#mcp.zugriff::before {
+  animation: mcp-puls 0.9s ease-in-out infinite;
+}
+
+@keyframes mcp-puls {
+  50% {
+    opacity: 0.3;
+    transform: scale(1.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #mcp.zugriff::before {
+    animation: none;
+  }
 }
 
 .einst-mcp {
@@ -1673,7 +1715,8 @@ body.schreibansicht #status {
   opacity: 0.6;
 }
 
-body.schreibansicht #status > :not(#zaehler) {
+/* MCP bleibt sichtbar: Ein Assistent kann auch in der Schreibansicht ändern. */
+body.schreibansicht #status > :not(#zaehler):not(#mcp) {
   display: none;
 }
 

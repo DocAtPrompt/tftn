@@ -53,6 +53,17 @@ describe("mcpAnzeige", () => {
     expect(mcpAnzeige(an).text).toBe("MCP an");
     expect(mcpAnzeige({ ...an, wartet: true }).text).toBe("MCP pausiert");
   });
+  it("während eines Zugriffs steht da, was der Assistent tut; danach im Tooltip mit Uhrzeit", () => {
+    const zugriff = { werkzeug: "text_ersetzen", zeit: new Date(2026, 10, 16, 14, 5) };
+    expect(mcpAnzeige(an, zugriff, true).text).toBe("MCP: Text geändert");
+    const ruhig = mcpAnzeige(an, zugriff, false);
+    expect(ruhig.text).toBe("MCP an");
+    expect(ruhig.titel).toContain("Zuletzt: Text geändert (14:05)");
+    expect(mcpAnzeige(an, { werkzeug: "formular_setzen", zeit: zugriff.zeit }, true).text).toBe("MCP: Formular geändert");
+    expect(mcpAnzeige(an, { werkzeug: "neu_erfunden", zeit: zugriff.zeit }, true).text).toBe("MCP: neu_erfunden");
+    // pausiert bleibt pausiert
+    expect(mcpAnzeige({ ...an, wartet: true }, zugriff, true).text).toBe("MCP pausiert");
+  });
 });
 
 describe("mcpFragtNoch", () => {

@@ -331,7 +331,9 @@ the source, change passages, fill in the form of the Document pane, look at prev
 one. Every change appears in the editor and the preview right away and can be undone.
 
 **Turning it on:** In the settings, tick “MCP: AI assistants … may read and write in the open
-document”. While MCP is on, “MCP on” shows in the status bar; clicking it turns MCP off. The choice is
+document”. While MCP is on, “MCP on” shows in the status bar; clicking it turns MCP off. While an assistant works, the dot
+pulses and for a few seconds the badge says what it does (e.g. “MCP: text changed”); the tooltip
+names the last access with its time. The badge stays visible in the focus view too. The choice is
 per computer and survives a restart.
 
 **Adding it to the assistant:** Below the checkbox is the line for Claude Code
