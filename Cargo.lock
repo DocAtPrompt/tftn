@@ -4856,7 +4856,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-app"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "flate2",
  "notify",
@@ -4884,7 +4884,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-cli"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "tftn-core",
  "tftn-export",
@@ -4895,7 +4895,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-core"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "comemo",
  "proptest",
@@ -4911,7 +4911,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-edit"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "proptest",
  "serde",
@@ -4926,7 +4926,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-einstellungen"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "notify",
  "serde",
@@ -4937,7 +4937,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-export"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "sha2",
  "tftn-core",
@@ -4948,7 +4948,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-formular"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "proptest",
  "regex",
@@ -4961,7 +4961,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-holer"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "flate2",
  "serde_json",
@@ -4976,7 +4976,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-katalog"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "semver",
  "serde",
@@ -4998,7 +4998,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-literatur"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "biblatex",
  "hayagriva",
@@ -5010,7 +5010,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-manifest"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "semver",
  "serde",
@@ -5027,7 +5027,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-mcp"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "getrandom 0.3.4",
  "serde",
@@ -5036,7 +5036,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-messen"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -5048,7 +5048,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-pakete"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "flate2",
  "semver",
@@ -5065,7 +5065,7 @@ dependencies = [
 
 [[package]]
 name = "tftn-sprachen"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "serde_json",
  "toml 0.9.12+spec-1.1.0",
@@ -6921,7 +6921,7 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 
 [[package]]
 name = "xtask"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "sha2",
  "tftn-sprachen",
