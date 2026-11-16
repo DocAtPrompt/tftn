@@ -1776,8 +1776,13 @@ fn literatur_liste(zustand: State<'_, Zustand>) -> Result<Vec<LitDateiJs>, Strin
     let s = sitzung
         .as_ref()
         .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    Ok(literatur_dateien_js(s))
+}
+
+/// Die Literaturdateien des Dokuments samt Einträgen (Fenster „Literatur verwalten“ und MCP).
+fn literatur_dateien_js(s: &Sitzung) -> Vec<LitDateiJs> {
     let quelltext = s.spiegel.quelle().text();
-    Ok(literatur_dateien(&s.projekt)
+    literatur_dateien(&s.projekt)
         .into_iter()
         .map(|d| {
             let pfad = relativ(&s.projekt, &d);
@@ -1815,7 +1820,7 @@ fn literatur_liste(zustand: State<'_, Zustand>) -> Result<Vec<LitDateiJs>, Strin
                 },
             }
         })
-        .collect())
+        .collect()
 }
 
 /// Die Literaturdatei `pfad` (relativ) des Dokuments; nur `.bib`.
@@ -1854,7 +1859,18 @@ fn literatur_eintrag_speichern(
     let s = sitzung
         .as_mut()
         .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-    let pfad = bib_datei(&s.projekt, &datei)?;
+    literatur_speichern(&zustand, s, &datei, alt, &eintrag)
+}
+
+/// Eintrag ändern oder anlegen und schreiben (Fenster und MCP).
+fn literatur_speichern(
+    zustand: &Zustand,
+    s: &mut Sitzung,
+    datei: &str,
+    alt: Option<String>,
+    eintrag: &tftn_literatur::verwaltung::BibEintrag,
+) -> Result<(), String> {
+    let pfad = bib_datei(&s.projekt, datei)?;
     // Schlüssel über alle Literaturdateien eindeutig (in derselben Datei prüft `verwaltung`).
     if alt.as_deref() != Some(eintrag.schluessel.as_str())
         && s.literatur.enthaelt(&eintrag.schluessel)
@@ -1866,14 +1882,14 @@ fn literatur_eintrag_speichern(
     }
     let text = bib_lesen(&pfad)?;
     let neu = match &alt {
-        Some(a) => tftn_literatur::verwaltung::aendern(&text, a, &eintrag)?,
-        None => tftn_literatur::verwaltung::anlegen(&text, &eintrag)?,
+        Some(a) => tftn_literatur::verwaltung::aendern(&text, a, eintrag)?,
+        None => tftn_literatur::verwaltung::anlegen(&text, eintrag)?,
     };
     let was = match &alt {
         Some(a) => format!("Literatur: {a} geändert ({})", eintrag.schluessel),
         None => format!("Literatur: {} angelegt", eintrag.schluessel),
     };
-    bib_schreiben(&zustand, s, &pfad, &neu, &was)
+    bib_schreiben(zustand, s, &pfad, &neu, &was)
 }
 
 /// Literaturverwaltung: Eintrag löschen.
@@ -2191,17 +2207,34 @@ fn rechtschreibung_pruefen(
         }
         s.spiegel.quelle().clone()
     };
-    let (lang, region) = dokumentsprache(&zustand, &quelle);
+    let (sprache, falsch) = falsche_woerter(&app, &zustand, &quelle, &quelle)?;
+    let z = quelle.lines();
+    let falsch = falsch
+        .into_iter()
+        .filter_map(|r| Some((z.byte_to_utf16(r.start)?, z.byte_to_utf16(r.end)?)))
+        .collect();
+    Ok(Some(RechtschreibungJs {
+        rev,
+        sprache,
+        falsch,
+    }))
+}
+
+/// Unbekannte Wörter in `quelle` (Bytebereiche) nach der Sprache des Dokuments mit der Hauptquelle
+/// `haupt`, dazu die Bezeichnung der Sprache. Ohne Wörterbuch für die Sprache: keine.
+fn falsche_woerter(
+    app: &tauri::AppHandle,
+    zustand: &Zustand,
+    haupt: &Source,
+    quelle: &Source,
+) -> Result<(String, Vec<std::ops::Range<usize>>), String> {
+    let (lang, region) = dokumentsprache(zustand, haupt);
     let sprache = rechtschreibung::bezeichnung(&lang, region.as_deref());
     let Some(kennung) = tftn_edit::rechtschreibung::woerterbuch_fuer(&lang, region.as_deref())
     else {
-        return Ok(Some(RechtschreibungJs {
-            rev,
-            sprache,
-            falsch: Vec::new(),
-        }));
+        return Ok((sprache, Vec::new()));
     };
-    let konfig = app_konfig(&app)?;
+    let konfig = app_konfig(app)?;
     let einstellungen =
         tftn_einstellungen::ort(&konfig, &tftn_einstellungen::Rechner::laden(&konfig)).ordner;
     let mut stand = zustand.rechtschreibung.lock().unwrap();
@@ -2212,16 +2245,10 @@ fn rechtschreibung_pruefen(
         kennung,
     )?;
     let pruefer = &stand.as_ref().expect("eben geholt").pruefer;
-    let z = quelle.lines();
-    let falsch = tftn_edit::rechtschreibung::falsche_woerter(&quelle, pruefer)
-        .into_iter()
-        .filter_map(|r| Some((z.byte_to_utf16(r.start)?, z.byte_to_utf16(r.end)?)))
-        .collect();
-    Ok(Some(RechtschreibungJs {
-        rev,
+    Ok((
         sprache,
-        falsch,
-    }))
+        tftn_edit::rechtschreibung::falsche_woerter(quelle, pruefer),
+    ))
 }
 
 /// Vorschläge aus dem zuletzt gebrauchten Wörterbuch.

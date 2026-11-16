@@ -188,13 +188,7 @@ pub fn schreiben(
     }
     let sicherung = match std::fs::read(ziel) {
         Ok(alt) if alt == text.as_bytes() => return Ok(None),
-        Ok(alt) => {
-            let name = format!("{zeit}-{}", rel.trim().replace(['/', '\\'], "__"));
-            let ordner = wurzel.join(SICHERUNGEN);
-            std::fs::create_dir_all(&ordner).map_err(|e| e.to_string())?;
-            std::fs::write(ordner.join(&name), alt).map_err(|e| e.to_string())?;
-            Some(format!("{SICHERUNGEN}/{name}"))
-        }
+        Ok(alt) => Some(sichern(wurzel, rel, &alt, zeit)?),
         Err(_) => None,
     };
     if let Some(eltern) = ziel.parent() {
@@ -202,6 +196,22 @@ pub fn schreiben(
     }
     tftn_formular::atomar_schreiben(ziel, text).map_err(|e| format!("„{rel}“: {e}"))?;
     Ok(sicherung)
+}
+
+/// Legt `alt` (den bisherigen Inhalt von `rel`) unter `SICHERUNGEN` ab; Antwort: der Pfad.
+pub fn sichern(wurzel: &Path, rel: &str, alt: &[u8], zeit: u64) -> Result<String, String> {
+    let basis = rel.trim().replace(['/', '\\'], "__");
+    let ordner = wurzel.join(SICHERUNGEN);
+    std::fs::create_dir_all(&ordner).map_err(|e| e.to_string())?;
+    // Zwei Änderungen in derselben Sekunde: die zweite Sicherung darf die erste nicht ersetzen.
+    let mut name = format!("{zeit}-{basis}");
+    let mut n = 2;
+    while ordner.join(&name).exists() {
+        name = format!("{zeit}-{n}-{basis}");
+        n += 1;
+    }
+    std::fs::write(ordner.join(&name), alt).map_err(|e| e.to_string())?;
+    Ok(format!("{SICHERUNGEN}/{name}"))
 }
 
 /// `#include "…"`-Ziele der Hauptdatei mit ihrer Zeile (ab 1), in ihrer Reihenfolge (nur
@@ -332,6 +342,17 @@ mod tests {
             std::fs::read_to_string(o.join(".fassungen/dateien/42-kapitel__01.typ")).unwrap(),
             "= Eins\n"
         );
+        // Gleiche Sekunde: eigene Sicherung, die erste bleibt
+        let s2 = schreiben(&o, "kapitel/01.typ", &z, "= Eins neuer\n", 42).unwrap();
+        assert_eq!(
+            s2.as_deref(),
+            Some(".fassungen/dateien/42-2-kapitel__01.typ")
+        );
+        assert_eq!(
+            std::fs::read_to_string(o.join(".fassungen/dateien/42-kapitel__01.typ")).unwrap(),
+            "= Eins\n"
+        );
+        schreiben(&o, "kapitel/01.typ", &z, "= Eins neu\n", 42).unwrap();
         // Unverändert: keine Sicherung
         assert_eq!(
             schreiben(&o, "kapitel/01.typ", &z, "= Eins neu\n", 43).unwrap(),

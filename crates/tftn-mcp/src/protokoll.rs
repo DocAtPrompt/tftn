@@ -15,7 +15,8 @@ lässt sich dort mit Rückgängig zurücknehmen. Zuerst `status` und `quelltext_
 den meisten Dokumenttypen im Formular (Fach „Dokument“), nicht im Quelltext: `formular_lesen` und \
 `formular_setzen`. Bindet die Hauptdatei weitere Dateien ein (Kapitel mit `#include`), zeigt \
 `gliederung_lesen` den Aufbau; diese Dateien gehen mit `datei_lesen`, `datei_ersetzen` und \
-`datei_schreiben`. Was der Benutzer markiert hat, liefert `auswahl_lesen`. Der Benutzer schaltet MCP \
+`datei_schreiben`. Was der Benutzer markiert hat, liefert `auswahl_lesen`. Literatur: `literatur_lesen` \
+und `literatur_eintrag_speichern`. Vor größeren Umbauten `fassung_sichern`. Der Benutzer schaltet MCP \
 in TFTN selbst ein und aus.";
 
 /// Liest Anfragen aus `ein` und schreibt Antworten nach `aus`, bis `ein` endet.

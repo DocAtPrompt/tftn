@@ -380,6 +380,10 @@ active” or “Turn MCP off”); until then TFTN refuses its calls.
 | `datei_lesen` | a text file of the project (chapter, `.bib`, `trennungen.txt` …) |
 | `datei_ersetzen` | replace a passage in such a file |
 | `datei_schreiben` | write such a file as a whole or create it |
+| `literatur_lesen` | entries of the bibliography files, cited or not |
+| `literatur_eintrag_speichern` | create or change one entry in the `.bib` (only that one) |
+| `fassung_sichern` | keep the current state as a version |
+| `rechtschreibung_pruefen` | unknown words with line and suggestions |
 | `seite_ansehen` | one preview page as an image |
 | `formular_lesen` | fields and values of the form (title, authors, date …) |
 | `formular_setzen` | set several fields at once, checked as in the pane; one undo step |
@@ -390,4 +394,5 @@ active” or “Turn MCP off”); until then TFTN refuses its calls.
 **Limits:** the assistant only reaches files inside the project folder, not hidden folders, `_lokal/`
 or `packages/`. It may only write text files; it changes the main file through the editor (with
 undo) and the form data through the form. When it changes another file, such as a chapter, undo in the
-editor does not apply – so TFTN first keeps the old content in `.fassungen/dateien/`.
+editor does not apply – so TFTN first keeps the old content in `.fassungen/dateien/` (bibliography too). The assistant
+cannot delete files or bibliography entries.

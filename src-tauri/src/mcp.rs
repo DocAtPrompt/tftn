@@ -330,6 +330,10 @@ fn ausfuehren(app: &AppHandle, werkzeug: &str, a: &Value) -> Result<Ergebnis, St
                 tftn_mcp::ersetzen(t.ok_or("Die Datei gibt es nicht.")?, &alt, &neu, alle)
             })
         }
+        "literatur_lesen" => literatur_lesen(app),
+        "literatur_eintrag_speichern" => literatur_speichern(app, a),
+        "fassung_sichern" => fassung_sichern(app),
+        "rechtschreibung_pruefen" => rechtschreibung_pruefen(app, text("pfad")),
         "formular_lesen" => formular_lesen(app),
         "formular_setzen" => {
             let werte = a
@@ -799,6 +803,228 @@ fn datei_aendern(
     );
     if alt.is_none() && ziel.extension().is_some_and(|e| e == "typ") {
         t.push_str(" Eine neue .typ-Datei erscheint erst, wenn die Hauptdatei sie mit `#include` einbindet.");
+    }
+    Ok(Ergebnis::text(t))
+}
+
+fn literatur_lesen(app: &AppHandle) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
+    let dateien = crate::literatur_dateien_js(s);
+    if dateien.is_empty() {
+        return Ok(Ergebnis::text(
+            "Dieses Dokument hat keine Literaturdatei (bei Typen mit Formular: Feld literatur.dateien).",
+        ));
+    }
+    let mut t = String::new();
+    for d in dateien {
+        t.push_str(&format!(
+            "{} ({}):\n",
+            d.pfad,
+            if d.schreibbar {
+                "schreibbar"
+            } else {
+                "nur lesen"
+            }
+        ));
+        if let Some(f) = &d.fehler {
+            t.push_str(&format!("  {f}\n"));
+        }
+        for e in &d.eintraege {
+            t.push_str(&format!(
+                "@{}{{{}}} – {}\n",
+                e.eintrag.art,
+                e.eintrag.schluessel,
+                if e.zitiert {
+                    "zitiert"
+                } else {
+                    "nicht zitiert"
+                }
+            ));
+            for f in &e.eintrag.felder {
+                t.push_str(&format!(
+                    "    {} = {}{}\n",
+                    f.name,
+                    f.wert,
+                    if f.roh { "  (BibTeX roh)" } else { "" }
+                ));
+            }
+        }
+    }
+    Ok(Ergebnis::text(t))
+}
+
+fn literatur_speichern(app: &AppHandle, a: &Value) -> Result<Ergebnis, String> {
+    use tftn_literatur::verwaltung::{BibEintrag, Feld};
+    let text = |n: &str| a.get(n).and_then(Value::as_str).map(str::to_string);
+    let art = text("art").ok_or("`art` fehlt")?.to_lowercase();
+    let schluessel = text("schluessel").ok_or("`schluessel` fehlt")?;
+    let felder = a
+        .get("felder")
+        .and_then(Value::as_object)
+        .ok_or("`felder` fehlt (ein Objekt Feldname → Wert)")?;
+    let alt = text("alt").filter(|s| !s.trim().is_empty());
+    let zustand = app.state::<Zustand>();
+    let mut sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_mut().ok_or(KEIN_DOKUMENT)?;
+    let schreibbar: Vec<String> = crate::literatur_dateien_js(s)
+        .into_iter()
+        .filter(|d| d.schreibbar)
+        .map(|d| d.pfad)
+        .collect();
+    let datei = match text("datei") {
+        Some(d) => d,
+        None if schreibbar.len() == 1 => schreibbar[0].clone(),
+        None if schreibbar.is_empty() => {
+            return Err("Das Dokument hat keine .bib-Datei, die sich bearbeiten lässt.".into());
+        }
+        None => {
+            return Err(format!(
+                "Mehrere Literaturdateien – bitte `datei` angeben: {}",
+                schreibbar.join(", ")
+            ));
+        }
+    };
+    let pfad = crate::bib_datei(&s.projekt, &datei)?;
+    let vorher = std::fs::read(&pfad).unwrap_or_default();
+    // Beim Ändern bleiben unveränderte rohe Werte (Zahlen ohne Klammern, @string-Kürzel) roh.
+    let bisher: Vec<Feld> = alt
+        .as_ref()
+        .and_then(|k| {
+            tftn_literatur::verwaltung::lesen(&String::from_utf8_lossy(&vorher))
+                .ok()?
+                .into_iter()
+                .find(|g| &g.eintrag.schluessel == k)
+                .map(|g| g.eintrag.felder)
+        })
+        .unwrap_or_default();
+    let mut liste = Vec::new();
+    for (name, wert) in felder {
+        let wert = match wert {
+            Value::String(w) => w.clone(),
+            Value::Number(n) => n.to_string(),
+            Value::Null => continue,
+            _ => return Err(format!("Feld `{name}`: bitte als Text angeben")),
+        };
+        let name = name.to_lowercase();
+        let roh = bisher
+            .iter()
+            .any(|f| f.roh && f.name == name && f.wert == wert);
+        liste.push(Feld { name, wert, roh });
+    }
+    let eintrag = BibEintrag {
+        art,
+        schluessel: schluessel.trim().to_string(),
+        felder: liste,
+    };
+    let zeit = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    let wurzel = s.projekt.wurzel.clone();
+    crate::literatur_speichern(&zustand, s, &datei, alt.clone(), &eintrag)?;
+    let sicherung = if vorher.is_empty() {
+        None
+    } else {
+        crate::projektdateien::sichern(&wurzel, &datei, &vorher, zeit).ok()
+    };
+    let mut t = match &alt {
+        Some(a) if a != &eintrag.schluessel => {
+            format!(
+                "@{a} geändert und umbenannt in @{} ({datei}).",
+                eintrag.schluessel
+            )
+        }
+        Some(_) => format!("@{} geändert ({datei}).", eintrag.schluessel),
+        None => format!(
+            "@{} angelegt ({datei}); im Text mit `@{}` zitieren.",
+            eintrag.schluessel, eintrag.schluessel
+        ),
+    };
+    if let Some(sich) = sicherung {
+        t.push_str(&format!(" Alte Fassung der Datei: {sich}."));
+    }
+    if alt.as_ref().is_some_and(|a| a != &eintrag.schluessel) {
+        t.push_str(" Zitate mit dem alten Schlüssel im Text müssen mit geändert werden.");
+    }
+    Ok(Ergebnis::text(t))
+}
+
+fn fassung_sichern(app: &AppHandle) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
+    let ordner = s.projekt.wurzel.join(crate::fassungen::ORDNER);
+    let neu = crate::fassungen::ablegen(&ordner, s.spiegel.text(), crate::fassungen::jetzt(), true)
+        .map_err(|e| format!("Fassung nicht gesichert: {e}"))?;
+    Ok(Ergebnis::text(if neu {
+        format!(
+            "Fassung von {} gesichert (Rev {}); der Benutzer holt sie in TFTN über „Fassungen“ zurück.",
+            s.projekt.konfig.haupt,
+            s.spiegel.rev()
+        )
+    } else {
+        "Der Text ist derselbe wie in der letzten Fassung; nichts Neues gesichert.".to_string()
+    }))
+}
+
+/// Höchstens so viele unbekannte Wörter gehen an den Assistenten.
+const RECHTSCHREIBUNG_GRENZE: usize = 200;
+
+fn rechtschreibung_pruefen(app: &AppHandle, pfad: Option<String>) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let (haupt, quelle, name) = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
+        let haupt = s.spiegel.quelle().clone();
+        match pfad.filter(|p| !p.trim().is_empty()) {
+            Some(p)
+                if crate::projektdateien::pfad(&s.projekt.wurzel, &p)?
+                    != crate::projektdateien::pfad(&s.projekt.wurzel, &s.projekt.konfig.haupt)? =>
+            {
+                let text = crate::projektdateien::lesen(&s.projekt.wurzel, &p)?;
+                (haupt, typst::syntax::Source::detached(text), p)
+            }
+            _ => (haupt.clone(), haupt, s.projekt.konfig.haupt.clone()),
+        }
+    };
+    let (sprache, falsch) = crate::falsche_woerter(app, &zustand, &haupt, &quelle)?;
+    if falsch.is_empty() {
+        return Ok(Ergebnis::text(format!(
+            "{name}: keine unbekannten Wörter ({sprache})."
+        )));
+    }
+    let z = quelle.lines();
+    let stand = zustand.rechtschreibung.lock().unwrap();
+    let mut t = format!(
+        "{name}, Wörterbuch {sprache}: {} unbekannte Wörter (Zeile: Wort – Vorschläge):\n",
+        falsch.len()
+    );
+    for r in falsch.iter().take(RECHTSCHREIBUNG_GRENZE) {
+        let wort = &quelle.text()[r.clone()];
+        let vorschlaege = stand
+            .as_ref()
+            .map(|st| st.pruefer.vorschlaege(wort))
+            .unwrap_or_default();
+        t.push_str(&format!(
+            "- {}: {wort} – {}\n",
+            z.byte_to_line(r.start).map_or(0, |l| l + 1),
+            if vorschlaege.is_empty() {
+                "keine".to_string()
+            } else {
+                vorschlaege
+                    .into_iter()
+                    .take(5)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            }
+        ));
+    }
+    if falsch.len() > RECHTSCHREIBUNG_GRENZE {
+        t.push_str(&format!(
+            "[… und {} weitere]\n",
+            falsch.len() - RECHTSCHREIBUNG_GRENZE
+        ));
     }
     Ok(Ergebnis::text(t))
 }

@@ -380,6 +380,10 @@ bleiben soll („Aktiv lassen“ oder „MCP ausschalten“); bis dahin lehnt TF
 | `datei_lesen` | eine Textdatei des Projekts (Kapitel, `.bib`, `trennungen.txt` …) |
 | `datei_ersetzen` | eine Stelle in einer solchen Datei ersetzen |
 | `datei_schreiben` | eine solche Datei ganz schreiben oder neu anlegen |
+| `literatur_lesen` | Einträge der Literaturdateien, zitiert oder nicht |
+| `literatur_eintrag_speichern` | einen Eintrag in der `.bib` anlegen oder ändern (nur diesen) |
+| `fassung_sichern` | den jetzigen Stand als Fassung festhalten |
+| `rechtschreibung_pruefen` | unbekannte Wörter mit Zeile und Vorschlägen |
 | `seite_ansehen` | eine Seite der Vorschau als Bild |
 | `formular_lesen` | Felder und Werte des Formulars (Titel, Autoren, Datum …) |
 | `formular_setzen` | mehrere Felder auf einmal setzen, geprüft wie im Fach; ein Rückgängig-Schritt |
@@ -390,4 +394,5 @@ bleiben soll („Aktiv lassen“ oder „MCP ausschalten“); bis dahin lehnt TF
 **Grenzen:** Der Assistent erreicht nur Dateien im Projektordner, nicht versteckte Ordner, `_lokal/`
 oder `packages/`. Schreiben darf er nur Textdateien; die Hauptdatei ändert er über den Editor (mit
 Rückgängig), die Formulardaten über das Formular. Ändert er eine andere Datei, etwa ein Kapitel, greift
-Rückgängig im Editor nicht – TFTN legt den alten Inhalt deshalb vorher unter `.fassungen/dateien/` ab.
+Rückgängig im Editor nicht – TFTN legt den alten Inhalt deshalb vorher unter `.fassungen/dateien/` ab (auch bei Literatur).
+Löschen kann der Assistent weder Dateien noch Literatureinträge.

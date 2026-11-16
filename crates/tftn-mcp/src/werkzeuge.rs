@@ -120,6 +120,50 @@ pub fn werkzeuge() -> Vec<Value> {
             },
         }),
         json!({
+            "name": "literatur_lesen",
+            "description": "Einträge der Literaturdateien des Dokuments (Schlüssel, Art, Felder) und \
+                ob sie im Text zitiert sind. Zitiert wird im Text mit `@schluessel` oder \
+                `@schluessel[S. 12]`.",
+            "inputSchema": leer,
+        }),
+        json!({
+            "name": "literatur_eintrag_speichern",
+            "description": "Legt einen Eintrag in einer .bib-Datei des Dokuments an oder ändert ihn \
+                (mit `alt`: sein bisheriger Schlüssel). Geschrieben wird nur dieser Eintrag; der Rest \
+                der Datei bleibt, die alte Fassung sichert TFTN unter .fassungen/dateien/. Felder in \
+                BibTeX-Namen (author, title, year oder date, journal, publisher, doi …), Personen mit \
+                „ and “ getrennt („Nachname, Vorname and …“). Löschen geht nicht über MCP.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "datei": { "type": "string", "description": "Literaturdatei (Standard: die einzige .bib des Dokuments)" },
+                    "alt": { "type": "string", "description": "bisheriger Schlüssel, wenn ein vorhandener Eintrag geändert wird" },
+                    "art": { "type": "string", "description": "article, book, incollection, inproceedings, online, misc …" },
+                    "schluessel": { "type": "string", "description": "z. B. mueller2026" },
+                    "felder": { "type": "object", "description": "Feldname → Wert; beim Ändern alle Felder, die bleiben sollen" },
+                },
+                "required": ["art", "schluessel", "felder"],
+            },
+        }),
+        json!({
+            "name": "fassung_sichern",
+            "description": "Hält den jetzigen Stand der Hauptdatei als Fassung fest (vor größeren \
+                Umbauten); der Benutzer holt Fassungen in TFTN über „Fassungen“ zurück.",
+            "inputSchema": leer,
+        }),
+        json!({
+            "name": "rechtschreibung_pruefen",
+            "description": "Unbekannte Wörter im Fließtext nach der Sprache des Dokuments, mit Zeile \
+                und Vorschlägen (wie die rote Unterwellung in TFTN). Fachwörter und Namen können \
+                richtig sein, obwohl das Wörterbuch sie nicht kennt.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "pfad": { "type": "string", "description": "andere .typ-Datei des Projekts (Standard: Hauptdatei)" },
+                },
+            },
+        }),
+        json!({
             "name": "formular_lesen",
             "description": "Formular des Dokumenttyps (Fach „Dokument“): Felder mit Name, \
                 Beschriftung, Art und Pflicht, dazu die aktuellen Werte aus der Datendatei \
