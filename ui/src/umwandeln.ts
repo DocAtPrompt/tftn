@@ -27,6 +27,12 @@ const AUFBAU = /<(h[1-6]|ul|ol|table|strong|b|em|i|blockquote|img)\b|<a\b[^>]*\b
 
 export type Angebot = "markdown" | "html";
 
+/** Ein misslungener Typst-Lauf, während das Angebot noch gilt: kein Fehlerband, die Vorschau
+ *  bleibt beim letzten Stand (sonst verdrängt das Fehlerband das Angebot). */
+export function umwandelnWartet(lauf: { gelungen: boolean }, angebotOffen: boolean): boolean {
+  return angebotOffen && !lauf.gelungen;
+}
+
 /** Was angeboten wird: HTML mit Aufbau vor Markdown im Text; `null`: einfach einfügen. */
 export function umwandelnAngebot(text: string, html: string): Angebot | null {
   if (text.trim() === "") return null;

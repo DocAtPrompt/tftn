@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { siehtNachMarkdownAus, umwandelnAngebot } from "./umwandeln";
+import { siehtNachMarkdownAus, umwandelnAngebot, umwandelnWartet } from "./umwandeln";
 
 describe("siehtNachMarkdownAus", () => {
   it("erkennt typisches Markdown", () => {
@@ -30,6 +30,14 @@ describe("siehtNachMarkdownAus", () => {
     ]) {
       expect(siehtNachMarkdownAus(t), t).toBe(false);
     }
+  });
+});
+
+describe("umwandelnWartet", () => {
+  it("hält nur Fehler zurück, solange das Angebot gilt", () => {
+    expect(umwandelnWartet({ gelungen: false }, true)).toBe(true);
+    expect(umwandelnWartet({ gelungen: true }, true)).toBe(false);
+    expect(umwandelnWartet({ gelungen: false }, false)).toBe(false);
   });
 });
 

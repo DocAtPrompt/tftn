@@ -3,7 +3,7 @@
 
 import { meldungMit } from "./meldung";
 import { type ChangeSet, Compartment, EditorState, Prec, StateEffect, StateField, type Text, type Transaction } from "@codemirror/state";
-import { type Angebot, umwandelnAngebot } from "./umwandeln";
+import { type Angebot, umwandelnAngebot, umwandelnWartet } from "./umwandeln";
 import {
   Decoration,
   type DecorationSet,
@@ -1782,6 +1782,9 @@ async function start() {
   await listen<VorschauEreignis>("vorschau", (e) => {
     // Nur „/“ für das Bausteinmenü getippt: kein Fehlerband, die Vorschau bleibt, wie sie ist.
     if (view && e.payload.rev === rev && nurSlashFehler(view.state.doc.toString(), e.payload)) return;
+    // Gerade eingefügtes Markdown ist meist kein gültiges Typst: Das Angebot „In Typst umwandeln“
+    // bleibt stehen, solange seither nichts getippt wurde; die Vorschau bleibt beim letzten Stand.
+    if (view && e.payload.rev === rev && umwandelnWartet(e.payload, umwandelnAngebotStand?.doc === view.state.doc)) return;
     vorschau.aktualisieren(e.payload);
     letzteDauer = e.payload.dauer_ms;
     dauerZeigen();
