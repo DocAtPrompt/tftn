@@ -1594,6 +1594,31 @@ button:hover .ikone {
 #hinweis.kurz {
   color: var(--text);
 }
+/* Angebot „In Typst umwandeln“: orange und ein paar Mal pulsierend, damit man es nicht übersieht.
+   Dunkle Schrift auf Orange hat in jedem Skin genug Kontrast. */
+#hinweis.angebot {
+  color: #1a1a1a;
+  background: #f59e0b;
+  border-bottom-color: #b45309;
+  font-weight: 600;
+  animation: angebot-puls 0.9s ease-in-out 4;
+}
+#hinweis.angebot button {
+  color: #1a1a1a;
+  background: #fff7ed;
+  border: 1px solid #b45309;
+  font-weight: 600;
+}
+@keyframes angebot-puls {
+  50% {
+    background: #fdba74;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #hinweis.angebot {
+    animation: none;
+  }
+}
 #hinweis-text {
   flex: 1 1 auto;
   min-width: 0;

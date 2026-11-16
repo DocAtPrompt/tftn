@@ -24,5 +24,7 @@ describe("ausblendenNach", () => {
   it("Fehler und Fragen mit Knöpfen bleiben stehen", () => {
     expect(ausblendenNach("bleibt", 0)).toBeNull();
     expect(ausblendenNach("kurz", 2)).toBeNull();
+    expect(ausblendenNach("angebot", 0)).toBeNull();
+    expect(ausblendenNach("angebot", 1)).toBeNull();
   });
 });

@@ -1015,7 +1015,7 @@ function einfuegenMitAngebot(e: ClipboardEvent, v: EditorView): boolean {
   const bis = auswahl.to + (v.state.doc.length - vorher);
   umwandelnAngebotStand = { doc: v.state.doc, von: auswahl.from, bis, quelle: art === "html" ? html : text, art };
   umwandelnAngebotText = art === "html" ? t("Formatierter Text eingefügt.") : t("Sieht nach Markdown aus.");
-  hinweis(umwandelnAngebotText, { titel: t("In Typst umwandeln"), aktion: () => void umwandelnAusfuehren() }, "kurz");
+  hinweis(umwandelnAngebotText, { titel: t("In Typst umwandeln"), aktion: () => void umwandelnAusfuehren() }, "angebot");
   return true;
 }
 
@@ -1313,8 +1313,12 @@ function hinweis(text: string, knopf?: HinweisKnopf | HinweisKnopf[], art: Hinwe
   const h = document.getElementById("hinweis")!;
   h.hidden = text === "";
   h.classList.toggle("kurz", art === "kurz");
+  // Neu gesetzt, damit das Pulsieren auch beim zweiten Angebot hintereinander wieder anläuft.
+  h.classList.remove("angebot");
+  void h.offsetWidth;
+  h.classList.toggle("angebot", art === "angebot");
   // Fehler und Warnungen sagt ein Bildschirmleser sofort an, kurze Meldungen höflich.
-  h.setAttribute("role", art === "kurz" ? "status" : "alert");
+  h.setAttribute("role", art === "bleibt" ? "alert" : "status");
   document.getElementById("hinweis-text")!.textContent = text;
   document.getElementById("hinweis-knoepfe")!.replaceChildren(
     ...knoepfe.map((k) => {

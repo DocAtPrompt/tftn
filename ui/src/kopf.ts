@@ -14,8 +14,9 @@ export function kopfName(
   return { name, rest: datei, titel: `${ohneEnde}${trenner}${datei}` };
 }
 
-/** `kurz`: eine Meldung („Gespeichert“, „MCP ausgeschaltet.“); `bleibt`: Fehler, Warnungen. */
-export type HinweisArt = "kurz" | "bleibt";
+/** `kurz`: eine Meldung („Gespeichert“, „MCP ausgeschaltet.“); `bleibt`: Fehler, Warnungen;
+ *  `angebot`: auffällig (orange, pulsierend), etwa „In Typst umwandeln“. */
+export type HinweisArt = "kurz" | "bleibt" | "angebot";
 
 /** Millisekunden bis zum Ausblenden; `null`: bleibt, bis man ihn schließt. Mit Knöpfen bleibt er immer. */
 export function ausblendenNach(art: HinweisArt, knoepfe: number): number | null {
