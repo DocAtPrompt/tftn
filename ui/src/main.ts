@@ -1001,6 +1001,16 @@ function vorschauVerarbeiten(lauf: VorschauEreignis) {
   vorschau.aktualisieren(lauf);
   letzteDauer = lauf.dauer_ms;
   dauerZeigen();
+  letzterLauf = lauf;
+  markierungenSetzen(lauf);
+  rechtschreibungSpaeter();
+}
+
+/** Der zuletzt gezeigte Lauf: Beim Öffnen kommt er, bevor es den Editor gibt. */
+let letzterLauf: VorschauEreignis | null = null;
+
+/** Fehlerstellen im Editor unterwellen. */
+function markierungenSetzen(lauf: VorschauEreignis) {
   // Markierungen nur, wenn sie zum aktuellen Text passen; sonst kommt bald ein neuer Lauf.
   if (view && lauf.rev === rev) {
     const laenge = view.state.doc.length;
@@ -1014,7 +1024,6 @@ function vorschauVerarbeiten(lauf: VorschauEreignis) {
       }));
     view.dispatch(setDiagnostics(view.state, diagnosen));
   }
-  rechtschreibungSpaeter();
 }
 
 // --- Einfügen mit Umwandlung (Markdown, HTML) ----------------------------------------------
@@ -1969,6 +1978,8 @@ async function start() {
     }),
   });
   popover = new Popover(() => view.focus());
+  // Der erste Lauf startet schon beim Öffnen und war meist vor dem Editor fertig.
+  if (letzterLauf) markierungenSetzen(letzterLauf);
   markenTasten();
   // Erste Hervorhebung: leere Änderung über neusync vermeiden, einfach anfragen.
   const h = await invoke<Bereich[] | null>("hervorheben", { rev, sichtbar: sichtbar() });

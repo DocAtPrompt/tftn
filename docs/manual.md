@@ -224,7 +224,8 @@ the outline shows the count per section. Captions and footnotes count; commands,
 comments do not.
 
 **Error messages** appear at the error in the text and at the top of the preview, with a tip on how
-to fix it. While an error persists, the preview keeps showing the last good state.
+to fix it. While an error persists, the preview keeps showing the last good state, faded and over
+red diagonal stripes.
 
 ## 10. Settings and keyboard shortcuts
 

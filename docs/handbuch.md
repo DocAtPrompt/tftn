@@ -222,7 +222,8 @@ Englisch (USA, Großbritannien), Französisch, Italienisch, Spanisch.
 Gliederung je Abschnitt. Gezählt wird der geschriebene Text samt Unterschriften und Fußnoten.
 
 **Fehlermeldungen** stehen am Fehler im Text und oben in der Vorschau, mit einem Tipp zur Behebung.
-Solange ein Fehler besteht, zeigt die Vorschau den letzten fehlerfreien Stand.
+Solange ein Fehler besteht, zeigt die Vorschau den letzten fehlerfreien Stand, blass und mit roten
+Schrägstreifen hinterlegt.
 
 ## 10. Einstellungen und Tastenkürzel
 
