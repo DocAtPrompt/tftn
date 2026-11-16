@@ -995,11 +995,34 @@ const bildAblage = EditorView.domEventHandlers({
   },
 });
 
+/** Ein Typst-Lauf: Vorschau, Dauer, Fehlerband und Markierungen im Editor. */
+function vorschauVerarbeiten(lauf: VorschauEreignis) {
+  vorschau.aktualisieren(lauf);
+  letzteDauer = lauf.dauer_ms;
+  dauerZeigen();
+  // Markierungen nur, wenn sie zum aktuellen Text passen; sonst kommt bald ein neuer Lauf.
+  if (view && lauf.rev === rev) {
+    const laenge = view.state.doc.length;
+    const diagnosen: Diagnostic[] = lauf.meldungen
+      .filter((m) => m.von !== null && m.bis !== null && m.bis <= laenge)
+      .map((m) => ({
+        from: m.von!,
+        to: Math.max(m.bis!, Math.min(m.von! + 1, laenge)),
+        severity: m.fehler ? "error" : "warning",
+        message: m.text,
+      }));
+    view.dispatch(setDiagnostics(view.state, diagnosen));
+  }
+  rechtschreibungSpaeter();
+}
+
 // --- Einfügen mit Umwandlung (Markdown, HTML) ----------------------------------------------
 
 /** Das zuletzt eingefügte Stück, solange seither nichts getippt wurde. */
 let umwandelnAngebotStand: { doc: Text; von: number; bis: number; quelle: string; art: Angebot } | null = null;
 let umwandelnAngebotText = "";
+/** Misslungener Lauf, der während des Angebots nicht gezeigt wurde. */
+let umwandelnZurueckgehalten: VorschauEreignis | null = null;
 
 /** Sieht der Text nach Markdown oder formatiertem HTML aus: wie gewohnt einfügen und im
  *  Hinweisband „In Typst umwandeln“ anbieten. Sonst übernimmt CodeMirror (`false`). */
@@ -1024,6 +1047,10 @@ function umwandelnAngebotVerwerfen() {
   if (!umwandelnAngebotStand) return;
   umwandelnAngebotStand = null;
   if (document.getElementById("hinweis-text")?.textContent === umwandelnAngebotText) hinweis("");
+  // Zurückgehaltener Lauf zum noch aktuellen Text: jetzt zeigen (nach dem Tippen kommt ohnehin ein neuer).
+  const lauf = umwandelnZurueckgehalten;
+  umwandelnZurueckgehalten = null;
+  if (lauf && lauf.rev === rev) vorschauVerarbeiten(lauf);
 }
 
 async function umwandelnAusfuehren() {
@@ -1043,6 +1070,7 @@ async function umwandelnAusfuehren() {
     const eingefuegt = view.state.sliceDoc(a.von, a.bis);
     const neu = /\n$/.test(eingefuegt) ? u.text : u.text.replace(/\n+$/, "");
     umwandelnAngebotStand = null;
+    umwandelnZurueckgehalten = null;
     view.dispatch({
       changes: { from: a.von, to: a.bis, insert: neu },
       selection: { anchor: a.von + neu.length },
@@ -1458,7 +1486,11 @@ async function start() {
   escAktivieren();
   kontextmenueBegrenzen();
   ikonenSetzen(document.body);
-  document.getElementById("hinweis-zu")!.addEventListener("click", () => hinweis(""));
+  document.getElementById("hinweis-zu")!.addEventListener("click", () => {
+    hinweis("");
+    // Angebot abgelehnt: Fehler im eingefügten Text jetzt zeigen.
+    umwandelnAngebotVerwerfen();
+  });
   // Skin zuerst, damit das Fenster nicht erst in den Standardfarben erscheint.
   await invoke<SkinsJs>("skins_lesen").then(skinsSetzen, () => {});
   await invoke<number>("oberflaeche_lesen").then(oberflaecheAnwenden, () => {});
@@ -1788,24 +1820,12 @@ async function start() {
     if (view && e.payload.rev === rev && nurSlashFehler(view.state.doc.toString(), e.payload)) return;
     // Gerade eingefügtes Markdown ist meist kein gültiges Typst: Das Angebot „In Typst umwandeln“
     // bleibt stehen, solange seither nichts getippt wurde; die Vorschau bleibt beim letzten Stand.
-    if (view && e.payload.rev === rev && umwandelnWartet(e.payload, umwandelnAngebotStand?.doc === view.state.doc)) return;
-    vorschau.aktualisieren(e.payload);
-    letzteDauer = e.payload.dauer_ms;
-    dauerZeigen();
-    // Markierungen nur, wenn sie zum aktuellen Text passen; sonst kommt bald ein neuer Lauf.
-    if (view && e.payload.rev === rev) {
-      const laenge = view.state.doc.length;
-      const diagnosen: Diagnostic[] = e.payload.meldungen
-        .filter((m) => m.von !== null && m.bis !== null && m.bis <= laenge)
-        .map((m) => ({
-          from: m.von!,
-          to: Math.max(m.bis!, Math.min(m.von! + 1, laenge)),
-          severity: m.fehler ? "error" : "warning",
-          message: m.text,
-        }));
-      view.dispatch(setDiagnostics(view.state, diagnosen));
+    if (view && e.payload.rev === rev && umwandelnWartet(e.payload, umwandelnAngebotStand?.doc === view.state.doc)) {
+      // Lehnt man ab (Band schließen), kommt dieser Lauf mit seinem Fehler nach.
+      umwandelnZurueckgehalten = e.payload;
+      return;
     }
-    rechtschreibungSpaeter();
+    vorschauVerarbeiten(e.payload);
   });
 
   const g = await projektOeffnen();
