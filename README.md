@@ -3,7 +3,7 @@
 A native, offline writing app for [Typst](https://typst.app) on macOS and Windows: write on the
 left, see the finished page on the right as you type. Built with Rust, Tauri 2 and CodeMirror 6.
 
-![TFTN with a journal article: outline, Typst source, sidebar and live preview](docs/images/main.png)
+![TFTN with a journal article: comment overview, Typst source and live preview](docs/images/main.png)
 
 **Why offline, when Typst has an excellent web app?** Some texts must not leave your computer:
 reports about patients or clients, legal and HR documents, anything covered by professional
@@ -19,6 +19,15 @@ with Typst without handing them to a third party.
   document, letter, invoice, medical report, report, journal article, book, poster and CV – and
   copies any of them into a custom type of your own in Settings.
 - **Citations** from your BibTeX/BibLaTeX file, or straight from a DOI (Crossref, DataCite).
+- **Bibliography manager:** browse, search, edit, add and delete entries of your `.bib` file in a
+  form; only the changed entry is rewritten, everything else in the file stays as it was. Entries
+  you have not cited yet are marked.
+- **Comment overview:** every `//` and `/* */` comment listed under its heading – notes to yourself
+  and review remarks in one place, one click away.
+- **Preview zoom:** fit to width, whole page or any percentage, with scrollbars; ⌘/Ctrl + wheel or
+  pinch zooms around the pointer.
+- **Paste with conversion:** paste Markdown or formatted text from a browser, Word or a chat
+  assistant and convert it to Typst with one click (via Pandoc).
 - **Typst Universe packages** vendored into the project with checksums – documents build offline,
   on any machine.
 - **Import** from Word, OpenDocument, Markdown, HTML, EPUB and LaTeX, **export** to PDF (incl.
@@ -45,6 +54,9 @@ as plain files. New documents follow the interface language.
 | ![Invoice with its form](docs/images/invoice.png) | ![Equation pane with palette and live rendering](docs/images/equation.png) |
 | Invoice: fill in the form, the totals are computed | Equations: edit with a palette, rendered as you type |
 
+![Bibliography manager: entries of the .bib file on the left, the selected entry in a form on the right](docs/images/bibliography.png)
+*Bibliography manager: search your `.bib` file, edit an entry in a form, see what you have not cited yet.*
+
 **Status:** early but usable day to day on macOS (Apple silicon). The Windows build passes the test
 suite and an automated install check, but has hardly been used by hand yet.
 
@@ -66,7 +78,7 @@ Download from the [releases](https://github.com/DocAtPrompt/tftn/releases):
 
 The matching typst CLI is bundled.
 
-Optional: [Pandoc](https://pandoc.org) 3.1.2 or later for import and Word export
+Optional: [Pandoc](https://pandoc.org) 3.1.2 or later for import, Word export and paste conversion
 (`brew install pandoc`, `winget install --id JohnMacFarlane.Pandoc`).
 
 ## Build from source
