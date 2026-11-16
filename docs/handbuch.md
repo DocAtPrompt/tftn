@@ -326,7 +326,7 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 
 Über MCP (Model Context Protocol) kann ein KI-Assistent im offenen Dokument arbeiten – ein lokales Modell ebenso wie ein
 Cloud-Dienst wie Claude: den
-Quelltext lesen, Stellen ändern, Seiten der Vorschau ansehen, ein neues Dokument aus einem Typ anlegen
+Quelltext lesen, Stellen ändern, das Formular im Fach „Dokument“ ausfüllen, Seiten der Vorschau ansehen, ein neues Dokument aus einem Typ anlegen
 oder ein anderes öffnen. Jede Änderung erscheint sofort im Editor und in der Vorschau und lässt sich
 mit Rückgängig zurücknehmen.
 
@@ -358,6 +358,8 @@ bleiben soll („Aktiv lassen“ oder „MCP ausschalten“); bis dahin lehnt TF
 | `text_ersetzen` | eine Stelle wörtlich ersetzen (oder jedes Vorkommen) |
 | `quelltext_setzen` | den ganzen Quelltext ersetzen |
 | `seite_ansehen` | eine Seite der Vorschau als Bild |
+| `formular_lesen` | Felder und Werte des Formulars (Titel, Autoren, Datum …) |
+| `formular_setzen` | mehrere Felder auf einmal setzen, geprüft wie im Fach; ein Rückgängig-Schritt |
 | `typen_auflisten` | Dokumenttypen für ein neues Dokument |
 | `dokument_anlegen` | neues Projekt aus einem Typ anlegen und öffnen |
 | `dokument_oeffnen` | ein anderes Projekt öffnen (das offene wird vorher gespeichert) |

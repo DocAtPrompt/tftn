@@ -265,6 +265,24 @@ impl FormularSitzung {
         self.aendern(stand_ui, pfad, stile, |d, f, _| d.eintrag(f, &p, aktion))
     }
 
+    /// Mehrere Werte auf einmal (MCP `formular_setzen`): `werte` wie in `dokument.toml`, Gruppen als
+    /// Objekte, Eintragslisten als Arrays von Objekten (ersetzen die Liste), `null` entfernt. Liest
+    /// frisch, prüft alles und schreibt einmal (ein Rückgängig-Schritt); bei einem Fehler nichts.
+    pub fn mehrere_setzen(
+        &mut self,
+        werte: &serde_json::Map<String, Json>,
+        stile: &[&str],
+    ) -> Result<FormularJs, String> {
+        let jetzt = stand(&self.text()?);
+        let js = self.aendern(&jetzt, Vec::new(), stile, |d, f, k| {
+            anwenden(d, f, &f.felder, &[], werte, k)
+        })?;
+        match js.abgelehnt {
+            Some(m) => Err(m.text),
+            None => Ok(js),
+        }
+    }
+
     /// Stand und Text der Datendatei für „Als Text bearbeiten“.
     pub fn text_lesen(&self) -> Result<(String, String), String> {
         let text = self.text()?;
@@ -341,6 +359,97 @@ impl FormularSitzung {
         self.formular()
             .is_some_and(|f| f.felder.iter().any(|f| f.name == "literatur"))
     }
+}
+
+/// `pfad` lesbar für Meldungen an den Assistenten: `autoren[0].name`.
+fn pfad_text(pfad: &[Schritt]) -> String {
+    let mut t = String::new();
+    for s in pfad {
+        match s {
+            Schritt::Name(n) if t.is_empty() => t.push_str(n),
+            Schritt::Name(n) => t.push_str(&format!(".{n}")),
+            Schritt::Index(i) => t.push_str(&format!("[{i}]")),
+        }
+    }
+    t
+}
+
+/// Wendet `werte` auf die Felder `felder` unter `pfad` an (für `mehrere_setzen`).
+fn anwenden(
+    d: &mut Daten,
+    f: &Formular,
+    felder: &[tftn_formular::Feld],
+    pfad: &[Schritt],
+    werte: &serde_json::Map<String, Json>,
+    k: &Kontext,
+) -> Result<(), String> {
+    use tftn_formular::Art;
+    for (name, wert) in werte {
+        let mut p = pfad.to_vec();
+        p.push(Schritt::Name(name.clone()));
+        let ort = pfad_text(&p);
+        let Some(feld) = felder.iter().find(|x| &x.name == name) else {
+            let bekannt: Vec<&str> = felder.iter().map(|x| x.name.as_str()).collect();
+            return Err(format!(
+                "{ort}: unbekanntes Feld; bekannt sind {}",
+                bekannt.join(", ")
+            ));
+        };
+        let fehler = |e: String| format!("{ort}: {e}");
+        match (&feld.art, wert) {
+            (Art::Gruppe { felder: unter }, Json::Object(m)) => {
+                anwenden(d, f, unter, &p, m, k)?;
+            }
+            (Art::Gruppe { .. }, _) => {
+                return Err(fehler(
+                    "erwartet ein Objekt mit den Feldern der Gruppe".into(),
+                ));
+            }
+            (Art::Eintraege { felder: unter, .. }, Json::Array(liste)) => {
+                let vorher = wert_an(&d.werte(), &p)
+                    .and_then(Json::as_array)
+                    .map_or(0, Vec::len);
+                for _ in vorher..liste.len() {
+                    d.eintrag(f, &p, EintragAktion::Hinzufuegen)
+                        .map_err(fehler)?;
+                }
+                for i in (liste.len()..vorher).rev() {
+                    d.eintrag(f, &p, EintragAktion::Entfernen { index: i })
+                        .map_err(fehler)?;
+                }
+                for (i, eintrag) in liste.iter().enumerate() {
+                    let Json::Object(m) = eintrag else {
+                        return Err(fehler(format!("Eintrag {i} ist kein Objekt")));
+                    };
+                    let mut pi = p.clone();
+                    pi.push(Schritt::Index(i));
+                    // Ersetzen: Was der Eintrag nicht nennt, fällt weg.
+                    let mut voll = m.clone();
+                    for u in unter {
+                        let blatt = !matches!(u.art, Art::Gruppe { .. } | Art::Eintraege { .. });
+                        if blatt && !voll.contains_key(&u.name) {
+                            voll.insert(u.name.clone(), Json::Null);
+                        }
+                    }
+                    anwenden(d, f, unter, &pi, &voll, k)?;
+                }
+            }
+            (Art::Eintraege { .. }, _) => {
+                return Err(fehler("erwartet ein Array von Objekten (Einträgen)".into()));
+            }
+            (_, Json::Null) => d.setzen(f, &p, None, k).map_err(fehler)?,
+            _ => d.setzen(f, &p, Some(wert.clone()), k).map_err(fehler)?,
+        }
+    }
+    Ok(())
+}
+
+/// Wert unter `pfad` in den Formularwerten.
+fn wert_an<'a>(werte: &'a Json, pfad: &[Schritt]) -> Option<&'a Json> {
+    pfad.iter().try_fold(werte, |w, s| match s {
+        Schritt::Name(n) => w.get(n),
+        Schritt::Index(i) => w.get(i),
+    })
 }
 
 /// Liegt `ordner` in einem Git-Arbeitsbaum (ein Vorfahr hat `.git`)?
@@ -742,5 +851,87 @@ mod tests {
         assert!(v["zitierstil"].contains(&"ieee".to_string()));
         assert!(v["zitierstil"].contains(&"eigen.csl".to_string()));
         let _ = std::fs::remove_dir_all(&o);
+    }
+
+    fn werte(j: serde_json::Value) -> serde_json::Map<String, serde_json::Value> {
+        j.as_object().unwrap().clone()
+    }
+
+    #[test]
+    fn mehrere_setzen_mit_gruppe_und_eintraegen() {
+        let p = projekt("mehrere");
+        let mut f = FormularSitzung::neu(&p);
+        let js = f
+            .mehrere_setzen(
+                &werte(json!({
+                    "titel": "Ein Testartikel",
+                    "datum": "2026-11-16",
+                    "schlagworte": ["eins", "zwei", "drei"],
+                    "autoren": [
+                        { "name": "Erika Example", "institution": ["Institut A"] },
+                        { "name": "Max Sample" },
+                    ],
+                    "literatur": { "stil": "ieee" },
+                })),
+                STILE,
+            )
+            .unwrap();
+        assert!(js.abgelehnt.is_none());
+        let w = &js.werte;
+        assert_eq!(w["titel"], "Ein Testartikel");
+        assert_eq!(w["datum"], "2026-11-16");
+        assert_eq!(w["schlagworte"], json!(["eins", "zwei", "drei"]));
+        assert_eq!(w["autoren"].as_array().unwrap().len(), 2);
+        assert_eq!(w["autoren"][0]["name"], "Erika Example");
+        assert_eq!(w["autoren"][0]["institution"], json!(["Institut A"]));
+        // Was beim Eintrag fehlt, fällt weg (auch „korrespondierend“ der Vorlage)
+        assert!(w["autoren"][0].get("korrespondierend").is_none());
+        assert_eq!(w["autoren"][1]["name"], "Max Sample");
+        assert_eq!(w["literatur"]["stil"], "ieee");
+        assert_eq!(
+            w["literatur"]["dateien"],
+            json!(["literatur.bib"]),
+            "Rest der Gruppe bleibt"
+        );
+        assert!(js.rueck, "ein Rückgängig-Schritt");
+        let js = f.rueckgaengig(&js.stand, STILE).unwrap();
+        assert_eq!(
+            js.werte["titel"], "Titel des Artikels",
+            "alles in einem Schritt zurück"
+        );
+        // Weniger Einträge als vorher
+        let js = f
+            .mehrere_setzen(&werte(json!({ "autoren": [{ "name": "Allein" }] })), STILE)
+            .unwrap();
+        assert_eq!(js.werte["autoren"], json!([{ "name": "Allein" }]));
+    }
+
+    #[test]
+    fn mehrere_setzen_schreibt_bei_fehler_nichts() {
+        let p = projekt("mehrere-fehler");
+        let mut f = FormularSitzung::neu(&p);
+        let vorher = lesen(&p);
+        let e = f
+            .mehrere_setzen(&werte(json!({ "titel": "Neu", "gibtsnicht": 1 })), STILE)
+            .unwrap_err();
+        assert!(e.contains("gibtsnicht") && e.contains("titel"), "{e}");
+        let e = f
+            .mehrere_setzen(&werte(json!({ "titel": "Neu", "datum": "gestern" })), STILE)
+            .unwrap_err();
+        assert!(e.contains("datum"), "{e}");
+        let e = f
+            .mehrere_setzen(&werte(json!({ "autoren": [] })), STILE)
+            .unwrap_err();
+        assert!(e.contains("autoren"), "{e}");
+        assert_eq!(lesen(&p), vorher);
+        // `null` entfernt ein Feld
+        let js = f
+            .mehrere_setzen(&werte(json!({ "untertitel": "U" })), STILE)
+            .unwrap();
+        assert_eq!(js.werte["untertitel"], "U");
+        let js = f
+            .mehrere_setzen(&werte(json!({ "untertitel": null })), STILE)
+            .unwrap();
+        assert!(js.werte.get("untertitel").is_none());
     }
 }

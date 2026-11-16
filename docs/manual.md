@@ -327,7 +327,7 @@ TFTN.
 
 With MCP (Model Context Protocol) an AI assistant can work in the open document – a local model just as well as a cloud
 service such as Claude: read
-the source, change passages, look at preview pages, create a new document from a type or open another
+the source, change passages, fill in the form of the Document pane, look at preview pages, create a new document from a type or open another
 one. Every change appears in the editor and the preview right away and can be undone.
 
 **Turning it on:** In the settings, tick “MCP: AI assistants … may read and write in the open
@@ -358,6 +358,8 @@ active” or “Turn MCP off”); until then TFTN refuses its calls.
 | `text_ersetzen` | replace one passage literally (or every occurrence) |
 | `quelltext_setzen` | replace the whole source |
 | `seite_ansehen` | one preview page as an image |
+| `formular_lesen` | fields and values of the form (title, authors, date …) |
+| `formular_setzen` | set several fields at once, checked as in the pane; one undo step |
 | `typen_auflisten` | document types for a new document |
 | `dokument_anlegen` | create a new project from a type and open it |
 | `dokument_oeffnen` | open another project (the open one is saved first) |

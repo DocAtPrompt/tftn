@@ -297,6 +297,14 @@ fn ausfuehren(app: &AppHandle, werkzeug: &str, a: &Value) -> Result<Ergebnis, St
             let ppi = a.get("ppi").and_then(Value::as_f64).unwrap_or(100.0);
             seite_ansehen(app, seite as usize, ppi)
         }
+        "formular_lesen" => formular_lesen(app),
+        "formular_setzen" => {
+            let werte = a
+                .get("werte")
+                .and_then(Value::as_object)
+                .ok_or("`werte` fehlt (ein Objekt Feldname → Wert)")?;
+            formular_setzen(app, werte)
+        }
         "typen_auflisten" => typen_auflisten(app),
         "dokument_anlegen" => {
             let (typ, name) = (pflicht("typ")?, pflicht("name")?);
@@ -388,6 +396,126 @@ fn quelltext(app: &AppHandle) -> Result<Ergebnis, String> {
         t.push_str(&format!("{}\t{z}\n", i + 1));
     }
     Ok(Ergebnis::text(t))
+}
+
+/// Die Felder knapp für den Assistenten: Name, Beschriftung, Art, Pflicht, Hilfe, Auswahl, Unterfelder.
+fn felder_js(felder: &[tftn_formular::Feld]) -> Value {
+    use tftn_formular::Art;
+    Value::Array(
+        felder
+            .iter()
+            .map(|f| {
+                let mut o = json!({ "name": f.name, "titel": f.titel });
+                let (art, extra) = match &f.art {
+                    Art::Text { .. } => ("text", None),
+                    Art::Zahl { ganzzahl: true, .. } => ("ganzzahl", None),
+                    Art::Zahl { .. } => ("zahl", None),
+                    Art::Schalter { .. } => ("schalter", None),
+                    Art::Datum { .. } => ("datum (JJJJ-MM-TT)", None),
+                    Art::Wahl { werte, .. } => ("wahl", Some(("erlaubt", json!(werte)))),
+                    Art::Liste { .. } => ("liste", None),
+                    Art::Gruppe { felder } => ("gruppe", Some(("felder", felder_js(felder)))),
+                    Art::Eintraege { felder, .. } => {
+                        ("eintraege", Some(("felder", felder_js(felder))))
+                    }
+                };
+                o["art"] = json!(art);
+                if let Some((k, v)) = extra {
+                    o[k] = v;
+                }
+                if f.pflicht {
+                    o["pflicht"] = json!(true);
+                }
+                if let Some(h) = &f.hilfe {
+                    o["hilfe"] = json!(h);
+                }
+                if f.sensibel {
+                    o["sensibel"] = json!(true);
+                }
+                o
+            })
+            .collect(),
+    )
+}
+
+/// Werte und Meldungen nach Lesen oder Setzen.
+fn formular_antwort(kopf: String, js: &crate::formular::FormularJs, mit_feldern: bool) -> Ergebnis {
+    let mut t = kopf;
+    if let Some(e) = &js.dateifehler {
+        t.push_str(&format!("\nDatei fehlerhaft: {e}"));
+    }
+    if let Some(f) = js.formular.as_ref().filter(|_| mit_feldern) {
+        t.push_str(&format!(
+            "\nFelder:\n{}",
+            serde_json::to_string_pretty(&felder_js(&f.felder)).unwrap_or_default()
+        ));
+    }
+    t.push_str(&format!(
+        "\nWerte:\n{}",
+        serde_json::to_string_pretty(&js.werte).unwrap_or_default()
+    ));
+    if !js.meldungen.is_empty() {
+        t.push_str("\nMeldungen:");
+        for m in &js.meldungen {
+            let ort: Vec<String> = m
+                .pfad
+                .iter()
+                .map(|s| match s {
+                    tftn_formular::Schritt::Name(n) => n.clone(),
+                    tftn_formular::Schritt::Index(i) => i.to_string(),
+                })
+                .collect();
+            t.push_str(&format!(
+                "\n- {} ({}): {}",
+                ort.join("."),
+                if m.fehler { "Fehler" } else { "Hinweis" },
+                m.text
+            ));
+        }
+    }
+    Ergebnis::text(t)
+}
+
+fn formular_lesen(app: &AppHandle) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let mut sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_mut().ok_or(KEIN_DOKUMENT)?;
+    let js = s.formular.laden(crate::stile());
+    if js.formular.is_none() {
+        return Ok(Ergebnis::text(format!(
+            "Dieser Dokumenttyp hat kein Formular.{}",
+            js.dateifehler
+                .map(|e| format!(" ({e})"))
+                .unwrap_or_default()
+        )));
+    }
+    Ok(formular_antwort(
+        format!("Formular, Datendatei {}:", js.datei),
+        &js,
+        true,
+    ))
+}
+
+fn formular_setzen(
+    app: &AppHandle,
+    werte: &serde_json::Map<String, Value>,
+) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let mut sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_mut().ok_or(KEIN_DOKUMENT)?;
+    let js = s
+        .formular
+        .mehrere_setzen(werte, crate::stile())
+        .map_err(|e| format!("Nichts geändert. {e}"))?;
+    Ok(formular_antwort(
+        format!(
+            "Gespeichert in {}; das Fach „Dokument“ zeigt es, die Vorschau wird neu übersetzt \
+             (Ergebnis mit `status`).",
+            js.datei
+        ),
+        &js,
+        false,
+    ))
 }
 
 /// Schickt dem Editor einen Auftrag und wartet auf seine Antwort (`Ok(false)`: nicht ausgeführt).
@@ -723,5 +851,27 @@ mod tests {
             conf["identifier"], "org.tftn.editor",
             "Kennung in tauri.conf.json geändert"
         );
+    }
+
+    #[test]
+    fn felder_knapp_fuer_den_assistenten() {
+        let schema = include_str!("../../types/tftn-fachartikel/tftn/formular.schema.json");
+        let f = tftn_formular::formular_lesen(schema).unwrap();
+        let j = felder_js(&f.felder);
+        let feld = |n: &str| {
+            j.as_array()
+                .unwrap()
+                .iter()
+                .find(|x| x["name"] == n)
+                .unwrap()
+                .clone()
+        };
+        assert_eq!(feld("titel")["art"], "text");
+        assert_eq!(feld("datum")["art"], "datum (JJJJ-MM-TT)");
+        let autoren = feld("autoren");
+        assert_eq!(autoren["art"], "eintraege");
+        assert_eq!(autoren["felder"][0]["name"], "name");
+        assert_eq!(autoren["felder"][0]["pflicht"], true);
+        assert_eq!(feld("literatur")["art"], "gruppe");
     }
 }

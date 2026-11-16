@@ -11,7 +11,9 @@ use crate::werkzeuge::werkzeuge;
 const ANLEITUNG: &str = "TFTN ist ein Typst-Editor. Die Werkzeuge arbeiten im Dokument, das gerade in \
 der laufenden TFTN-App offen ist; jede Änderung erscheint sofort im Editor und in der Vorschau und \
 lässt sich dort mit Rückgängig zurücknehmen. Zuerst `status` und `quelltext_lesen` aufrufen, dann mit \
-`text_ersetzen` gezielt ändern. Der Benutzer schaltet MCP in TFTN selbst ein und aus.";
+`text_ersetzen` gezielt ändern. Titel, Autorinnen und Autoren, Datum und ähnliche Angaben stehen bei \
+den meisten Dokumenttypen im Formular (Fach „Dokument“), nicht im Quelltext: `formular_lesen` und \
+`formular_setzen`. Der Benutzer schaltet MCP in TFTN selbst ein und aus.";
 
 /// Liest Anfragen aus `ein` und schreibt Antworten nach `aus`, bis `ein` endet.
 /// `aufrufen(name, argumente)` führt ein Werkzeug aus (in der App: über die lokale Verbindung).

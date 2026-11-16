@@ -56,6 +56,32 @@ pub fn werkzeuge() -> Vec<Value> {
             },
         }),
         json!({
+            "name": "formular_lesen",
+            "description": "Formular des Dokumenttyps (Fach „Dokument“): Felder mit Name, \
+                Beschriftung, Art und Pflicht, dazu die aktuellen Werte aus der Datendatei \
+                (meist dokument.toml) und die Meldungen der Prüfung. Titel, Autorinnen und Autoren, \
+                Datum und Ähnliches stehen hier, nicht im Quelltext.",
+            "inputSchema": leer,
+        }),
+        json!({
+            "name": "formular_setzen",
+            "description": "Setzt Werte im Formular, geprüft wie im Fach „Dokument“; alles in einem \
+                Schritt (ein Rückgängig-Schritt), bei einem ungültigen Wert wird nichts geschrieben. \
+                Nur die genannten Felder ändern sich. Gruppen als Objekt (nur die genannten \
+                Unterfelder), Listen von Einträgen als Array von Objekten (ersetzt die ganze Liste), \
+                Datum als JJJJ-MM-TT, `null` entfernt einen Wert. Feldnamen aus `formular_lesen`.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "werte": {
+                        "type": "object",
+                        "description": "Feldname → Wert, z. B. {\"titel\": \"…\", \"autoren\": [\"…\"]}",
+                    },
+                },
+                "required": ["werte"],
+            },
+        }),
+        json!({
             "name": "typen_auflisten",
             "description": "Dokumenttypen (Vorlagen), aus denen `dokument_anlegen` ein neues Dokument macht.",
             "inputSchema": leer,
