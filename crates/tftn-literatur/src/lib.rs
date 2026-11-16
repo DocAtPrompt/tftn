@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 use tftn_sprachen::tr;
 
 pub mod doi;
+pub mod verwaltung;
 
 use serde::Serialize;
 use typst_syntax::{LinkedNode, Side, Source, SyntaxMode};

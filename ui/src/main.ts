@@ -25,6 +25,8 @@ import { listen } from "@tauri-apps/api/event";
 import { type Aenderung, PRUEFSUMME_ALLE, aenderungenAus, pruefsumme } from "./protokoll";
 import { type Stelle, Vorschau, type VorschauEreignis } from "./vorschau";
 import { ZitatPalette, type ZitatSuche } from "./zitat";
+import { LiteraturDialog } from "./literaturdialog";
+import type { LitDateiJs } from "./literatur";
 import type { DoiJs } from "./doi";
 import { type ExportJs, ExportMenue, type ProfilJs, type WordJs } from "./export";
 import { autocompletion, startCompletion } from "@codemirror/autocomplete";
@@ -895,6 +897,7 @@ function escVerlaesstJetzt(e: KeyboardEvent): boolean {
 // --- Zitat einfügen (PLAN-M1 AP7) ----------------------------------------------------------
 
 let palette: ZitatPalette;
+let literaturDialog: LiteraturDialog;
 
 /** `anhang` (etwa `#bibliography(…)` nach „Literatur aus DOI“) kommt im selben Undo-Schritt ans Ende. */
 function zitatEinfuegen(schluessel: string, seite: string | null, anhang?: string | null) {
@@ -1599,7 +1602,18 @@ async function start() {
     zitatEinfuegen,
     () => view.focus(),
     (eingabe) => invoke<DoiJs>("literatur_aus_doi", { eingabe }),
+    () => void literaturDialog.zeigen(),
   );
+  literaturDialog = new LiteraturDialog({
+    liste: () => invoke<LitDateiJs[]>("literatur_liste"),
+    speichern: (datei, alt, eintrag) => invoke<void>("literatur_eintrag_speichern", { datei, alt, eintrag }),
+    loeschen: (datei, schluessel) => invoke<void>("literatur_eintrag_loeschen", { datei, schluessel }),
+    zitieren: (schluessel) => {
+      zitatEinfuegen(schluessel, null);
+      view.focus();
+    },
+    geschlossen: () => view.focus(),
+  });
   document.getElementById("zitat-knopf")!.addEventListener("click", () => palette.oeffnen());
   bausteinPalette = new BausteinPalette(
     katalogAnzeige,
@@ -1627,6 +1641,7 @@ async function start() {
     },
     hinweis: (text) => hinweis(text),
     meldung,
+    literatur: () => void literaturDialog.zeigen(),
     vergleichen: async () => {
       if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht verglichen."));
       return invoke<VergleichJs>("typ_vergleichen");

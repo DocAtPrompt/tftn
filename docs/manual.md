@@ -119,6 +119,15 @@ existing citation, put the cursor in it and open the sidebar (or right-click it 
 the bibliography file with a readable key (`lecun2015`) and inserts the citation. If the document
 has no bibliography yet, one is added at the end. Only the DOI is sent.
 
+**Managing references:** “Manage bibliography …” in the citation dialog or in the “Document” pane shows
+the entries of the bibliography file: on the left the list with search (entries not cited are
+marked), on the right a form with the usual fields per type (journal article, book, collection, …).
+People go one per line (“Last name, first name”). For a new entry TFTN suggests a key from the first
+person and the year. “Save” (Cmd/Ctrl+S) writes only this entry to the `.bib`; the rest of the file
+stays as it is. “Cite” inserts `@key` at the cursor. Values without braces such as `2015` or
+abbreviations from `@string` are shown in monospace and written unchanged. YAML bibliographies
+(Hayagriva) cannot be edited here.
+
 **Outline:** the headings are listed on the left; a click jumps there. Dragging moves a section with
 its subsections, as does Alt+↑/↓ on an entry. Every move is one undo step.
 

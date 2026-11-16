@@ -1726,6 +1726,177 @@ struct ZitatSuche {
     dauer_ms: f64,
 }
 
+// --- Literaturverwaltung --------------------------------------------------------------------
+
+#[derive(Serialize)]
+struct LitEintragJs {
+    #[serde(flatten)]
+    eintrag: tftn_literatur::verwaltung::BibEintrag,
+    /// Im Text zitiert (`@schluessel` oder `<schluessel>`)
+    zitiert: bool,
+}
+
+#[derive(Serialize)]
+struct LitDateiJs {
+    /// Relativ zum Projekt, mit `/`
+    pfad: String,
+    schreibbar: bool,
+    fehler: Option<String>,
+    eintraege: Vec<LitEintragJs>,
+}
+
+fn relativ(projekt: &Projekt, datei: &Path) -> String {
+    datei
+        .strip_prefix(&projekt.wurzel)
+        .unwrap_or(datei)
+        .to_string_lossy()
+        .replace('\\', "/")
+}
+
+fn ist_bib(datei: &Path) -> bool {
+    datei
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("bib"))
+}
+
+/// Inhalt einer Literaturdatei; fehlt sie, ist sie leer (beim ersten Speichern entsteht sie).
+fn bib_lesen(datei: &Path) -> Result<String, String> {
+    match std::fs::read_to_string(datei) {
+        Ok(t) => Ok(t),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
+        Err(e) => Err(format!("{}: {e}", datei.display())),
+    }
+}
+
+/// Die Literaturdateien des Dokuments mit ihren Einträgen (Literaturverwaltung).
+#[tauri::command]
+fn literatur_liste(zustand: State<'_, Zustand>) -> Result<Vec<LitDateiJs>, String> {
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung
+        .as_ref()
+        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    let quelltext = s.spiegel.quelle().text();
+    Ok(literatur_dateien(&s.projekt)
+        .into_iter()
+        .map(|d| {
+            let pfad = relativ(&s.projekt, &d);
+            if !ist_bib(&d) {
+                return LitDateiJs {
+                    pfad,
+                    schreibbar: false,
+                    fehler: Some(tr!(
+                        "Nur .bib-Dateien lassen sich hier bearbeiten; diese bitte in einem Texteditor."
+                    )),
+                    eintraege: Vec::new(),
+                };
+            }
+            match bib_lesen(&d).and_then(|t| tftn_literatur::verwaltung::lesen(&t)) {
+                Ok(liste) => LitDateiJs {
+                    pfad,
+                    schreibbar: true,
+                    fehler: None,
+                    eintraege: liste
+                        .into_iter()
+                        .map(|g| LitEintragJs {
+                            zitiert: tftn_literatur::verwaltung::zitiert(
+                                quelltext,
+                                &g.eintrag.schluessel,
+                            ),
+                            eintrag: g.eintrag,
+                        })
+                        .collect(),
+                },
+                Err(fehler) => LitDateiJs {
+                    pfad,
+                    schreibbar: false,
+                    fehler: Some(fehler),
+                    eintraege: Vec::new(),
+                },
+            }
+        })
+        .collect())
+}
+
+/// Die Literaturdatei `pfad` (relativ) des Dokuments; nur `.bib`.
+fn bib_datei(projekt: &Projekt, pfad: &str) -> Result<PathBuf, String> {
+    literatur_dateien(projekt)
+        .into_iter()
+        .find(|d| relativ(projekt, d) == pfad)
+        .filter(|d| ist_bib(d))
+        .ok_or_else(|| tr!("{pfad} ist keine Literaturdatei dieses Dokuments.", pfad))
+}
+
+/// Schreibt die geänderte Literaturdatei, lädt die Literatur neu und übersetzt.
+fn bib_schreiben(
+    zustand: &Zustand,
+    s: &mut Sitzung,
+    datei: &Path,
+    text: &str,
+    was: &str,
+) -> Result<(), String> {
+    std::fs::write(datei, text).map_err(|e| format!("{}: {e}", datei.display()))?;
+    protokollieren(&s.projekt, was);
+    s.literatur = literatur_laden(&s.projekt);
+    kompilieren_lassen(zustand, s);
+    Ok(())
+}
+
+/// Literaturverwaltung: Eintrag ändern (`alt`: sein bisheriger Schlüssel) oder neu anlegen.
+#[tauri::command]
+fn literatur_eintrag_speichern(
+    zustand: State<'_, Zustand>,
+    datei: String,
+    alt: Option<String>,
+    eintrag: tftn_literatur::verwaltung::BibEintrag,
+) -> Result<(), String> {
+    let mut sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung
+        .as_mut()
+        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    let pfad = bib_datei(&s.projekt, &datei)?;
+    // Schlüssel über alle Literaturdateien eindeutig (in derselben Datei prüft `verwaltung`).
+    if alt.as_deref() != Some(eintrag.schluessel.as_str())
+        && s.literatur.enthaelt(&eintrag.schluessel)
+    {
+        return Err(tr!(
+            "Den Schlüssel „{schluessel}“ gibt es schon.",
+            schluessel = eintrag.schluessel
+        ));
+    }
+    let text = bib_lesen(&pfad)?;
+    let neu = match &alt {
+        Some(a) => tftn_literatur::verwaltung::aendern(&text, a, &eintrag)?,
+        None => tftn_literatur::verwaltung::anlegen(&text, &eintrag)?,
+    };
+    let was = match &alt {
+        Some(a) => format!("Literatur: {a} geändert ({})", eintrag.schluessel),
+        None => format!("Literatur: {} angelegt", eintrag.schluessel),
+    };
+    bib_schreiben(&zustand, s, &pfad, &neu, &was)
+}
+
+/// Literaturverwaltung: Eintrag löschen.
+#[tauri::command]
+fn literatur_eintrag_loeschen(
+    zustand: State<'_, Zustand>,
+    datei: String,
+    schluessel: String,
+) -> Result<(), String> {
+    let mut sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung
+        .as_mut()
+        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    let pfad = bib_datei(&s.projekt, &datei)?;
+    let neu = tftn_literatur::verwaltung::loeschen(&bib_lesen(&pfad)?, &schluessel)?;
+    bib_schreiben(
+        &zustand,
+        s,
+        &pfad,
+        &neu,
+        &format!("Literatur: {schluessel} gelöscht"),
+    )
+}
+
 #[tauri::command]
 fn zitate_suchen(anfrage: String, zustand: State<'_, Zustand>) -> Result<ZitatSuche, String> {
     let sitzung = zustand.sitzung.lock().unwrap();
@@ -3342,6 +3513,9 @@ pub fn run() {
             word_exportieren,
             im_ordner_zeigen,
             gliederung_lesen,
+            literatur_liste,
+            literatur_eintrag_speichern,
+            literatur_eintrag_loeschen,
             zaehlen_bereich,
             rechtschreibung_pruefen,
             rechtschreibung_vorschlaege,

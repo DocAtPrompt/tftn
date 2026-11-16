@@ -49,6 +49,8 @@ export interface DokumentAktionen {
   hinweis(text: string): void;
   /** Kurze Erfolgsmeldung; blendet sich nach ein paar Sekunden aus. */
   meldung(text: string): void;
+  /** Literaturverwaltung öffnen. */
+  literatur(): void;
 }
 
 type Eingabe = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -237,12 +239,19 @@ export class DokumentFach {
     } else if (!js.formular && !js.profilfehler.length) {
       teile.push(el("p", "leiste-leer", t("Dieser Dokumenttyp hat kein Formular.")));
     }
-    if (this.projekt && !this.projekt.literatur_im_formular && js.formular) {
+    {
+      // Literaturverwaltung; hat das Formular schon eine Gruppe „Literatur“, ohne eigene Überschrift.
       const s = el("section", "dok-gruppe");
-      s.append(el("h3", "", t("Literatur")));
-      s.append(
-        el("p", "leiste-hilfe", t("Dieser Dokumenttyp (Version {version}) liest die Literatur aus main.typ.", { version: this.projekt.version })),
-      );
+      if (!this.projekt?.literatur_im_formular || !js.formular) s.append(el("h3", "", t("Literatur")));
+      if (this.projekt && !this.projekt.literatur_im_formular && js.formular) {
+        s.append(
+          el("p", "leiste-hilfe", t("Dieser Dokumenttyp (Version {version}) liest die Literatur aus main.typ.", { version: this.projekt.version })),
+        );
+      }
+      const b = el("button", "", t("Literatur verwalten …"));
+      b.title = t("Einträge der Literaturdatei ansehen, ändern, anlegen und löschen");
+      b.addEventListener("click", () => this.a.literatur());
+      s.append(b);
       teile.push(s);
     }
     teile.push(this.projektTeil(), this.exportTeil());

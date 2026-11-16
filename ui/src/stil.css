@@ -1241,6 +1241,143 @@ body {
   color: var(--leise);
   font-size: 12px;
 }
+/* Literaturverwaltung: Liste links, Formular rechts */
+.neu-dialog.literatur-dialog {
+  overflow: hidden;
+}
+.lit-leiste {
+  display: flex;
+  gap: 6px;
+}
+.lit-suche {
+  flex: 1;
+  min-width: 0;
+}
+.lit-rumpf {
+  display: grid;
+  grid-template-columns: minmax(14em, 2fr) minmax(0, 3fr);
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+.lit-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: auto;
+  border-right: 1px solid var(--linie);
+  padding-right: 6px;
+}
+.lit-eintrag {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.lit-eintrag:hover {
+  background: color-mix(in srgb, var(--akzent) 10%, transparent);
+}
+.lit-eintrag.gewaehlt {
+  background: color-mix(in srgb, var(--akzent) 20%, transparent);
+}
+.lit-kopf {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.lit-kopf code {
+  font-weight: 600;
+}
+.lit-marke {
+  color: var(--leise);
+  font-size: 11px;
+}
+.lit-zeile {
+  color: var(--leise);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lit-zeile.lit-titel {
+  color: var(--text);
+}
+.lit-leer {
+  margin: 8px;
+  color: var(--leise);
+}
+.lit-formular {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+  padding-right: 4px;
+}
+.lit-feldkopf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.lit-felder {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lit-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lit-feld > span {
+  color: var(--leise);
+  font-size: 12px;
+}
+.lit-feld input,
+.lit-feld textarea,
+.lit-feld select {
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.lit-feld textarea {
+  resize: vertical;
+}
+.lit-roh {
+  font-family: "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 12px;
+}
+.lit-feld-dazu {
+  display: flex;
+  gap: 6px;
+}
+.lit-feld-dazu input {
+  flex: 1;
+  min-width: 0;
+}
+.lit-knoepfe {
+  display: flex;
+  gap: 6px;
+  position: sticky;
+  bottom: 0;
+  padding: 6px 0;
+  background: var(--grund);
+}
+.lit-loeschen {
+  margin-left: auto;
+}
+.palette-verwalten {
+  margin-left: auto;
+  margin-right: 6px;
+  font-size: 12px;
+}
+
 .fassungen-vorschau {
   margin: 0;
   padding: 8px;

@@ -118,6 +118,15 @@ Vorschau → „Ändern …“). Dort lassen sich Seitenangabe und Quelle wechse
 schreibt ihn mit lesbarem Schlüssel (`lecun2015`) in die Literaturdatei und fügt das Zitat ein. Fehlt
 noch ein Literaturverzeichnis, kommt es ans Ende. Übertragen wird nur die DOI.
 
+**Literatur verwalten:** „Literatur verwalten …“ im Zitat-Dialog oder im Fach „Dokument“ zeigt die
+Einträge der Literaturdatei: links die Liste mit Suche (nicht zitierte Einträge sind vermerkt), rechts
+das Formular mit den üblichen Feldern je Art (Zeitschriftenartikel, Buch, Sammelband, …). Personen
+stehen eine je Zeile („Nachname, Vorname“). Bei einem neuen Eintrag schlägt TFTN den Schlüssel aus
+erster Person und Jahr vor. „Speichern“ (Cmd/Strg+S) schreibt nur diesen Eintrag in die `.bib`; der
+Rest der Datei bleibt, wie er ist. „Zitieren“ fügt `@schlüssel` an der Schreibmarke ein. Werte ohne
+Klammern wie `2015` oder Abkürzungen aus `@string` stehen in Schreibmaschinenschrift und werden
+unverändert geschrieben. YAML-Literatur (Hayagriva) lässt sich hier nicht bearbeiten.
+
 **Gliederung:** Links stehen die Überschriften; ein Klick springt hin. Ziehen verschiebt einen
 Abschnitt samt Unterabschnitten, ebenso Alt+↑/↓ auf einem Eintrag. Jede Verschiebung ist ein
 Rückgängig-Schritt.

@@ -39,6 +39,8 @@ export class ZitatPalette {
     private einfuegen: (schluessel: string, seite: string | null, anhang?: string | null) => void,
     private geschlossen: () => void,
     private doiHolen: (doi: string) => Promise<DoiJs>,
+    /** Literaturverwaltung öffnen (die Palette schließt sich). */
+    private verwalten?: () => void,
   ) {
     this.huelle = document.createElement("div");
     this.huelle.id = "palette";
@@ -52,7 +54,15 @@ export class ZitatPalette {
       <ul class="palette-liste"></ul>
       <div class="palette-fuss"></div>`;
     document.body.append(this.huelle);
-    this.huelle.querySelector(".neu-kopf")!.append(schliessenKnopf(() => this.schliessen()));
+    const verwaltenKnopf = document.createElement("button");
+    verwaltenKnopf.className = "palette-verwalten";
+    verwaltenKnopf.textContent = t("Literatur verwalten …");
+    verwaltenKnopf.addEventListener("click", () => {
+      this.huelle.hidden = true;
+      this.verwalten?.();
+    });
+    verwaltenKnopf.hidden = !this.verwalten;
+    this.huelle.querySelector(".neu-kopf")!.append(verwaltenKnopf, schliessenKnopf(() => this.schliessen()));
     dialogAnmelden(this, this.huelle, document.getElementById("zitat-knopf"));
     this.suche = this.huelle.querySelector(".palette-suche")!;
     this.seite = this.huelle.querySelector(".palette-seite")!;
