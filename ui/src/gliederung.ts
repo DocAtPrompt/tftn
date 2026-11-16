@@ -1,5 +1,6 @@
 // Gliederung: Überschriften neben dem Editor, Klick springt hin, Ziehen oder Alt+↑/↓ verschiebt
-// ganze Abschnitte. Gelesen und verschoben wird in Rust (tftn_edit::gliederung).
+// ganze Abschnitte. Gelesen und verschoben wird in Rust (tftn_edit::gliederung). Ein zweiter
+// Reiter zeigt die Kommentare (`// …`, `/* … */`) nach Abschnitten (tftn_edit::kommentare).
 
 import { schliessenKnopf } from "./dialoge";
 import { type Zahlen, tausender } from "./zaehler";
@@ -16,11 +17,49 @@ export interface EintragJs {
   woerter?: number;
 }
 
+export interface KommentarJs {
+  /** ohne Kommentarzeichen; Zeilen getrennt durch `\n` */
+  text: string;
+  /** UTF-16 */
+  von: number;
+  /** UTF-16 */
+  bis: number;
+}
+
 export interface GliederungJs {
   rev: number;
   eintraege: EintragJs[];
+  kommentare: KommentarJs[];
   gesamt: Zahlen;
 }
+
+export interface KommentarGruppe {
+  /** Titel des Abschnitts; `null` vor der ersten Überschrift */
+  titel: string | null;
+  /** UTF-16: Anfang der Überschrift (Gruppe vor der ersten: -1) */
+  von: number;
+  kommentare: KommentarJs[];
+}
+
+/** Kommentare nach dem (Unter-)Abschnitt, in dem sie stehen; Abschnitte ohne Kommentar fehlen. */
+export function kommentarGruppen(eintraege: readonly EintragJs[], kommentare: readonly KommentarJs[]): KommentarGruppe[] {
+  const gruppen: KommentarGruppe[] = [];
+  for (const k of kommentare) {
+    const i = aktuell(eintraege, k.von);
+    const von = i < 0 ? -1 : eintraege[i].von;
+    const letzte = gruppen[gruppen.length - 1];
+    if (letzte && letzte.von === von) letzte.kommentare.push(k);
+    else gruppen.push({ titel: i < 0 ? null : eintraege[i].titel, von, kommentare: [k] });
+  }
+  return gruppen;
+}
+
+/** Index des Kommentars, in dem `pos` steht (Ränder eingeschlossen), sonst -1. */
+export function kommentarAn(kommentare: readonly KommentarJs[], pos: number): number {
+  return kommentare.findIndex((k) => k.von <= pos && pos <= k.bis);
+}
+
+export type Ansicht = "gliederung" | "kommentare";
 
 /** Index des Abschnitts, in dem `pos` steht; -1 vor der ersten Überschrift. */
 export function aktuell(liste: readonly EintragJs[], pos: number): number {
@@ -79,30 +118,87 @@ export interface GliederungAktionen {
   schliessen(): void;
 }
 
+/** Merker in localStorage: zuletzt gewählter Reiter. */
+const ANSICHT = "tftn-gliederung-ansicht";
+
+function ansichtAnfang(): Ansicht {
+  try {
+    return localStorage.getItem(ANSICHT) === "kommentare" ? "kommentare" : "gliederung";
+  } catch {
+    return "gliederung";
+  }
+}
+
 export class GliederungLeiste {
   private liste = el("div", "gl-liste");
   private eintraege: EintragJs[] = [];
+  private kommentare: KommentarJs[] = [];
   private knoepfe: HTMLButtonElement[] = [];
   private gezogen: number | null = null;
   private markiert = -1;
+  private pos = 0;
   private ende = el("div", "gl-ende", t("ans Ende"));
+  private ansicht: Ansicht = ansichtAnfang();
+  private reiter: Record<Ansicht, HTMLButtonElement>;
 
   constructor(
     ort: HTMLElement,
     private a: GliederungAktionen,
   ) {
     const kopf = el("div", "gl-kopf");
-    kopf.append(el("span", "", t("Gliederung")), schliessenKnopf(() => a.schliessen()));
+    const reiter = el("div", "gl-reiter");
+    reiter.setAttribute("role", "tablist");
+    this.reiter = {
+      gliederung: this.reiterKnopf("gliederung", t("Gliederung")),
+      kommentare: this.reiterKnopf("kommentare", t("Kommentare")),
+    };
+    reiter.append(this.reiter.gliederung, this.reiter.kommentare);
+    kopf.append(reiter, schliessenKnopf(() => a.schliessen()));
     ort.append(kopf, this.liste);
     this.ende.addEventListener("dragover", (e) => this.ueber(e, null, this.ende));
     this.ende.addEventListener("dragleave", () => this.ende.classList.remove("gl-davor"));
     this.ende.addEventListener("drop", (e) => this.fallen(e, null));
+    this.reiterZeigen();
   }
 
-  zeigen(neu: readonly EintragJs[], pos: number) {
+  private reiterKnopf(ansicht: Ansicht, text: string): HTMLButtonElement {
+    const b = el("button", "gl-reiter-knopf", text);
+    b.setAttribute("role", "tab");
+    b.addEventListener("click", () => this.umschalten(ansicht));
+    return b;
+  }
+
+  private reiterZeigen() {
+    for (const [art, b] of Object.entries(this.reiter) as [Ansicht, HTMLButtonElement][]) {
+      b.setAttribute("aria-selected", String(art === this.ansicht));
+      b.classList.toggle("gl-reiter-an", art === this.ansicht);
+    }
+    const n = this.kommentare.length;
+    this.reiter.kommentare.textContent = n ? `${t("Kommentare")} ${tausender(n)}` : t("Kommentare");
+  }
+
+  umschalten(ansicht: Ansicht) {
+    if (ansicht === this.ansicht) return;
+    this.ansicht = ansicht;
+    try {
+      localStorage.setItem(ANSICHT, ansicht);
+    } catch {
+      // ohne localStorage gilt die Wahl nur bis zum Neuladen
+    }
+    this.zeigen(this.eintraege, this.pos, this.kommentare);
+  }
+
+  zeigen(neu: readonly EintragJs[], pos: number, kommentare: readonly KommentarJs[] = []) {
     const hatteFokus = this.liste.contains(document.activeElement);
     this.eintraege = [...neu];
+    this.kommentare = [...kommentare];
     this.markiert = -1;
+    this.pos = pos;
+    this.reiterZeigen();
+    if (this.ansicht === "kommentare") {
+      this.kommentareZeigen();
+      return;
+    }
     if (neu.length === 0) {
       this.knoepfe = [];
       this.liste.replaceChildren(
@@ -116,9 +212,36 @@ export class GliederungLeiste {
     if (hatteFokus) (this.knoepfe[this.markiert] ?? this.knoepfe[0]).focus();
   }
 
-  /** Markiert den Abschnitt, in dem der Cursor steht. */
+  private kommentareZeigen() {
+    if (this.kommentare.length === 0) {
+      this.knoepfe = [];
+      this.liste.replaceChildren(
+        el("p", "gl-leer", t("Keine Kommentare. Was nach „//“ steht, ist eine Notiz für dich: Sie bleibt im Text, wird aber nicht gedruckt.")),
+      );
+      return;
+    }
+    this.knoepfe = [];
+    const teile: HTMLElement[] = [];
+    const gruppen = kommentarGruppen(this.eintraege, this.kommentare);
+    for (const g of gruppen) {
+      if (this.eintraege.length > 0)
+        teile.push(el("div", "gl-gruppe", g.titel === null ? t("Vor der ersten Überschrift") : g.titel || t("(ohne Titel)")));
+      for (const k of g.kommentare) {
+        const b = el("button", "gl-eintrag gl-kommentar", k.text);
+        b.title = k.text;
+        b.addEventListener("click", () => this.a.springen(k.von));
+        this.knoepfe.push(b);
+        teile.push(b);
+      }
+    }
+    this.liste.replaceChildren(...teile);
+    this.cursor(this.pos);
+  }
+
+  /** Markiert den Abschnitt bzw. Kommentar, in dem der Cursor steht. */
   cursor(pos: number) {
-    const i = aktuell(this.eintraege, pos);
+    this.pos = pos;
+    const i = this.ansicht === "kommentare" ? kommentarAn(this.kommentare, pos) : aktuell(this.eintraege, pos);
     if (i === this.markiert) return;
     this.knoepfe[this.markiert]?.classList.remove("gl-hier");
     this.knoepfe[i]?.classList.add("gl-hier");

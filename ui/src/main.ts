@@ -289,7 +289,7 @@ function gliederungSpaeter(warten = 300) {
         if (g.rev !== rev) return;
         zahlen_.gesamt = g.gesamt;
         zaehlerZeigen();
-        if (!gliederungOrt().hidden) gliederung?.zeigen(g.eintraege, view.state.selection.main.head);
+        if (!gliederungOrt().hidden) gliederung?.zeigen(g.eintraege, view.state.selection.main.head, g.kommentare);
       } catch (fehler) {
         console.error("Gliederung", fehler);
       }

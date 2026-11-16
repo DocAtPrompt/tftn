@@ -518,7 +518,7 @@ name = "English"
 "Zitat" = "Citation"
 "Zitat einfügen (Cmd/Strg+Umschalt+L)" = "Insert citation (Cmd/Ctrl+Shift+L)"
 "Öffnen" = "Open"
-"Überschriften neben dem Text: hinspringen, Abschnitte verschieben" = "Headings beside the text: jump to them, move sections"
+"Überschriften und Kommentare neben dem Text: hinspringen, Abschnitte verschieben" = "Headings and comments beside the text: jump to them, move sections"
 
 # ui/src/bausteine.ts
 "Dokumenttyp" = "Document type"
@@ -716,8 +716,11 @@ name = "English"
 
 # ui/src/gliederung.ts
 "(ohne Titel)" = "(untitled)"
+"Keine Kommentare. Was nach „//“ steht, ist eine Notiz für dich: Sie bleibt im Text, wird aber nicht gedruckt." = "No comments. Anything after “//” is a note to yourself: it stays in the text but is not printed."
 "Klick springt hin. Ziehen oder Alt+↑/↓ verschiebt den ganzen Abschnitt." = "Click to jump there. Drag or press Alt+↑/↓ to move the whole section."
+"Kommentare" = "Comments"
 "Noch keine Überschriften. Eine Zeile mit „= Titel“ beginnt ein Kapitel, „== Titel“ einen Abschnitt darin." = "No headings yet. A line starting with “= Title” begins a chapter, “== Title” a section within it."
+"Vor der ersten Überschrift" = "Before the first heading"
 "ans Ende" = "to the end"
 
 # ui/src/main.ts

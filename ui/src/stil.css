@@ -1341,6 +1341,47 @@ body {
   margin: 8px 10px;
   color: var(--leise);
 }
+/* Reiter „Gliederung | Kommentare“ */
+.gl-reiter {
+  display: flex;
+  gap: 2px;
+  margin-left: -6px;
+  min-width: 0;
+}
+.gl-reiter-knopf {
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--leise);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.gl-reiter-knopf:hover {
+  color: var(--text);
+}
+.gl-reiter-knopf.gl-reiter-an {
+  color: var(--text);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+}
+/* Kommentare: Abschnittstitel klein darüber, je Kommentar höchstens drei Zeilen */
+.gl-gruppe {
+  padding: 8px 10px 2px;
+  color: var(--leise);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gl-eintrag.gl-kommentar {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  padding: 3px 6px 3px 10px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
 
 /* Seitenleiste: nichts ragt über den rechten Rand (Breite 100 % samt Rand und Polsterung) */
 #seitenleiste *,

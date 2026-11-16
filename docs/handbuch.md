@@ -78,7 +78,8 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
   die Vorschau folgt der Schreibmarke. Rechtsklick öffnet ein Menü mit „Ändern …“ und „Im Code zeigen“.
 - **Seitenleiste** (Cmd/Strg+Umschalt+P): Fächer „Hier“, „Einfügen“, „Formel“, „Seite“, „Dokument“,
   „Pakete“. Ihre Breite lässt sich ziehen.
-- **Gliederung** (Knopf „Gliederung“): die Überschriften neben dem Text.
+- **Gliederung** (Knopf „Gliederung“): die Überschriften neben dem Text, im zweiten Reiter die
+  Kommentare.
 - **Statuszeile:** Wörter und Zeichen, Dokumentsprache, Speicherstand, Netzzugriffe.
 
 ## 3. Schreiben
@@ -116,6 +117,10 @@ noch ein Literaturverzeichnis, kommt es ans Ende. Übertragen wird nur die DOI.
 **Gliederung:** Links stehen die Überschriften; ein Klick springt hin. Ziehen verschiebt einen
 Abschnitt samt Unterabschnitten, ebenso Alt+↑/↓ auf einem Eintrag. Jede Verschiebung ist ein
 Rückgängig-Schritt.
+
+**Kommentare:** Was nach `//` steht (oder zwischen `/*` und `*/`), ist eine Notiz, die nicht gedruckt
+wird. Der Reiter „Kommentare“ in der Gliederung listet sie nach Abschnitten; ein Klick springt hin.
+Mehrere `//`-Zeilen untereinander gelten als ein Kommentar.
 
 **Schreibansicht ohne Ablenkung** (Knopf „Schreibansicht“ oder Cmd/Strg+Umschalt+Eingabe): nur der
 Text, mittig und etwas größer. Alles andere tritt zurück; die Vorschau rechnet im Hintergrund weiter.

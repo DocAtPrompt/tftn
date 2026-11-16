@@ -82,7 +82,7 @@ sync it and keep working on another computer without a network.
   code”.
 - **Sidebar** (Cmd/Ctrl+Shift+P): panels “Here”, “Insert”, “Equation”, “Page”, “Document”,
   “Packages”. Drag its edge to resize it.
-- **Outline** (“Outline” button): the headings next to the text.
+- **Outline** (“Outline” button): the headings next to the text; the second tab lists the comments.
 - **Status bar:** words and characters, document language, save state, network activity.
 
 ## 3. Writing
@@ -118,6 +118,10 @@ has no bibliography yet, one is added at the end. Only the DOI is sent.
 
 **Outline:** the headings are listed on the left; a click jumps there. Dragging moves a section with
 its subsections, as does Alt+↑/↓ on an entry. Every move is one undo step.
+
+**Comments:** anything after `//` (or between `/*` and `*/`) is a note that is not printed. The
+“Comments” tab in the outline lists them by section; a click jumps there. Several `//` lines in a row
+count as one comment.
 
 **Focus view** (“Focus view” button or Cmd/Ctrl+Shift+Enter): just the text, centered and a little
 larger. Everything else steps back; the preview keeps updating in the background. Esc, the same

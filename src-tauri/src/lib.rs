@@ -1897,14 +1897,24 @@ struct UeberschriftJs {
 }
 
 #[derive(Serialize)]
+struct KommentarJs {
+    text: String,
+    /// UTF-16
+    von: usize,
+    /// UTF-16
+    bis: usize,
+}
+
+#[derive(Serialize)]
 struct GliederungJs {
     rev: u64,
     eintraege: Vec<UeberschriftJs>,
+    kommentare: Vec<KommentarJs>,
     /// Das ganze Dokument
     gesamt: tftn_edit::Zahlen,
 }
 
-/// Überschriften der obersten Ebene im jetzigen Text.
+/// Überschriften der obersten Ebene und Kommentare im jetzigen Text.
 #[tauri::command]
 fn gliederung_lesen(zustand: State<'_, Zustand>) -> Result<GliederungJs, String> {
     let sitzung = zustand.sitzung.lock().unwrap();
@@ -1928,6 +1938,16 @@ fn gliederung_lesen(zustand: State<'_, Zustand>) -> Result<GliederungJs, String>
     Ok(GliederungJs {
         rev: s.spiegel.rev(),
         eintraege,
+        kommentare: tftn_edit::kommentare(quelle)
+            .into_iter()
+            .filter_map(|k| {
+                Some(KommentarJs {
+                    von: z.byte_to_utf16(k.von)?,
+                    bis: z.byte_to_utf16(k.bis)?,
+                    text: k.text,
+                })
+            })
+            .collect(),
         gesamt: tftn_edit::zaehlen(quelle, 0..quelle.text().len()),
     })
 }

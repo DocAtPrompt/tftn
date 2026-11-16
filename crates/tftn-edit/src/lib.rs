@@ -16,6 +16,7 @@
 //! kommt mit AP6.
 
 pub mod gliederung;
+pub mod kommentare;
 pub mod literal;
 pub mod markup;
 pub mod rechtschreibung;
@@ -27,6 +28,7 @@ use std::ops::Range;
 use tftn_sprachen::tr;
 
 pub use gliederung::{Ueberschrift, abschnitt_verschieben, gliederung};
+pub use kommentare::{Kommentar, kommentare};
 pub use literal::{
     Farbe, Farbraum, Wert, WidgetArt, ZAHL_GRENZE, farbe_lesen, farbe_literal, hex_lesen, lesen,
     schreiben,
