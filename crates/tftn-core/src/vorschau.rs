@@ -211,7 +211,46 @@ impl Vorschau {
     /// Quelle → Vorschau: Punkte (Seite 0-basiert, x, y in pt) für das Byte `byte` in `quelle`.
     /// `quelle` muss die Spans der kompilierten Fassung tragen (Spiegel-Quelle); bei veraltetem
     /// gutem Stand werden nur unveränderte Bereiche gefunden.
+    ///
+    /// Ist an `byte` nichts gesetzt (Kommentar, Leerzeile, Code ohne Ausgabe), gilt der nächste
+    /// gesetzte Text danach, am Ende der Datei der davor.
     pub fn stellen(&self, quelle: &Source, byte: usize) -> Vec<(usize, f64, f64)> {
+        let genau = self.stellen_genau(quelle, byte);
+        if !genau.is_empty() || self.gut.is_none() {
+            return genau;
+        }
+        let wurzel = LinkedNode::new(quelle.root());
+        let Some(start) = wurzel
+            .leaf_at(byte, Side::After)
+            .or_else(|| wurzel.leaf_at(byte, Side::Before))
+        else {
+            return genau;
+        };
+        // Höchstens so viele Blätter in jede Richtung (jede Probe durchsucht das Dokument).
+        const NACHBARN: usize = 40;
+        for vorwaerts in [true, false] {
+            let mut k = start.clone();
+            for _ in 0..NACHBARN {
+                let Some(n) = (if vorwaerts {
+                    k.next_leaf()
+                } else {
+                    k.prev_leaf()
+                }) else {
+                    break;
+                };
+                if !n.kind().is_trivia() {
+                    let s = self.stellen_genau(quelle, n.offset());
+                    if !s.is_empty() {
+                        return s;
+                    }
+                }
+                k = n;
+            }
+        }
+        genau
+    }
+
+    fn stellen_genau(&self, quelle: &Source, byte: usize) -> Vec<(usize, f64, f64)> {
         let Some(gut) = self.gut.as_ref() else {
             return Vec::new();
         };

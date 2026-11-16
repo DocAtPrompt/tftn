@@ -48,3 +48,34 @@ fn ueberschrift_vor_inhaltsverzeichnis() {
         );
     }
 }
+
+/// Schreibmarke in einem Kommentar oder einer Leerzeile: Kommentare werden nicht gesetzt; die
+/// Vorschau soll zum Text danach gehen (am Ende zum Text davor), nicht stehen bleiben.
+#[test]
+fn kommentar_fuehrt_zum_text_danach() {
+    let projekt = Projekt::oeffnen(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/korpus/testartikel"),
+    )
+    .unwrap();
+    let mut vorschau = Vorschau::neu(&projekt).unwrap();
+    let original = std::fs::read_to_string(projekt.haupt()).unwrap();
+    let anker = "= Diskussion";
+    let text = original.replacen(anker, &format!("// Hier wird es heftig.\n\n{anker}"), 1);
+    let text = format!("{text}\n\n// Schlussnotiz\n");
+    let quelle = Source::new(vorschau.world().haupt(), text.clone());
+    assert!(vorschau.lauf(1, Some(quelle.clone())).gelungen);
+    let ziel = vorschau.stellen(&quelle, text.find(anker).unwrap() + 3);
+    assert!(!ziel.is_empty());
+    let kommentar = text.find("// Hier wird").unwrap();
+    for byte in [kommentar, kommentar + 8, kommentar + 25] {
+        let stellen = vorschau.stellen(&quelle, byte);
+        assert_eq!(
+            stellen.first().map(|s| s.0),
+            Some(ziel[0].0),
+            "Byte {byte}: {stellen:?}"
+        );
+    }
+    // Kommentar am Ende: der Text davor
+    let schluss = vorschau.stellen(&quelle, text.find("// Schlussnotiz").unwrap() + 5);
+    assert!(!schluss.is_empty(), "am Ende: Text davor");
+}
