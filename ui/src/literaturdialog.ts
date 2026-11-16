@@ -157,9 +157,10 @@ export class LiteraturDialog {
     this.dateiWahl.hidden = this.dateien.length < 2;
     const d = this.aktuelleDatei();
     this.neuKnopf.disabled = !d?.schreibbar;
-    this.listeZeigen();
     const e = d?.eintraege.find((x) => x.schluessel === waehlen) ?? d?.eintraege[0];
+    // vor der Liste setzen, sonst ist der gewählte Eintrag dort nicht hervorgehoben
     this.alt = e ? e.schluessel : undefined;
+    this.listeZeigen();
     this.formularZeigen(e ?? null);
   }
 
