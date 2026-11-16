@@ -4,7 +4,7 @@
 import { type EditorState, type Extension, StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView } from "@codemirror/view";
 import { t } from "./sprache";
-import { anAnker } from "./platz";
+import { schwebeMenue } from "./schwebemenue";
 
 export interface RechtschreibungJs {
   rev: number;
@@ -60,33 +60,8 @@ export interface RechtschreibAktionen {
 
 /** Rechtsklick auf ein unterwelltes Wort: schwebendes Menü wie in der Vorschau. */
 export function rechtschreibMenue(a: RechtschreibAktionen): Extension {
-  const huelle = document.createElement("ul");
-  huelle.className = "vorschau-menue";
-  huelle.hidden = true;
-  document.body.append(huelle);
-  const schliessen = () => {
-    huelle.hidden = true;
-    document.removeEventListener("mousedown", daneben, true);
-  };
-  const daneben = (e: Event) => {
-    if (!huelle.contains(e.target as Node)) schliessen();
-  };
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape" || huelle.hidden) return;
-    e.preventDefault(); // Esc schließt nur das Menü, nicht auch die Schreibansicht
-    schliessen();
-  });
-  const zeile = (text: string, klasse: string, aktion?: () => void) => {
-    const li = document.createElement("li");
-    li.className = klasse;
-    li.textContent = text;
-    if (aktion)
-      li.addEventListener("click", () => {
-        schliessen();
-        aktion();
-      });
-    return li;
-  };
+  const menue = schwebeMenue();
+  const zeile = menue.zeile;
 
   return [
     falschFeld,
@@ -107,19 +82,16 @@ export function rechtschreibMenue(a: RechtschreibAktionen): Extension {
           zeile(t("Ignorieren"), "menue-eintrag", () => a.ignorieren(w.wort)),
         ];
         const warten = zeile(t("Vorschläge …"), "menue-gruppe");
-        huelle.replaceChildren(zeile(w.wort, "menue-titel"), warten, ...unten);
-        huelle.hidden = false;
         const anker = { x: e.clientX, oben: e.clientY, unten: e.clientY };
-        anAnker(huelle, anker);
-        setTimeout(() => document.addEventListener("mousedown", daneben, true));
+        menue.zeigen([zeile(w.wort, "menue-titel"), warten, ...unten], anker);
         a.vorschlaege(w.wort).then(
           (liste) => {
-            if (huelle.hidden) return;
+            if (!menue.offen()) return;
             const zeilen = liste.length
               ? liste.map((v) => zeile(v, "menue-eintrag", () => ersetzen(v)))
               : [zeile(t("Keine Vorschläge"), "menue-gruppe")];
             warten.replaceWith(...zeilen);
-            anAnker(huelle, anker); // gewachsen: wieder ganz ins Fenster
+            menue.anpassen(anker); // gewachsen: wieder ganz ins Fenster
           },
           () => warten.replaceWith(zeile(t("Keine Vorschläge"), "menue-gruppe")),
         );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { siehtNachMarkdownAus, umwandelnAngebot, umwandelnWartet } from "./umwandeln";
+import { auswahlAmKlick, siehtNachMarkdownAus, umwandelnAngebot, umwandelnWartet } from "./umwandeln";
 
 describe("siehtNachMarkdownAus", () => {
   it("erkennt typisches Markdown", () => {
@@ -30,6 +30,21 @@ describe("siehtNachMarkdownAus", () => {
     ]) {
       expect(siehtNachMarkdownAus(t), t).toBe(false);
     }
+  });
+});
+
+describe("auswahlAmKlick", () => {
+  const r = (from: number, to: number) => ({ from, to });
+  it("eine Auswahl, Klick darin", () => {
+    expect(auswahlAmKlick([r(5, 20)], 5)).toEqual({ von: 5, bis: 20 });
+    expect(auswahlAmKlick([r(5, 20)], 12)).toEqual({ von: 5, bis: 20 });
+    expect(auswahlAmKlick([r(5, 20)], 20)).toEqual({ von: 5, bis: 20 });
+  });
+  it("sonst das Menü des Systems", () => {
+    expect(auswahlAmKlick([r(5, 20)], 21)).toBe(null);
+    expect(auswahlAmKlick([r(5, 20)], null)).toBe(null);
+    expect(auswahlAmKlick([r(7, 7)], 7)).toBe(null);
+    expect(auswahlAmKlick([r(1, 3), r(5, 9)], 2)).toBe(null);
   });
 });
 

@@ -190,7 +190,9 @@ Installieren: Mac `brew install pandoc`, Windows `winget install --id JohnMacFar
 `# Titel`, `**fett**`, `[Link](…)`, Tabellen) oder formatierten Text aus dem Browser oder aus Word,
 steht er zuerst unverändert da, und das Hinweisband bietet „In Typst umwandeln“ an. Ein Klick ersetzt
 das Eingefügte durch Typst; ein Rückgängig holt den eingefügten Text zurück. Tippt man weiter, gilt
-das Angebot nicht mehr. Bilder aus dem Netz werden nicht geholt.
+das Angebot nicht mehr; schließt man das Band, zeigt die Vorschau die Fehler im eingefügten Text.
+Später geht es auch so: Markdown im Editor markieren, Rechtsklick in die Auswahl, „In Typst
+umwandeln“. Bilder aus dem Netz werden nicht geholt.
 
 **PDF** („Export“): Die Profile kommen vom Dokumenttyp, beim Fachartikel etwa „vorschau“ und
 „archiv“ (PDF/A-2b). Das PDF entsteht mit der beigelegten typst-CLI und ist reproduzierbar.

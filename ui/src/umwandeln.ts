@@ -27,6 +27,17 @@ const AUFBAU = /<(h[1-6]|ul|ol|table|strong|b|em|i|blockquote|img)\b|<a\b[^>]*\b
 
 export type Angebot = "markdown" | "html";
 
+/** Rechtsklick in die einzige, nicht leere Auswahl: deren Bereich (für „In Typst umwandeln“);
+ *  sonst `null` (das Menü des Systems bzw. der Rechtschreibung). */
+export function auswahlAmKlick(
+  bereiche: readonly { from: number; to: number }[],
+  pos: number | null,
+): { von: number; bis: number } | null {
+  if (bereiche.length !== 1 || pos === null) return null;
+  const { from, to } = bereiche[0];
+  return from < to && pos >= from && pos <= to ? { von: from, bis: to } : null;
+}
+
 /** Ein misslungener Typst-Lauf, während das Angebot noch gilt: kein Fehlerband, die Vorschau
  *  bleibt beim letzten Stand (sonst verdrängt das Fehlerband das Angebot). */
 export function umwandelnWartet(lauf: { gelungen: boolean }, angebotOffen: boolean): boolean {

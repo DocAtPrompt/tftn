@@ -2,8 +2,9 @@
 // und kompiliert die Vorschau.
 
 import { meldungMit } from "./meldung";
-import { type ChangeSet, Compartment, EditorState, Prec, StateEffect, StateField, type Text, type Transaction } from "@codemirror/state";
-import { type Angebot, umwandelnAngebot, umwandelnWartet } from "./umwandeln";
+import { type ChangeSet, Compartment, type EditorSelection, EditorState, Prec, StateEffect, StateField, type Text, type Transaction } from "@codemirror/state";
+import { type Angebot, auswahlAmKlick, umwandelnAngebot, umwandelnWartet } from "./umwandeln";
+import { schwebeMenue } from "./schwebemenue";
 import {
   Decoration,
   type DecorationSet,
@@ -1057,6 +1058,12 @@ async function umwandelnAusfuehren() {
   const a = umwandelnAngebotStand;
   if (!a) return;
   hinweis("");
+  await umwandelnBereich(a);
+}
+
+/** `von`–`bis` (Quelle: `quelle`, Markdown oder HTML) durch Typst ersetzen, wenn der Text seit
+ *  `doc` gleich geblieben ist; ein Rückgängig-Schritt. */
+async function umwandelnBereich(a: { doc: Text; von: number; bis: number; quelle: string; art: Angebot }) {
   try {
     const u = await invoke<{ text: string; hinweise: string[] }>("einfuegen_umwandeln", {
       text: a.quelle,
@@ -1066,9 +1073,9 @@ async function umwandelnAusfuehren() {
       hinweis(t("Inzwischen getippt – nicht umgewandelt."));
       return;
     }
-    // Pandoc schließt mit einem Zeilenumbruch; mitten im Satz eingefügt stört er.
-    const eingefuegt = view.state.sliceDoc(a.von, a.bis);
-    const neu = /\n$/.test(eingefuegt) ? u.text : u.text.replace(/\n+$/, "");
+    // Pandoc schließt mit einem Zeilenumbruch; mitten im Satz stört er.
+    const alt = view.state.sliceDoc(a.von, a.bis);
+    const neu = /\n$/.test(alt) ? u.text : u.text.replace(/\n+$/, "");
     umwandelnAngebotStand = null;
     umwandelnZurueckgehalten = null;
     view.dispatch({
@@ -1079,12 +1086,63 @@ async function umwandelnAusfuehren() {
       scrollIntoView: true,
     });
     if (u.hinweise.length > 0) hinweis(u.hinweise.join(" "));
-    else meldung(t("In Typst umgewandelt. Rückgängig holt den eingefügten Text zurück."));
+    else meldung(t("In Typst umgewandelt. Rückgängig holt den vorigen Text zurück."));
   } catch (fehler) {
     hinweis(meldungMit(t("Nicht umgewandelt"), String(fehler)));
   }
   view.focus();
 }
+
+/** Rechtsklick in eine Auswahl: „In Typst umwandeln“ (Markdown), Ausschneiden, Kopieren. Ohne
+ *  Auswahl bleibt das Menü des Systems bzw. der Rechtschreibung. */
+const auswahlMenue = (() => {
+  const menue = schwebeMenue();
+  // Die Auswahl vor dem Rechtsklick: WebKit markiert dabei oft das Wort unter dem Zeiger, und dann
+  // verdrängte dieses Menü das der Rechtschreibung.
+  let vorher: EditorSelection | null = null;
+  return EditorView.domEventHandlers({
+    mousedown(e, v) {
+      vorher = e.button === 2 || (e.button === 0 && e.ctrlKey) ? v.state.selection : null;
+      return false;
+    },
+    contextmenu(e, v) {
+      const pos = v.posAtCoords({ x: e.clientX, y: e.clientY });
+      const auswahl = vorher ?? v.state.selection;
+      vorher = null;
+      const b = auswahlAmKlick(auswahl.ranges, pos);
+      if (!b) return false;
+      e.preventDefault();
+      const doc = v.state.doc;
+      const text = v.state.sliceDoc(b.von, b.bis);
+      const kopieren = async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (fehler) {
+          hinweis(meldungMit(t("Nicht kopiert"), String(fehler)));
+          return false;
+        }
+      };
+      menue.zeigen(
+        [
+          menue.zeile(t("In Typst umwandeln"), "menue-eintrag", () =>
+            void umwandelnBereich({ doc, von: b.von, bis: b.bis, quelle: text, art: "markdown" }),
+          ),
+          menue.zeile(t("Ausschneiden"), "menue-eintrag", () =>
+            void kopieren().then((ok) => {
+              if (ok && v.state.doc === doc)
+                v.dispatch({ changes: { from: b.von, to: b.bis }, userEvent: "delete.cut" });
+              v.focus();
+            }),
+          ),
+          menue.zeile(t("Kopieren"), "menue-eintrag", () => void kopieren().then(() => v.focus())),
+        ],
+        { x: e.clientX, oben: e.clientY, unten: e.clientY },
+      );
+      return true;
+    },
+  });
+})();
 
 // Eine Datei, die neben den Editor fällt, darf das Fenster nicht wegnavigieren.
 for (const art of ["dragover", "drop"] as const) {
@@ -1870,6 +1928,7 @@ async function start() {
           autocorrect: "off",
           autocapitalize: "off",
         }),
+        auswahlMenue,
         rechtschreibung,
         // Kürzel aus der Belegung (eigene > Dokumenttyp/Paket > Standard) vor den Editor-Kürzeln,
         // damit ein bewusst gesetzter Konflikt wirkt; austauschbar ohne Neustart.
