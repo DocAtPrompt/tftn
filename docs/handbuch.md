@@ -236,6 +236,21 @@ Formeln, Code und Verweise nie. Rechtsklick: Vorschläge, „Ins Wörterbuch auf
 im Einstellungsordner) oder „Ignorieren“. Wörterbücher: Deutsch (Deutschland, Österreich, Schweiz),
 Englisch (USA, Großbritannien), Französisch, Italienisch, Spanisch.
 
+**Silbentrennung:** Typst trennt am Zeilenende selbst, nach den Regeln der Dokumentsprache. Trennt es
+ein Wort falsch (Fachbegriffe, Namen, „Urin-stinkt“), trägt man es in `trennungen.txt` im
+Projektordner ein – Fachartikel, Fachbuch und Bericht haben diese Datei. Ein Wort je Zeile, die
+erlaubten Trennstellen mit `-` markiert; ein Wort ohne `-` wird nie getrennt. Zeilen mit `#` sind
+Kommentare.
+
+```
+Ur-instinkt
+Sozial-versicherungs-träger
+Typst
+```
+
+Das Wort wird auch in längeren Wörtern gefunden (Zusammensetzungen, Beugungsformen);
+Groß- und Kleinschreibung zählt. Die Änderung wirkt sofort in der Vorschau.
+
 **Zählen:** Die Statuszeile zeigt Wörter und Zeichen, für eine Auswahl „Auswahl: … von …“, die
 Gliederung je Abschnitt. Gezählt wird der geschriebene Text samt Unterschriften und Fußnoten.
 

@@ -235,6 +235,21 @@ commands, equations, code and references never are. Right-click: suggestions, �
 (stored in `woerter.txt` in the settings folder) or “Ignore”. Dictionaries: German (Germany, Austria,
 Switzerland), English (US, UK), French, Italian, Spanish.
 
+**Hyphenation:** Typst hyphenates at the end of a line by itself, following the rules of the document
+language. If it breaks a word wrongly (technical terms, names, “the-rapist”), add the word to
+`trennungen.txt` in the project folder – journal article, book and report have this file. One word
+per line, allowed break points marked with `-`; a word without `-` is never hyphenated. Lines starting
+with `#` are comments.
+
+```
+the-ra-pist
+Sozial-versicherungs-träger
+Typst
+```
+
+The word is also found inside longer words (compounds, inflected forms); case matters. The change
+shows in the preview right away.
+
 **Counting:** the status bar shows words and characters, “Selection: … of …” for a selection, and
 the outline shows the count per section. Captions and footnotes count; commands, equations, code and
 comments do not.
