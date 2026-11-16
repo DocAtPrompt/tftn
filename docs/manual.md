@@ -374,9 +374,20 @@ active” or “Turn MCP off”); until then TFTN refuses its calls.
 | `quelltext_lesen` | source of the main file as it is in the editor |
 | `text_ersetzen` | replace one passage literally (or every occurrence) |
 | `quelltext_setzen` | replace the whole source |
+| `auswahl_lesen` | what you have selected and where the cursor is |
+| `gliederung_lesen` | headings and comments, including included chapter files |
+| `dateien_auflisten` | files in the project folder |
+| `datei_lesen` | a text file of the project (chapter, `.bib`, `trennungen.txt` …) |
+| `datei_ersetzen` | replace a passage in such a file |
+| `datei_schreiben` | write such a file as a whole or create it |
 | `seite_ansehen` | one preview page as an image |
 | `formular_lesen` | fields and values of the form (title, authors, date …) |
 | `formular_setzen` | set several fields at once, checked as in the pane; one undo step |
 | `typen_auflisten` | document types for a new document |
 | `dokument_anlegen` | create a new project from a type and open it |
 | `dokument_oeffnen` | open another project (the open one is saved first) |
+
+**Limits:** the assistant only reaches files inside the project folder, not hidden folders, `_lokal/`
+or `packages/`. It may only write text files; it changes the main file through the editor (with
+undo) and the form data through the form. When it changes another file, such as a chapter, undo in the
+editor does not apply – so TFTN first keeps the old content in `.fassungen/dateien/`.

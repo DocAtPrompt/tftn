@@ -44,6 +44,7 @@ mod helfer;
 mod import;
 mod mcp;
 mod pakete;
+mod projektdateien;
 mod rechtschreibung;
 mod skins;
 mod sprachen;
@@ -3384,6 +3385,12 @@ fn mcp_antwort(app: tauri::AppHandle, id: u64, ok: bool, fehler: Option<String>)
     mcp::antwort(&app, id, ok, fehler);
 }
 
+/// Die Oberfläche meldet die Auswahl im Editor (nur solange MCP an ist), für `auswahl_lesen`.
+#[tauri::command]
+fn mcp_auswahl(app: tauri::AppHandle, auswahl: mcp::Auswahl) {
+    mcp::auswahl_setzen(&app, auswahl);
+}
+
 /// Patch eines Markup-Helfers (AP4) an der UTF-16-Position `pos`; `None`, wenn dort keine passende
 /// Stelle ist. Ebene ± gilt der innersten Überschrift.
 #[tauri::command]
@@ -3558,6 +3565,7 @@ pub fn run() {
             mcp_beim_wechsel_aus,
             mcp_bestaetigen,
             mcp_antwort,
+            mcp_auswahl,
             mcp_wechsel_vormerken,
             oberflaeche_lesen,
             typ_eigen_anlegen,

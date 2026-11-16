@@ -60,6 +60,22 @@ pub struct Mcp {
     /// Ziel eines Wechsels durch MCP. Wird erst nach dem Speichern vorgemerkt, weil das Benennen
     /// eines Dokuments ohne Namen die Vormerkung sonst überschreibt.
     ziel: Option<PathBuf>,
+    /// Auswahl im Editor, wie ihn die Oberfläche zuletzt gemeldet hat (nur solange MCP an ist).
+    auswahl: Option<Auswahl>,
+}
+
+/// Auswahl im Editor: UTF-16-Stellen im Text der Revision `rev`; `kopf` ist die Schreibmarke.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize)]
+pub struct Auswahl {
+    pub rev: u64,
+    pub von: usize,
+    pub bis: usize,
+    pub kopf: usize,
+}
+
+/// Die Oberfläche meldet die Auswahl (Befehl `mcp_auswahl`).
+pub fn auswahl_setzen(app: &AppHandle, a: Auswahl) {
+    app.state::<Zustand>().mcp.lock().unwrap().auswahl = Some(a);
 }
 
 /// Merkt das Ziel eines MCP-Wechsels für das Neuladen vor (nach dem Speichern im Editor).
@@ -299,6 +315,21 @@ fn ausfuehren(app: &AppHandle, werkzeug: &str, a: &Value) -> Result<Ergebnis, St
             let ppi = a.get("ppi").and_then(Value::as_f64).unwrap_or(100.0);
             seite_ansehen(app, seite as usize, ppi)
         }
+        "auswahl_lesen" => auswahl_lesen(app),
+        "gliederung_lesen" => gliederung_lesen(app),
+        "dateien_auflisten" => dateien_auflisten(app),
+        "datei_lesen" => datei_lesen(app, &pflicht("pfad")?),
+        "datei_schreiben" => {
+            let (pfad, neu) = (pflicht("pfad")?, pflicht("text")?);
+            datei_aendern(app, &pfad, |_| Ok(neu.clone()))
+        }
+        "datei_ersetzen" => {
+            let (pfad, alt, neu) = (pflicht("pfad")?, pflicht("alt")?, pflicht("neu")?);
+            let alle = a.get("alle").and_then(Value::as_bool).unwrap_or(false);
+            datei_aendern(app, &pfad, |t| {
+                tftn_mcp::ersetzen(t.ok_or("Die Datei gibt es nicht.")?, &alt, &neu, alle)
+            })
+        }
         "formular_lesen" => formular_lesen(app),
         "formular_setzen" => {
             let werte = a
@@ -518,6 +549,258 @@ fn formular_setzen(
         &js,
         false,
     ))
+}
+
+/// Text mit Zeilennummern (ab `erste`), wie bei `quelltext_lesen`.
+fn nummeriert(text: &str, erste: usize) -> String {
+    let mut t = String::new();
+    for (i, z) in text.lines().enumerate() {
+        t.push_str(&format!("{}\t{z}\n", i + erste));
+    }
+    t
+}
+
+/// Höchstens so viele Zeichen der Auswahl gehen an den Assistenten.
+const AUSWAHL_GRENZE: usize = 20_000;
+
+fn auswahl_lesen(app: &AppHandle) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let auswahl = zustand.mcp.lock().unwrap().auswahl;
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
+    let a = auswahl
+        .ok_or("TFTN hat noch keine Auswahl gemeldet; der Benutzer soll in den Text klicken.")?;
+    let quelle = s.spiegel.quelle();
+    let z = quelle.lines();
+    let stelle = |u: usize| {
+        z.utf16_to_byte(u)
+            .ok_or("Die gemeldete Auswahl passt nicht mehr zum Text; bitte noch einmal.")
+    };
+    let (von, bis, kopf) = (stelle(a.von)?, stelle(a.bis)?, stelle(a.kopf)?);
+    let (kz, ks) = z.byte_to_line_column(kopf).unwrap_or((0, 0));
+    let mut t = format!(
+        "{}: Schreibmarke in Zeile {}, Spalte {}.",
+        s.projekt.konfig.haupt,
+        kz + 1,
+        ks + 1
+    );
+    if a.rev != s.spiegel.rev() {
+        t.push_str(
+            " (Seit der Meldung wurde der Text geändert; die Stelle kann leicht abweichen.)",
+        );
+    }
+    if von == bis {
+        t.push_str("\nNichts markiert.");
+        return Ok(Ergebnis::text(t));
+    }
+    let text = &quelle.text()[von..bis];
+    let (vz, _) = z.byte_to_line_column(von).unwrap_or((0, 0));
+    let bz = z.byte_to_line(bis).unwrap_or(vz);
+    let zeichen = text.chars().count();
+    t.push_str(&format!(
+        "\nMarkiert: Zeile {} bis {}, {zeichen} Zeichen. Wörtlich (für `text_ersetzen`):\n",
+        vz + 1,
+        bz + 1
+    ));
+    if zeichen > AUSWAHL_GRENZE {
+        let ende = text
+            .char_indices()
+            .nth(AUSWAHL_GRENZE)
+            .map_or(text.len(), |(i, _)| i);
+        t.push_str(&text[..ende]);
+        t.push_str(&format!(
+            "\n[… gekürzt; der Rest mit `quelltext_lesen` ab Zeile {}]",
+            z.byte_to_line(von + ende).unwrap_or(bz) + 1
+        ));
+    } else {
+        t.push_str(text);
+    }
+    Ok(Ergebnis::text(t))
+}
+
+/// Überschriften und Kommentare einer Quelle, je mit Zeile. `einschuebe`: weitere Zeilen (etwa
+/// eingebundene Kapitel), die nach ihrer Zeile zwischen die Überschriften kommen.
+fn gliederung_text(quelle: &typst::syntax::Source, einschuebe: Vec<(usize, String)>) -> String {
+    let z = quelle.lines();
+    let zeile = |b: usize| z.byte_to_line(b).map_or(0, |l| l + 1);
+    let mut zeilen: Vec<(usize, String)> = tftn_edit::gliederung(quelle)
+        .into_iter()
+        .map(|u| {
+            (
+                zeile(u.von),
+                format!(
+                    "{}{} {} (Zeile {}, {} Wörter)\n",
+                    "  ".repeat(u.ebene.saturating_sub(1)),
+                    "=".repeat(u.ebene),
+                    u.titel,
+                    zeile(u.von),
+                    tftn_edit::zaehlen(quelle, u.abschnitt.clone()).woerter
+                ),
+            )
+        })
+        .collect();
+    zeilen.extend(einschuebe);
+    zeilen.sort_by_key(|(z, _)| *z);
+    let mut t: String = zeilen.into_iter().map(|(_, s)| s).collect();
+    let kommentare = tftn_edit::kommentare(quelle);
+    if !kommentare.is_empty() {
+        t.push_str("Kommentare:\n");
+        for k in kommentare {
+            t.push_str(&format!(
+                "- Zeile {}: {}\n",
+                zeile(k.von),
+                k.text.replace('\n', " ")
+            ));
+        }
+    }
+    if t.is_empty() {
+        t.push_str("(keine Überschriften, keine Kommentare)\n");
+    }
+    t
+}
+
+fn gliederung_lesen(app: &AppHandle) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
+    let quelle = s.spiegel.quelle();
+    // Eingebundene Dateien relativ zur Hauptdatei, an ihrer Stelle; Zeilen darin gelten in der Datei.
+    let basis = Path::new(&s.projekt.konfig.haupt)
+        .parent()
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .filter(|p| !p.is_empty());
+    let einschuebe = crate::projektdateien::eingebunden(quelle.text())
+        .into_iter()
+        .map(|(zeile, rel)| {
+            let pfad = match &basis {
+                Some(b) => format!("{b}/{rel}"),
+                None => rel,
+            };
+            let innen = match crate::projektdateien::lesen(&s.projekt.wurzel, &pfad) {
+                Ok(text) => gliederung_text(&typst::syntax::Source::detached(text), Vec::new()),
+                Err(e) => format!("nicht lesbar: {e}\n"),
+            };
+            let eingerueckt: String = innen.lines().map(|l| format!("    {l}\n")).collect();
+            (
+                zeile,
+                format!(
+                    "#include {pfad} (Zeile {zeile}), darin (Zeilen der Datei):\n{eingerueckt}"
+                ),
+            )
+        })
+        .collect();
+    Ok(Ergebnis::text(format!(
+        "{} (Hauptdatei):\n{}",
+        s.projekt.konfig.haupt,
+        gliederung_text(quelle, einschuebe)
+    )))
+}
+
+fn dateien_auflisten(app: &AppHandle) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
+    let daten = relativ(&s.projekt.wurzel, s.formular.datei());
+    let mut t = format!("Projektordner {}:\n", s.projekt.wurzel.display());
+    for e in crate::projektdateien::auflisten(&s.projekt.wurzel) {
+        let art = if e.pfad == s.projekt.konfig.haupt {
+            "Hauptdatei (über text_ersetzen)"
+        } else if Some(&e.pfad) == daten.as_ref() {
+            "Formulardaten (über formular_setzen)"
+        } else if e.schreibbar {
+            "Text"
+        } else if e.text {
+            "Text, nur lesen"
+        } else {
+            "nicht lesbar (Bild o. Ä., im Text mit Pfad einbinden)"
+        };
+        t.push_str(&format!("- {} ({} Bytes): {art}\n", e.pfad, e.bytes));
+    }
+    Ok(Ergebnis::text(t))
+}
+
+/// `datei` relativ zu `wurzel`, mit `/`.
+fn relativ(wurzel: &Path, datei: &Path) -> Option<String> {
+    let r = datei.strip_prefix(wurzel).ok()?;
+    Some(
+        r.components()
+            .map(|c| c.as_os_str().to_string_lossy())
+            .collect::<Vec<_>>()
+            .join("/"),
+    )
+}
+
+fn datei_lesen(app: &AppHandle, rel: &str) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
+    let wurzel = &s.projekt.wurzel;
+    let p = crate::projektdateien::pfad(wurzel, rel)?;
+    let (text, kopf) = if crate::projektdateien::pfad(wurzel, &s.projekt.konfig.haupt)? == p {
+        (
+            s.spiegel.text().to_string(),
+            format!(
+                "{rel} (Hauptdatei, Stand im Editor, Rev {})",
+                s.spiegel.rev()
+            ),
+        )
+    } else {
+        (crate::projektdateien::lesen(wurzel, rel)?, rel.to_string())
+    };
+    Ok(Ergebnis::text(format!(
+        "{kopf}, Zeilennummer und Tabulator stehen nicht im Text:\n{}",
+        nummeriert(&text, 1)
+    )))
+}
+
+/// Liest die Datei (falls vorhanden), wendet `aenderung` an, schreibt mit Sicherung und lässt neu
+/// übersetzen (bei Literatur auch neu laden).
+fn datei_aendern(
+    app: &AppHandle,
+    rel: &str,
+    aenderung: impl FnOnce(Option<&str>) -> Result<String, String>,
+) -> Result<Ergebnis, String> {
+    let zustand = app.state::<Zustand>();
+    let mut sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung.as_mut().ok_or(KEIN_DOKUMENT)?;
+    let wurzel = s.projekt.wurzel.clone();
+    let daten = relativ(&wurzel, s.formular.datei()).unwrap_or_default();
+    let ziel =
+        crate::projektdateien::schreiben_pruefen(&wurzel, rel, &s.projekt.konfig.haupt, &daten)?;
+    let alt = if ziel.exists() {
+        Some(crate::projektdateien::lesen(&wurzel, rel)?)
+    } else {
+        None
+    };
+    let neu = aenderung(alt.as_deref())?;
+    let zeit = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    let sicherung = crate::projektdateien::schreiben(&wurzel, rel, &ziel, &neu, zeit)?;
+    if alt.as_deref() == Some(neu.as_str()) {
+        return Ok(Ergebnis::text(format!("{rel}: unverändert.")));
+    }
+    crate::protokollieren(&s.projekt, &format!("MCP: {rel} geschrieben"));
+    if ziel
+        .extension()
+        .is_some_and(|e| ["bib", "yaml", "yml"].contains(&&*e.to_string_lossy()))
+    {
+        s.literatur = crate::literatur_laden(&s.projekt);
+    }
+    crate::kompilieren_lassen(&zustand, s);
+    let mut t = match (&alt, &sicherung) {
+        (None, _) => format!("{rel}: neu angelegt."),
+        (Some(_), Some(sich)) => format!("{rel}: geschrieben; der alte Inhalt liegt in {sich}."),
+        (Some(_), None) => format!("{rel}: geschrieben."),
+    };
+    t.push_str(
+        " Die Vorschau wird neu übersetzt (Ergebnis mit `status`). Rückgängig im Editor gilt hier \
+         nicht.",
+    );
+    if alt.is_none() && ziel.extension().is_some_and(|e| e == "typ") {
+        t.push_str(" Eine neue .typ-Datei erscheint erst, wenn die Hauptdatei sie mit `#include` einbindet.");
+    }
+    Ok(Ergebnis::text(t))
 }
 
 /// Schickt dem Editor einen Auftrag und wartet auf seine Antwort (`Ok(false)`: nicht ausgeführt).
@@ -852,6 +1135,26 @@ mod tests {
         assert_eq!(
             conf["identifier"], "org.tftn.editor",
             "Kennung in tauri.conf.json geändert"
+        );
+    }
+
+    #[test]
+    fn gliederung_mit_zeilen_und_kommentaren() {
+        let q = typst::syntax::Source::detached(
+            "= Eins\nText eins zwei.\n// zu kurz\n== Unter\nmehr\n/* lang\n   zweite */\n",
+        );
+        let t = gliederung_text(&q, vec![(2, "#include x\n".into())]);
+        assert!(t.contains("= Eins (Zeile 1, "), "{t}");
+        assert!(
+            t.contains(" Wörter)\n#include x\n  == Unter"),
+            "an seiner Stelle: {t}"
+        );
+        assert!(t.contains("  == Unter (Zeile 4, "), "{t}");
+        assert!(t.contains("- Zeile 3: zu kurz"), "{t}");
+        assert!(t.contains("- Zeile 6: lang zweite"), "{t}");
+        assert_eq!(
+            gliederung_text(&typst::syntax::Source::detached("nur Text"), Vec::new()),
+            "(keine Überschriften, keine Kommentare)\n"
         );
     }
 

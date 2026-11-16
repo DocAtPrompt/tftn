@@ -56,6 +56,70 @@ pub fn werkzeuge() -> Vec<Value> {
             },
         }),
         json!({
+            "name": "auswahl_lesen",
+            "description": "Wo im Editor die Schreibmarke steht (Zeile, Spalte der Hauptdatei) und was \
+                der Benutzer gerade markiert hat, mit Zeilennummern. Für Bitten wie „formuliere das \
+                um“ oder „was hältst du von diesem Absatz“.",
+            "inputSchema": leer,
+        }),
+        json!({
+            "name": "gliederung_lesen",
+            "description": "Überschriften (mit Ebene, Zeile und Wörtern) und Kommentare (`//`, \
+                `/* */`, mit Zeile) der Hauptdatei und der Dateien, die sie mit `#include` \
+                einbindet (etwa die Kapitel eines Buchs).",
+            "inputSchema": leer,
+        }),
+        json!({
+            "name": "dateien_auflisten",
+            "description": "Dateien im Projektordner (ohne versteckte, `_`-Ordner und `packages/`), \
+                mit Größe und ob lesbar bzw. schreibbar. Kapitel, Literatur (.bib), \
+                Trennausnahmen (trennungen.txt), Bilder.",
+            "inputSchema": leer,
+        }),
+        json!({
+            "name": "datei_lesen",
+            "description": "Text einer Datei im Projektordner, mit Zeilennummern. Für die \
+                Hauptdatei kommt der Stand im Editor (wie `quelltext_lesen`).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "pfad": { "type": "string", "description": "relativ zum Projektordner, z. B. kapitel/01-einleitung.typ" },
+                },
+                "required": ["pfad"],
+            },
+        }),
+        json!({
+            "name": "datei_schreiben",
+            "description": "Schreibt eine Textdatei im Projektordner ganz (legt sie samt Ordner an, \
+                wenn es sie nicht gibt). Nicht für die Hauptdatei (`text_ersetzen`) und die \
+                Formulardaten (`formular_setzen`). Den alten Inhalt sichert TFTN unter \
+                .fassungen/dateien/. Neue Kapitel muss die Hauptdatei noch mit `#include` einbinden.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "pfad": { "type": "string", "description": "relativ zum Projektordner" },
+                    "text": { "type": "string" },
+                },
+                "required": ["pfad", "text"],
+            },
+        }),
+        json!({
+            "name": "datei_ersetzen",
+            "description": "Ersetzt in einer Textdatei des Projekts genau die Stelle `alt` durch \
+                `neu` (wie `text_ersetzen`, aber für andere Dateien als die Hauptdatei). Alter \
+                Inhalt gesichert unter .fassungen/dateien/.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "pfad": { "type": "string", "description": "relativ zum Projektordner" },
+                    "alt": { "type": "string", "description": "vorhandener Text, wörtlich" },
+                    "neu": { "type": "string", "description": "Ersatz (leer: löschen)" },
+                    "alle": { "type": "boolean", "description": "jedes Vorkommen ersetzen", "default": false },
+                },
+                "required": ["pfad", "alt", "neu"],
+            },
+        }),
+        json!({
             "name": "formular_lesen",
             "description": "Formular des Dokumenttyps (Fach „Dokument“): Felder mit Name, \
                 Beschriftung, Art und Pflicht, dazu die aktuellen Werte aus der Datendatei \

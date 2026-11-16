@@ -245,6 +245,7 @@ function neusync() {
 const synchron = EditorView.updateListener.of((u: ViewUpdate) => {
   for (const tr of u.transactions) if (tr.docChanged) senden(tr);
   if (u.selectionSet || u.docChanged) stelleZeigenSpaeter();
+  if (u.selectionSet || u.docChanged) mcpAuswahlSpaeter();
   if (u.docChanged) markenEreignis({ art: "dokument-geaendert" });
   if (u.docChanged) gliederungSpaeter();
   if (u.docChanged && umwandelnAngebotStand && u.state.doc !== umwandelnAngebotStand.doc) umwandelnAngebotVerwerfen();
@@ -1497,11 +1498,25 @@ function mcpZugriff(werkzeug: string) {
   mcpAbzeichen();
 }
 
+let mcpAuswahlUhr: ReturnType<typeof setTimeout> | undefined;
+
+/** Meldet die Auswahl für `auswahl_lesen` – nur solange MCP an ist, gebündelt nach 150 ms. */
+function mcpAuswahlSpaeter() {
+  if (!mcpStand?.an) return;
+  clearTimeout(mcpAuswahlUhr);
+  mcpAuswahlUhr = setTimeout(() => {
+    if (!view) return;
+    const s = view.state.selection.main;
+    invoke("mcp_auswahl", { auswahl: { rev, von: s.from, bis: s.to, kopf: s.head } }).catch(() => {});
+  }, 150);
+}
+
 /** Statusleiste und Einstellungen; pausiert nach einem Wechsel durch MCP: nachfragen. */
 function mcpZeigen(m: McpJs) {
   const vorher = mcpStand;
   mcpStand = m;
   mcpAbzeichen();
+  if (m.an && !vorher?.an) mcpAuswahlSpaeter();
   einstellDialog?.mcpZeigen(m);
   if (mcpFragtNoch(m) && !mcpFragtNoch(vorher)) mcpNachfragen();
   // Beantwortet, ausgeschaltet oder in den Einstellungen geändert: Die Frage verschwindet.

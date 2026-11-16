@@ -374,9 +374,20 @@ bleiben soll („Aktiv lassen“ oder „MCP ausschalten“); bis dahin lehnt TF
 | `quelltext_lesen` | Quelltext der Hauptdatei, wie er im Editor steht |
 | `text_ersetzen` | eine Stelle wörtlich ersetzen (oder jedes Vorkommen) |
 | `quelltext_setzen` | den ganzen Quelltext ersetzen |
+| `auswahl_lesen` | was du markiert hast und wo die Schreibmarke steht |
+| `gliederung_lesen` | Überschriften und Kommentare, auch der eingebundenen Kapiteldateien |
+| `dateien_auflisten` | Dateien im Projektordner |
+| `datei_lesen` | eine Textdatei des Projekts (Kapitel, `.bib`, `trennungen.txt` …) |
+| `datei_ersetzen` | eine Stelle in einer solchen Datei ersetzen |
+| `datei_schreiben` | eine solche Datei ganz schreiben oder neu anlegen |
 | `seite_ansehen` | eine Seite der Vorschau als Bild |
 | `formular_lesen` | Felder und Werte des Formulars (Titel, Autoren, Datum …) |
 | `formular_setzen` | mehrere Felder auf einmal setzen, geprüft wie im Fach; ein Rückgängig-Schritt |
 | `typen_auflisten` | Dokumenttypen für ein neues Dokument |
 | `dokument_anlegen` | neues Projekt aus einem Typ anlegen und öffnen |
 | `dokument_oeffnen` | ein anderes Projekt öffnen (das offene wird vorher gespeichert) |
+
+**Grenzen:** Der Assistent erreicht nur Dateien im Projektordner, nicht versteckte Ordner, `_lokal/`
+oder `packages/`. Schreiben darf er nur Textdateien; die Hauptdatei ändert er über den Editor (mit
+Rückgängig), die Formulardaten über das Formular. Ändert er eine andere Datei, etwa ein Kapitel, greift
+Rückgängig im Editor nicht – TFTN legt den alten Inhalt deshalb vorher unter `.fassungen/dateien/` ab.
