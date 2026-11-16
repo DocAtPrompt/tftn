@@ -76,6 +76,10 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
   „Gliederung“, „Seite“ und als Symbole Seitenleiste und Schreibansicht.
 - **Vorschau** (rechts): die fertigen Seiten. Ein Klick in die Vorschau springt an die Stelle im Text;
   die Vorschau folgt der Schreibmarke. Rechtsklick öffnet ein Menü mit „Ändern …“ und „Im Code zeigen“.
+  Rechts in der Statuszeile: „Breite“ (Seiten so breit wie die Spalte), „Ganze Seite“, − und + sowie
+  die Prozentzahl (ein Klick darauf zeigt die echte Größe). Cmd/Strg + Mausrad oder zwei Finger auf
+  dem Trackpad zoomen um den Mauszeiger; ist die Seite breiter als die Spalte, gibt es eine waagrechte
+  Laufleiste.
 - **Seitenleiste** (Cmd/Strg+Umschalt+P): Fächer „Hier“, „Einfügen“, „Formel“, „Seite“, „Dokument“,
   „Pakete“. Ihre Breite lässt sich ziehen.
 - **Gliederung** (Knopf „Gliederung“): die Überschriften neben dem Text, im zweiten Reiter die

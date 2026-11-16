@@ -64,6 +64,7 @@ import { dauerText, syncText } from "./statuszeile";
 import * as schreibansicht from "./schreibansicht";
 import { type FassungJs, FassungenDialog } from "./fassungen";
 import { type GliederungJs, GliederungLeiste } from "./gliederung";
+import { stufe, zoomLesen } from "./vorschauzoom";
 import { type Zahlen, zahlText } from "./zaehler";
 import { type RechtschreibungJs, falschSetzen, ohneIgnorierte, rechtschreibMenue } from "./rechtschreibung";
 import { abbildungText, blockEinfuegen, eingefuegterName, istBild } from "./bildeinfuegen";
@@ -266,6 +267,38 @@ function stelleZeigenSpaeter() {
       if (r === rev) vorschau.folgen(stellen);
     });
   }, 150);
+}
+
+// --- Zoom der Vorschau ------------------------------------------------------------------------
+
+/** Merker in localStorage: Zoom der Vorschau. */
+const VORSCHAU_ZOOM = "tftn-vorschau-zoom";
+
+function zoomBedienung() {
+  const knopf = (id: string) => document.getElementById(id) as HTMLButtonElement;
+  const prozent = () => vorschau.prozent() ?? 100;
+  vorschau.zoomGeaendert = (z) => {
+    knopf("zoom-breite").setAttribute("aria-pressed", String(z.art === "breite"));
+    knopf("zoom-seite").setAttribute("aria-pressed", String(z.art === "seite"));
+    knopf("zoom-prozent").textContent = `${prozent()} %`;
+    try {
+      localStorage.setItem(VORSCHAU_ZOOM, JSON.stringify(z));
+    } catch {
+      // ohne localStorage gilt der Zoom nur bis zum Neuladen
+    }
+  };
+  knopf("zoom-breite").addEventListener("click", () => vorschau.zoomSetzen({ art: "breite" }));
+  knopf("zoom-seite").addEventListener("click", () => vorschau.zoomSetzen({ art: "seite" }));
+  knopf("zoom-prozent").addEventListener("click", () => vorschau.zoomSetzen({ art: "prozent", wert: 100 }));
+  knopf("zoom-weniger").addEventListener("click", () => vorschau.zoomSetzen({ art: "prozent", wert: stufe(prozent(), -1) }));
+  knopf("zoom-mehr").addEventListener("click", () => vorschau.zoomSetzen({ art: "prozent", wert: stufe(prozent(), 1) }));
+  let gemerkt: string | null = null;
+  try {
+    gemerkt = localStorage.getItem(VORSCHAU_ZOOM);
+  } catch {
+    // Seitenbreite
+  }
+  vorschau.zoomSetzen(zoomLesen(gemerkt));
 }
 
 // --- Gliederung ------------------------------------------------------------------------------
@@ -1865,6 +1898,7 @@ async function start() {
     (seite, x, y) => void klick(seite, x, y),
     (seite, x, y, maus) => void kontext(seite, x, y, maus),
   );
+  zoomBedienung();
   vorschauMenue = new VorschauMenue({
     formel: () => seitenleisteOeffnen("formel"),
     aendern: () => {

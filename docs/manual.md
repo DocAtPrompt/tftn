@@ -80,6 +80,9 @@ sync it and keep working on another computer without a network.
 - **Preview** (right): the finished pages. Clicking in the preview jumps to the matching place in
   the text; the preview follows the cursor. Right-click opens a menu with “Edit …” and “Show in
   code”.
+  On the right of the status bar: “Width” (pages as wide as the column), “Whole page”, − and +, and
+  the percentage (click it for actual size). Cmd/Ctrl + mouse wheel or a two-finger pinch zooms around
+  the pointer; a page wider than the column gets a horizontal scrollbar.
 - **Sidebar** (Cmd/Ctrl+Shift+P): panels “Here”, “Insert”, “Equation”, “Page”, “Document”,
   “Packages”. Drag its edge to resize it.
 - **Outline** (“Outline” button): the headings next to the text; the second tab lists the comments.
