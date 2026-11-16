@@ -215,10 +215,15 @@ impl Vorschau {
         let Some(gut) = self.gut.as_ref() else {
             return Vec::new();
         };
-        let gefunden: Vec<_> = typst_ide::jump_from_cursor(&gut.dokument, quelle, byte)
+        let mut gefunden: Vec<_> = typst_ide::jump_from_cursor(&gut.dokument, quelle, byte)
             .into_iter()
             .map(|p| (p.page.get() - 1, p.point.x.to_pt(), p.point.y.to_pt()))
             .collect();
+        // Der Text einer Überschrift steht auch im Inhaltsverzeichnis und in Kolumnentiteln, die
+        // davor liegen können: die Überschrift selbst zuerst.
+        if let Some(u) = ueberschrift_stelle(&gut.dokument, quelle, byte) {
+            gefunden.insert(0, u);
+        }
         if !gefunden.is_empty() {
             return gefunden;
         }
@@ -250,6 +255,38 @@ impl Vorschau {
         }
         Some(rastern(gut.dokument.pages().get(nr)?, ppi))
     }
+}
+
+/// Wo die Überschrift gesetzt ist, in der `byte` steht (Seite 0-basiert, x, y in pt); `None`
+/// außerhalb von Überschriften.
+fn ueberschrift_stelle(
+    dokument: &PagedDocument,
+    quelle: &Source,
+    byte: usize,
+) -> Option<(usize, f64, f64)> {
+    use typst::foundations::NativeElement;
+    use typst::introspection::Introspector;
+    use typst::model::HeadingElem;
+    use typst::syntax::SyntaxKind;
+    let wurzel = LinkedNode::new(quelle.root());
+    let mut knoten = wurzel
+        .leaf_at(byte, Side::After)
+        .or_else(|| wurzel.leaf_at(byte, Side::Before))?;
+    let span = loop {
+        if knoten.kind() == SyntaxKind::Heading {
+            break knoten.span();
+        }
+        knoten = knoten.parent()?.clone();
+    };
+    let intro = dokument.introspector();
+    intro
+        .query(&HeadingElem::ELEM.select())
+        .iter()
+        .filter(|u| u.span() == span)
+        .find_map(|u| {
+            let p = intro.position(u.location()?)?;
+            Some((p.page.get() - 1, p.point.x.to_pt(), p.point.y.to_pt()))
+        })
 }
 
 /// Kopie eines Frames ohne Link-Flächen (rekursiv).
