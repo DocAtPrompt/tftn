@@ -219,6 +219,29 @@ downloaded.
 real footnotes, equations, citations and bibliography come along; the page layout does not. The file
 is saved as `<document name>.docx` in the document folder and overwritten by the next export.
 
+**Series** (“Export” → “Series …”): one PDF per record, e.g. for mail merge and invoices. The records
+are either a folder of `.toml` files (one document per file, the PDF is named after the file) or one
+`.toml` with `[[serie]]` sections. A record holds only what changes; everything else – sender, bank,
+closing – comes from the Document pane of the project. Groups such as `[absender]` are merged, all other
+values are replaced. The field `datei` names the PDF; without it the PDFs are numbered
+(`invoices-001.pdf`).
+
+```toml
+[[serie]]
+datei = "2026-014 Miller"
+nummer = "2026-014"
+empfaenger = ["Mr", "Dr Hans Miller", "5 High Street", "Graz 8010"]
+anrede = "Dear Dr Miller,"
+posten = [{ text = "Consulting", menge = 3, einheit = "h", preis = 120 }]
+```
+
+Letter and invoice have a “Salutation” field for this. To swap more of the text, write
+`#daten.fieldname` there (new letters and invoices have `#let daten = …` at the top for this). The PDFs are written to the data folder and replace files of the same name.
+Each one is made with the typst CLI like any export; the dialog shows the cross-check commands. For
+this the main file reads its data with `toml(sys.inputs.at("daten", default: "dokument.toml"))`; for
+older documents “Adjust main file” changes that one spot. A faulty record does not stop the others and
+is reported at the end. On the command line: `tftn serie <project> --daten <folder or file>`.
+
 ## 8. Saving and versions
 
 Every document saves itself one second after the last change, also when closing the window and
@@ -332,6 +355,7 @@ The `tftn` program (built from source) works without the window:
 | `tftn build <folder> --png [--ppi 144]` | page images instead of a PDF |
 | `tftn export <folder> [--profil archiv] [--abnehmen]` | export profile of the document type |
 | `tftn gegenprobe <folder>` | print the equivalent `typst compile` command |
+| `tftn serie <folder> --daten <source> [--anpassen]` | one PDF per record (series) |
 | `tftn katalog <folder>` | list the project’s blocks |
 | `tftn typ-pruefen <folder>` | check all blocks of a document type |
 

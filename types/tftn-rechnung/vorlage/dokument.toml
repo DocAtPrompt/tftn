@@ -4,6 +4,7 @@ nummer = "2026-001"
 datum = 2026-01-31
 leistung = "Jänner 2026"
 empfaenger = ["Frau", "Mag. Erika Muster", "Musterstraße 1", "1010 Wien"]
+anrede = "Sehr geehrte Frau Muster,"
 ust = 20
 zahlungsziel = 14
 gruss = "Mit freundlichen Grüßen"

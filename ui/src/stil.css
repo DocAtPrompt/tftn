@@ -1991,3 +1991,79 @@ button:hover .ikone {
 .neu-vorlage .neu-links {
   padding-right: 4px;
 }
+
+/* Serie: ein PDF je Datensatz */
+.neu-dialog.serie-dialog {
+  inset: auto;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, 90vw);
+  max-height: 76vh;
+}
+.serie-hilfe {
+  margin: 0;
+  color: var(--leise);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.serie-zeile {
+  display: flex;
+  gap: 6px;
+}
+.serie-quelle {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+  background: var(--grund);
+  color: var(--text);
+}
+.serie-uebersicht {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 1.4em;
+}
+.serie-ziel {
+  color: var(--leise);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.serie-dateien {
+  overflow-wrap: anywhere;
+}
+.serie-hinweis {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--akzent) 10%, transparent);
+}
+.serie-hinweis span {
+  flex: 1;
+}
+.serie-fehler {
+  color: var(--warn);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.serie-knoepfe {
+  display: flex;
+  justify-content: flex-end;
+}
+.serie-ergebnis {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+.serie-gegenprobe code {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}

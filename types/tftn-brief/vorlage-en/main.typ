@@ -1,8 +1,7 @@
-#import "@local/tftn-brief:0.1.0": *
+#import "@local/tftn-brief:0.2.0": *
 
-#show: brief.with(daten: toml("dokument.toml"))
-
-Dear Ms Sample,
+#let daten = toml(sys.inputs.at("daten", default: "dokument.toml"))
+#show: brief.with(daten: daten)
 
 The letter starts here. Sender, address, place, date, subject and closing are in the “Document”
 pane of the sidebar; this file holds only the text.

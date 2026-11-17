@@ -1,8 +1,7 @@
-#import "@local/tftn-brief:0.1.0": *
+#import "@local/tftn-brief:0.2.0": *
 
-#show: brief.with(daten: toml("dokument.toml"))
-
-Sehr geehrte Frau Muster,
+#let daten = toml(sys.inputs.at("daten", default: "dokument.toml"))
+#show: brief.with(daten: daten)
 
 hier beginnt der Brief. Absender, Anschrift, Ort, Datum, Betreff und Grußformel stehen im Fach
 „Dokument“ der Seitenleiste; hier steht nur der Text.

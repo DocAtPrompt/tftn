@@ -29,6 +29,7 @@ import { LiteraturDialog } from "./literaturdialog";
 import type { LitDateiJs } from "./literatur";
 import type { DoiJs } from "./doi";
 import { type ExportJs, ExportMenue, type ProfilJs, type WordJs } from "./export";
+import { SerieDialog, type SerieJs, type StueckJs, hauptdateiAnpassung } from "./serie";
 import { autocompletion, startCompletion } from "@codemirror/autocomplete";
 import {
   type BausteinTextJs,
@@ -1472,6 +1473,8 @@ function meldung(text: string) {
 // --- MCP ------------------------------------------------------------------------------------
 
 
+/** Ordner des offenen Projekts (für Merker je Projekt). */
+let projektOrdner = "";
 let mcpZuletzt: McpZugriff | null = null;
 let mcpRuhe: ReturnType<typeof setTimeout> | undefined;
 
@@ -1928,7 +1931,34 @@ async function start() {
       },
       zeigen: (pfad) => invoke("im_ordner_zeigen", { pfad }),
     },
+    () => serieDialog.zeigen(),
   );
+  const serieDialog = new SerieDialog({
+    pruefen: (quelle) => invoke<SerieJs>("serie_pruefen", { quelle }),
+    erzeugen: async (quelle) => {
+      if (entwurf) throw new Error(t("Das Dokument braucht zuerst einen Namen: Cmd/Strg+S."));
+      if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht exportiert."));
+      return invoke<StueckJs[]>("serie_erzeugen", { quelle });
+    },
+    anpassen: async (daten) => {
+      const a = hauptdateiAnpassung(view.state.doc.toString(), daten);
+      if (!a) {
+        hinweis(t("Die Stelle toml(\"{daten}\") steht nicht genau einmal in der Hauptdatei; bitte von Hand anpassen.", { daten }));
+        return false;
+      }
+      view.dispatch({ changes: { from: a.von, to: a.bis, insert: a.neu }, userEvent: "input.serie" });
+      return speichern();
+    },
+    // Start: die bisherige Quelle, sonst der Projektordner (nicht dort, wo der Dialog zuletzt war).
+    dateiWaehlen: (start) =>
+      invoke<string | null>("datei_waehlen_dialog", { aufforderung: t("Seriendatei (.toml) wählen"), start: start || projektOrdner }),
+    ordnerWaehlen: (start) =>
+      invoke<string | null>("ordner_waehlen_dialog", { aufforderung: t("Ordner mit den Datensätzen wählen"), start: start || projektOrdner }),
+    zeigen: (pfad) => invoke("im_ordner_zeigen", { pfad }),
+    merker: () => `tftn-serie-quelle:${projektOrdner}`,
+    geschlossen: () => view?.focus(),
+  });
+  await listen<[number, number, string]>("serie-fortschritt", (e) => serieDialog.fortschritt(...e.payload));
   await listen<[number, string[]]>("literatur", (e) => {
     const [anzahl, fehler] = e.payload;
     hinweis(
@@ -1981,6 +2011,7 @@ async function start() {
   });
 
   const g = await projektOeffnen();
+  projektOrdner = g.ordner;
   entwurf = g.entwurf;
   namensVorschlag = g.vorschlag ?? "";
   const kopf = kopfName(g.ordner, g.datei, entwurf, t("Ohne Namen"));

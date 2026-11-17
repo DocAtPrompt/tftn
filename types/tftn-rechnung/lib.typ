@@ -184,6 +184,9 @@
     ),
   )
   v(1em)
+  if "anrede" in daten {
+    par(tftn-feld("anrede")[#daten.anrede])
+  }
   body
 
   // Posten: jede Zeile auf Cent gerundet, dann summiert

@@ -3,11 +3,12 @@
   "title": "Rechnung",
   "type": "object",
   "required": ["nummer", "datum", "empfaenger", "posten"],
-  "x-tftn-reihenfolge": ["nummer", "datum", "leistung", "absender", "empfaenger", "posten", "ust", "steuerhinweis", "waehrung", "zahlungsziel", "bank", "gruss", "sprache"],
+  "x-tftn-reihenfolge": ["nummer", "datum", "leistung", "anrede", "absender", "empfaenger", "posten", "ust", "steuerhinweis", "waehrung", "zahlungsziel", "bank", "gruss", "sprache"],
   "properties": {
     "nummer": { "type": "string", "title": "Rechnungsnummer", "description": "Vergibst du selbst, fortlaufend und ohne Lücken; TFTN zählt nicht mit", "minLength": 1 },
     "datum": { "type": "string", "title": "Rechnungsdatum", "format": "date" },
     "leistung": { "type": "string", "title": "Leistungszeitraum", "description": "Datum oder Zeitraum der Leistung, z. B. Jänner 2026" },
+    "anrede": { "type": "string", "title": "Anrede", "description": "Erste Zeile des Texts, z. B. „Sehr geehrte Frau Muster,“ – in einer Serie je Empfänger" },
     "absender": {
       "type": "object",
       "title": "Absender",

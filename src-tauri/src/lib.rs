@@ -342,7 +342,8 @@ enum Wahl {
 /// Argumente für `osascript`: JavaScript statt AppleScript, weil `activate` dort sofort wirkt
 /// (AppleScripts „tell me to activate“ kostete rund zwei Sekunden, bevor der Dialog erschien).
 /// Die Aufforderung kommt als Argument, nicht in den Skripttext.
-fn wahl_argumente(wahl: Wahl, aufforderung: &str) -> Vec<String> {
+/// `start`: Ordner (oder Datei darin), wo der Dialog öffnet; sonst dort, wo er zuletzt war.
+fn wahl_argumente(wahl: Wahl, aufforderung: &str, start: Option<&Path>) -> Vec<String> {
     let funktion = match wahl {
         Wahl::Datei => "chooseFile",
         Wahl::Ordner => "chooseFolder",
@@ -350,20 +351,31 @@ fn wahl_argumente(wahl: Wahl, aufforderung: &str) -> Vec<String> {
     let skript = format!(
         "function run(argv) {{ var a = Application.currentApplication(); \
          a.includeStandardAdditions = true; a.activate(); \
-         return a.{funktion}({{ withPrompt: argv[0] }}).toString(); }}"
+         var o = {{ withPrompt: argv[0] }}; if (argv[1]) o.defaultLocation = Path(argv[1]); \
+         return a.{funktion}(o).toString(); }}"
     );
-    ["-l", "JavaScript", "-e", &skript, aufforderung]
+    let mut a: Vec<String> = ["-l", "JavaScript", "-e", &skript, aufforderung]
         .map(String::from)
-        .to_vec()
+        .to_vec();
+    // Eine Datei als Start: ihr Ordner.
+    let start = start.and_then(|s| if s.is_file() { s.parent() } else { Some(s) });
+    if let Some(s) = start.filter(|s| s.is_dir()) {
+        a.push(s.display().to_string());
+    }
+    a
 }
 
 /// Systemdialog zur Datei- oder Ordnerwahl (macOS); `None` bei Abbruch und auf anderen Systemen.
 fn waehlen(wahl: Wahl, aufforderung: &str) -> Option<PathBuf> {
+    waehlen_ab(wahl, aufforderung, None)
+}
+
+fn waehlen_ab(wahl: Wahl, aufforderung: &str, start: Option<&Path>) -> Option<PathBuf> {
     if !cfg!(target_os = "macos") {
         return None;
     }
     let aus = std::process::Command::new("osascript")
-        .args(wahl_argumente(wahl, aufforderung))
+        .args(wahl_argumente(wahl, aufforderung, start))
         .output()
         .ok()?;
     if !aus.status.success() {
@@ -374,13 +386,10 @@ fn waehlen(wahl: Wahl, aufforderung: &str) -> Option<PathBuf> {
     (!pfad.is_empty()).then(|| PathBuf::from(pfad))
 }
 
-fn datei_waehlen(aufforderung: &str) -> Option<PathBuf> {
-    waehlen(Wahl::Datei, aufforderung)
-}
-
 #[tauri::command(async)]
-fn datei_waehlen_dialog(aufforderung: String) -> Option<String> {
-    datei_waehlen(&aufforderung).map(|p| p.display().to_string())
+fn datei_waehlen_dialog(aufforderung: String, start: Option<String>) -> Option<String> {
+    waehlen_ab(Wahl::Datei, &aufforderung, start.as_deref().map(Path::new))
+        .map(|p| p.display().to_string())
 }
 
 /// Import über Pandoc in ein neues Dokument ohne Namen; liefert Hinweise (etwa fehlende Bilder).
@@ -885,6 +894,106 @@ async fn exportieren(
     })
 }
 
+// --- Serie (ein PDF je Datensatz) ------------------------------------------------------------
+
+#[derive(Serialize)]
+struct SerieJs {
+    /// Namen der PDFs (ohne Endung), in ihrer Reihenfolge
+    namen: Vec<String>,
+    zielordner: String,
+    /// „bereit“, „anpassbar“ oder „nein“
+    hauptdatei: &'static str,
+    /// Name der Datendatei, etwa `dokument.toml`
+    daten: String,
+}
+
+#[derive(Serialize)]
+struct StueckJs {
+    name: String,
+    pdf: Option<String>,
+    fehler: Option<String>,
+    gegenprobe: String,
+}
+
+fn serie_projekt(zustand: &Zustand) -> Result<Projekt, String> {
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung
+        .as_ref()
+        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    Ok(s.projekt.clone())
+}
+
+/// Liest die Datensätze (Datei oder Ordner) und sagt, ob die Hauptdatei bereit ist.
+#[tauri::command(async)]
+fn serie_pruefen(quelle: String, zustand: State<'_, Zustand>) -> Result<SerieJs, String> {
+    use tftn_export::serie::{self, Hauptdatei};
+    let projekt = serie_projekt(&zustand)?;
+    let q = serie::lesen(Path::new(quelle.trim()))?;
+    let daten = serie::datendatei(&projekt);
+    let text = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        sitzung
+            .as_ref()
+            .map(|s| s.spiegel.text().to_string())
+            .unwrap_or_default()
+    };
+    Ok(SerieJs {
+        namen: q.datensaetze.into_iter().map(|d| d.name).collect(),
+        zielordner: q.zielordner.display().to_string(),
+        hauptdatei: match serie::hauptdatei_pruefen(&text, &daten) {
+            Hauptdatei::Bereit => "bereit",
+            Hauptdatei::Anpassbar { .. } => "anpassbar",
+            Hauptdatei::Nein => "nein",
+        },
+        daten,
+    })
+}
+
+/// Erzeugt die Serie über die typst-CLI; meldet `serie-fortschritt` (fertig, gesamt, name).
+#[tauri::command(async)]
+fn serie_erzeugen(
+    app: tauri::AppHandle,
+    quelle: String,
+    zustand: State<'_, Zustand>,
+) -> Result<Vec<StueckJs>, String> {
+    {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        if s.spiegel.pruefsumme() != s.auf_platte {
+            return Err(tr!(
+                "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
+            ));
+        }
+    }
+    let projekt = serie_projekt(&zustand)?;
+    let q = tftn_export::serie::lesen(Path::new(quelle.trim()))?;
+    let cli = tftn_export::TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
+    let stuecke = tftn_export::serie::erzeugen(&projekt, &cli, &q, |fertig, gesamt, name| {
+        let _ = app.emit("serie-fortschritt", (fertig, gesamt, name.to_string()));
+    })
+    .map_err(|e| e.to_string())?;
+    let gut = stuecke.iter().filter(|s| s.pdf.is_some()).count();
+    protokollieren(
+        &projekt,
+        &format!(
+            "Serie: {gut} von {} nach {}",
+            stuecke.len(),
+            q.zielordner.display()
+        ),
+    );
+    Ok(stuecke
+        .into_iter()
+        .map(|s| StueckJs {
+            name: s.name,
+            pdf: s.pdf.map(|p| p.display().to_string()),
+            fehler: s.fehler,
+            gegenprobe: s.gegenprobe,
+        })
+        .collect())
+}
+
 // --- Dokumenttypen, Neues Projekt, Projektwechsel (PLAN-M2 AP8) ---------------------------------
 
 /// Typquellen: eigener Ordner im Tresor (`<Einstellungsordner>/typen`) vor dem App-Bündel.
@@ -965,8 +1074,9 @@ fn typ_vorschaubild(
 
 /// Systemdialog zur Ordnerwahl (nur macOS; sonst `None`).
 #[tauri::command(async)]
-fn ordner_waehlen_dialog(aufforderung: String) -> Option<String> {
-    ordner_waehlen(&aufforderung).map(|p| p.display().to_string())
+fn ordner_waehlen_dialog(aufforderung: String, start: Option<String>) -> Option<String> {
+    waehlen_ab(Wahl::Ordner, &aufforderung, start.as_deref().map(Path::new))
+        .map(|p| p.display().to_string())
 }
 
 /// Legt `<eltern>/<name>` an und merkt es für den Wechsel (die Oberfläche lädt danach neu).
@@ -3593,6 +3703,8 @@ pub fn run() {
             mcp_bestaetigen,
             mcp_antwort,
             mcp_auswahl,
+            serie_pruefen,
+            serie_erzeugen,
             mcp_wechsel_vormerken,
             oberflaeche_lesen,
             typ_eigen_anlegen,
@@ -3691,13 +3803,23 @@ mod tests {
     /// Die Aufforderung geht unverändert als eigenes Argument an das Skript, nie in den Skripttext.
     #[test]
     fn wahldialog_reicht_die_aufforderung_als_argument() {
-        let a = wahl_argumente(Wahl::Ordner, r#"Wählen "x" \ ');"#);
+        let a = wahl_argumente(Wahl::Ordner, r#"Wählen "x" \ ');"#, None);
         assert_eq!(a[0], "-l");
         assert_eq!(a[1], "JavaScript");
         assert!(a[3].contains("chooseFolder"));
         assert!(!a[3].contains("Wählen"));
         assert_eq!(a[4], r#"Wählen "x" \ ');"#);
-        assert!(wahl_argumente(Wahl::Datei, "y")[3].contains("chooseFile"));
+        assert_eq!(a.len(), 5);
+        let start = std::env::temp_dir();
+        let b = wahl_argumente(Wahl::Datei, "y", Some(&start));
+        assert!(b[3].contains("chooseFile"));
+        assert_eq!(
+            b[5],
+            start.display().to_string(),
+            "Startordner als eigenes Argument"
+        );
+        let fehlt = start.join("gibt-es-nicht-tftn");
+        assert_eq!(wahl_argumente(Wahl::Datei, "y", Some(&fehlt)).len(), 5);
     }
 
     /// Fachartikel regelt die Literatur selbst; ein leeres Dokument braucht `#bibliography(…)`.

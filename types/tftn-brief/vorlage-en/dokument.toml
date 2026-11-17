@@ -1,5 +1,6 @@
 sprache = "en"
 empfaenger = ["Ms Erika Sample", "1 Sample Street", "London SW1A 1AA", "United Kingdom"]
+anrede = "Dear Ms Sample,"
 ort = "Vienna"
 datum = 2026-01-15
 betreff = "Subject of the letter"

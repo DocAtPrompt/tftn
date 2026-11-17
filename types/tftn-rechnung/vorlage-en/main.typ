@@ -1,7 +1,6 @@
-#import "@local/tftn-rechnung:0.1.0": *
+#import "@local/tftn-rechnung:0.2.0": *
 
-#show: rechnung.with(daten: toml("dokument.toml"))
-
-Dear Ms Sample,
+#let daten = toml(sys.inputs.at("daten", default: "dokument.toml"))
+#show: rechnung.with(daten: daten)
 
 Please find below the invoice for my services:

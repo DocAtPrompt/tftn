@@ -16,6 +16,8 @@ Aufruf:
   tftn build [ORDNER] --png [--ppi N] [-o ZIEL]  Seitenbilder statt PDF (Standard 144 ppi)
   tftn export [ORDNER] --profil ID [--abnehmen]  Export-Profil des Dokumenttyps (ohne ID: Liste)
   tftn gegenprobe [ORDNER] [-o ZIEL]             die gleichwertige typst-Zeile ausgeben
+  tftn serie [ORDNER] --daten QUELLE [--anpassen]
+                                                 ein PDF je Datensatz (Serienbrief, Rechnungen)
   tftn check [ORDNER]                            mit der Vorschau-World prüfen
   tftn katalog [ORDNER] [--beschreibungen PFAD]… Bausteine des Projekts auflisten
   tftn typ-pruefen [ORDNER] [--beschreibungen PFAD]…
@@ -30,6 +32,9 @@ Gegenprobe-Notiz unter export/ ab; sonst landet es unter _renders/.
 ORDNER ist der Projektordner mit tftn.toml (Standard: aktueller Ordner).
 ZIEL ist relativ zum Projektordner (Standard: _renders/<hauptdatei>.pdf, mit --png
 _renders/<hauptdatei>-{0p}.png; {0p} wird zur Seitennummer).
+QUELLE ist ein Ordner mit .toml-Dateien (je Datei ein Dokument) oder eine .toml mit
+Abschnitten [[serie]]; jeder Datensatz legt sich über dokument.toml, die PDFs landen bei
+den Daten. --anpassen stellt die Hauptdatei auf sys.inputs um, falls nötig.
 SCHALTER nach -- gehen unverändert an typst compile, z. B. -- --pdf-standard a-2b.
 Die typst-CLI kommt aus TFTN_TYPST, neben tftn oder vom PATH und muss die Version
 aus tftn.toml haben.";
@@ -49,6 +54,10 @@ struct Aufruf {
     png: Option<f32>,
     /// `--beschreibungen`: Ordner mit Paketbeschreibungen, der erste hat Vorrang.
     beschreibungen: Vec<PathBuf>,
+    /// `--daten`: Ordner oder Datei mit den Datensätzen (`tftn serie`).
+    daten: Option<PathBuf>,
+    /// `--anpassen`: Hauptdatei für Serien auf `sys.inputs` umstellen.
+    anpassen: bool,
 }
 
 fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
@@ -65,6 +74,8 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
     let mut png = false;
     let mut ppi = None;
     let mut beschreibungen = Vec::new();
+    let mut daten = None;
+    let mut anpassen = false;
     while let Some(a) = it.next() {
         match a.as_str() {
             "-o" => ziel = Some(it.next().ok_or("-o braucht ein Ziel")?),
@@ -90,6 +101,12 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
             "--beschreibungen" => beschreibungen.push(PathBuf::from(
                 it.next().ok_or("--beschreibungen braucht einen Pfad")?,
             )),
+            "--daten" => {
+                daten = Some(PathBuf::from(
+                    it.next().ok_or("--daten braucht einen Pfad")?,
+                ))
+            }
+            "--anpassen" => anpassen = true,
             "--" => zusatz.extend(it.by_ref()),
             "-h" | "--help" => return Err(HILFE.to_string()),
             _ if ordner.is_none() && !a.starts_with('-') => ordner = Some(PathBuf::from(a)),
@@ -111,6 +128,8 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
         abnehmen,
         png: png.then(|| ppi.unwrap_or(144.0)),
         beschreibungen,
+        daten,
+        anpassen,
     })
 }
 
@@ -217,6 +236,54 @@ fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {
             println!("Gegenprobe: {}", e.gegenprobe);
             if let Some(h) = e.sha256 {
                 println!("SHA-256: {h}");
+            }
+            Ok(())
+        }
+        "serie" => {
+            use tftn_export::serie::{self, Hauptdatei};
+            let quelle = aufruf
+                .daten
+                .as_deref()
+                .ok_or("serie braucht --daten QUELLE")?;
+            let daten = serie::datendatei(&projekt);
+            let text = std::fs::read_to_string(projekt.haupt()).map_err(|e| e.to_string())?;
+            match serie::hauptdatei_pruefen(&text, &daten) {
+                Hauptdatei::Bereit => {}
+                Hauptdatei::Anpassbar { neu } if aufruf.anpassen => {
+                    std::fs::write(projekt.haupt(), neu).map_err(|e| e.to_string())?;
+                    println!("Hauptdatei angepasst: liest {daten} jetzt über sys.inputs");
+                }
+                Hauptdatei::Anpassbar { .. } => {
+                    return Err(format!(
+                        "Die Hauptdatei liest {daten} fest. Mit --anpassen wird daraus \
+                         toml(sys.inputs.at(\"daten\", default: \"{daten}\"))."
+                    ));
+                }
+                Hauptdatei::Nein => {
+                    return Err(format!(
+                        "Die Hauptdatei liest keine Formulardaten ({daten}); keine Serie möglich."
+                    ));
+                }
+            }
+            let q = serie::lesen(quelle)?;
+            let cli = TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
+            let stuecke = serie::erzeugen(&projekt, &cli, &q, |f, g, n| eprintln!("{f}/{g} {n}"))
+                .map_err(|e| e.to_string())?;
+            let mut fehler = 0;
+            for s in &stuecke {
+                match (&s.pdf, &s.fehler) {
+                    (Some(p), _) => println!("{}", p.display()),
+                    (None, f) => {
+                        fehler += 1;
+                        eprintln!("{}: {}", s.name, f.as_deref().unwrap_or(""));
+                    }
+                }
+            }
+            if fehler > 0 {
+                return Err(format!(
+                    "{fehler} von {} Datensätzen fehlgeschlagen.",
+                    stuecke.len()
+                ));
             }
             Ok(())
         }

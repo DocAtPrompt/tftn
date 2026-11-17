@@ -5,6 +5,7 @@
 //! die CLI nie etwas herunterlädt.
 
 pub mod profil;
+pub mod serie;
 
 use std::fmt;
 use std::path::{Path, PathBuf};

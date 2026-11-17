@@ -220,6 +220,29 @@ Abbildungen, echte Fußnoten, Formeln, Zitate und Literaturverzeichnis kommen mi
 nicht. Die Datei liegt als `<Dokumentname>.docx` im Dokumentordner und wird beim nächsten Export
 überschrieben.
 
+**Serie** („Export“ → „Serie …“): ein PDF je Datensatz, etwa für Serienbriefe und Rechnungen. Die
+Datensätze liegen entweder als Ordner mit `.toml`-Dateien vor (je Datei ein Dokument, das PDF heißt
+wie die Datei) oder als eine `.toml` mit Abschnitten `[[serie]]`. Ein Datensatz enthält nur, was sich
+ändert; alles andere – Absender, Bank, Grußformel – kommt aus dem Fach „Dokument“ des Projekts. Gruppen
+wie `[absender]` werden zusammengeführt, alle anderen Werte ersetzt. Das Feld `datei` gibt dem PDF
+seinen Namen; ohne es wird nummeriert (`rechnungen-001.pdf`).
+
+```toml
+[[serie]]
+datei = "2026-014 Müller"
+nummer = "2026-014"
+empfaenger = ["Herrn", "Dr. Hans Müller", "Hauptstraße 5", "8010 Graz"]
+anrede = "Sehr geehrter Herr Dr. Müller,"
+posten = [{ text = "Beratung", menge = 3, einheit = "Std.", preis = 120 }]
+```
+
+Brief und Rechnung haben dafür das Feld „Anrede“. Wer mehr im Text austauschen will, schreibt dort
+`#daten.feldname` (neue Briefe und Rechnungen haben dafür oben `#let daten = …`). Die PDFs landen im Ordner der Daten und ersetzen gleichnamige. Jedes entsteht wie
+beim Export mit der typst-CLI, die Gegenprobe-Zeilen stehen im Dialog. Dafür liest die Hauptdatei
+ihre Daten über `toml(sys.inputs.at("daten", default: "dokument.toml"))`; bei älteren Dokumenten
+passt „Hauptdatei anpassen“ diese eine Stelle an. Ein fehlerhafter Datensatz hält die anderen nicht
+auf und wird am Ende gemeldet. Auf der Kommandozeile: `tftn serie <projekt> --daten <ordner oder datei>`.
+
 ## 8. Sichern und Fassungen
 
 Jedes Dokument sichert sich eine Sekunde nach der letzten Änderung von selbst, auch beim Schließen und
@@ -332,6 +355,7 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 | `tftn build <ordner> --png [--ppi 144]` | Seitenbilder statt PDF |
 | `tftn export <ordner> [--profil archiv] [--abnehmen]` | Export-Profil des Dokumenttyps |
 | `tftn gegenprobe <ordner>` | die gleichwertige `typst compile`-Zeile ausgeben |
+| `tftn serie <ordner> --daten <quelle> [--anpassen]` | ein PDF je Datensatz (Serie) |
 | `tftn katalog <ordner>` | Bausteine des Projekts auflisten |
 | `tftn typ-pruefen <ordner>` | alle Bausteine eines Dokumenttyps prüfen |
 

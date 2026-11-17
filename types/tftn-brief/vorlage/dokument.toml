@@ -1,5 +1,6 @@
 sprache = "de"
 empfaenger = ["Frau", "Mag. Erika Muster", "Musterstraße 1", "1010 Wien"]
+anrede = "Sehr geehrte Frau Muster,"
 ort = "Wien"
 datum = 2026-01-15
 betreff = "Betreff des Briefs"

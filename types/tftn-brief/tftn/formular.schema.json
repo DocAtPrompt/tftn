@@ -3,7 +3,7 @@
   "title": "Brief",
   "type": "object",
   "required": ["empfaenger"],
-  "x-tftn-reihenfolge": ["absender", "empfaenger", "ort", "datum", "betreff", "gruss", "unterschrift", "sprache"],
+  "x-tftn-reihenfolge": ["absender", "empfaenger", "ort", "datum", "betreff", "anrede", "gruss", "unterschrift", "sprache"],
   "properties": {
     "absender": {
       "type": "object",
@@ -28,6 +28,7 @@
     "ort": { "type": "string", "title": "Ort" },
     "datum": { "type": "string", "title": "Datum", "format": "date" },
     "betreff": { "type": "string", "title": "Betreff" },
+    "anrede": { "type": "string", "title": "Anrede", "description": "Erste Zeile des Texts, z. B. „Sehr geehrte Frau Muster,“ – in einer Serie je Empfänger" },
     "gruss": { "type": "string", "title": "Grußformel", "default": "Mit freundlichen Grüßen" },
     "unterschrift": { "type": "string", "title": "Name unter der Unterschrift", "description": "Leer: der Name des Absenders" },
     "sprache": {

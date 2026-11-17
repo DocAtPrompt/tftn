@@ -1,7 +1,6 @@
-#import "@local/tftn-rechnung:0.1.0": *
+#import "@local/tftn-rechnung:0.2.0": *
 
-#show: rechnung.with(daten: toml("dokument.toml"))
-
-Sehr geehrte Frau Muster,
+#let daten = toml(sys.inputs.at("daten", default: "dokument.toml"))
+#show: rechnung.with(daten: daten)
 
 für meine Leistungen erlaube ich mir zu verrechnen:

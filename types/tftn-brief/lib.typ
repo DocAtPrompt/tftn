@@ -71,6 +71,9 @@
     tftn-feld("betreff")[*#daten.betreff*]
     v(1em)
   }
+  if "anrede" in daten {
+    par(tftn-feld("anrede")[#daten.anrede])
+  }
   body
   v(1em)
   tftn-feld("gruss")[#daten.at("gruss", default: wort.gruss)]

@@ -11,6 +11,8 @@ tftn-sprachen.workspace = true
 tftn-core.workspace = true
 tftn-manifest.workspace = true
 sha2 = "0.10"
+toml.workspace = true
+typst.workspace = true
 
 [dev-dependencies]
 tiny-skia = "0.12"

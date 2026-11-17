@@ -38,6 +38,7 @@ export class ExportMenue {
     private profile: () => Promise<ProfilJs[]>,
     private exportieren: (profil: string, abnehmen: boolean) => Promise<ExportJs>,
     private word: WordAktionen,
+    private serie?: () => void,
   ) {
     this.menue = document.createElement("div");
     this.menue.id = "export-menue";
@@ -91,6 +92,21 @@ export class ExportMenue {
     wKnopf.onclick = () => void this.wordLos();
     w.append(wName, wKnopf);
     this.menue.append(w);
+    if (this.serie) {
+      const s = document.createElement("div");
+      s.className = "export-zeile";
+      const sName = document.createElement("span");
+      sName.textContent = t("Serie: ein PDF je Datensatz");
+      sName.title = t("Serienbriefe, Rechnungen: Datensätze aus einem Ordner oder einer .toml, über die typst-CLI");
+      const sKnopf = document.createElement("button");
+      sKnopf.textContent = t("Serie …");
+      sKnopf.onclick = () => {
+        this.schliessen();
+        this.serie?.();
+      };
+      s.append(sName, sKnopf);
+      this.menue.append(s);
+    }
     for (const p of liste) {
       const zeile = document.createElement("div");
       zeile.className = "export-zeile";
