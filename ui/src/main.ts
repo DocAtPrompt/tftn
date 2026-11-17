@@ -29,7 +29,7 @@ import { LiteraturDialog } from "./literaturdialog";
 import type { LitDateiJs } from "./literatur";
 import type { DoiJs } from "./doi";
 import { type ExportJs, ExportMenue, type ProfilJs, type WordJs } from "./export";
-import { SerieDialog, type SerieJs, type StueckJs, hauptdateiAnpassung } from "./serie";
+import { SerieDialog, type SerieErgebnisJs, type SerieJs, hauptdateiAnpassung } from "./serie";
 import { autocompletion, startCompletion } from "@codemirror/autocomplete";
 import {
   type BausteinTextJs,
@@ -1935,10 +1935,10 @@ async function start() {
   );
   const serieDialog = new SerieDialog({
     pruefen: (quelle) => invoke<SerieJs>("serie_pruefen", { quelle }),
-    erzeugen: async (quelle) => {
+    erzeugen: async (quelle, wahl) => {
       if (entwurf) throw new Error(t("Das Dokument braucht zuerst einen Namen: Cmd/Strg+S."));
       if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht exportiert."));
-      return invoke<StueckJs[]>("serie_erzeugen", { quelle });
+      return invoke<SerieErgebnisJs>("serie_erzeugen", { quelle, ausgabe: wahl.ausgabe, beidseitig: wahl.beidseitig });
     },
     anpassen: async (daten) => {
       const a = hauptdateiAnpassung(view.state.doc.toString(), daten);

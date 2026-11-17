@@ -16,8 +16,9 @@ Aufruf:
   tftn build [ORDNER] --png [--ppi N] [-o ZIEL]  Seitenbilder statt PDF (Standard 144 ppi)
   tftn export [ORDNER] --profil ID [--abnehmen]  Export-Profil des Dokumenttyps (ohne ID: Liste)
   tftn gegenprobe [ORDNER] [-o ZIEL]             die gleichwertige typst-Zeile ausgeben
-  tftn serie [ORDNER] --daten QUELLE [--anpassen]
+  tftn serie [ORDNER] --daten QUELLE [--ausgabe einzeln|gesamt|beides] [--beidseitig] [--anpassen]
                                                  ein PDF je Datensatz (Serienbrief, Rechnungen)
+                                                 oder alle in einem PDF für den Druck
   tftn check [ORDNER]                            mit der Vorschau-World prüfen
   tftn katalog [ORDNER] [--beschreibungen PFAD]… Bausteine des Projekts auflisten
   tftn typ-pruefen [ORDNER] [--beschreibungen PFAD]…
@@ -34,7 +35,9 @@ ZIEL ist relativ zum Projektordner (Standard: _renders/<hauptdatei>.pdf, mit --p
 _renders/<hauptdatei>-{0p}.png; {0p} wird zur Seitennummer).
 QUELLE ist ein Ordner mit .toml-Dateien (je Datei ein Dokument) oder eine .toml mit
 Abschnitten [[serie]]; jeder Datensatz legt sich über dokument.toml, die PDFs landen bei
-den Daten. --anpassen stellt die Hauptdatei auf sys.inputs um, falls nötig.
+den Daten. --ausgabe gesamt legt alle in ein PDF <quelle>-alle.pdf (einen Drucklauf),
+beides macht beides; --beidseitig fügt dort nach ungerader Seitenzahl eine Leerseite ein.
+--anpassen stellt die Hauptdatei auf sys.inputs um, falls nötig.
 SCHALTER nach -- gehen unverändert an typst compile, z. B. -- --pdf-standard a-2b.
 Die typst-CLI kommt aus TFTN_TYPST, neben tftn oder vom PATH und muss die Version
 aus tftn.toml haben.";
@@ -58,6 +61,8 @@ struct Aufruf {
     daten: Option<PathBuf>,
     /// `--anpassen`: Hauptdatei für Serien auf `sys.inputs` umstellen.
     anpassen: bool,
+    /// `--ausgabe`, `--beidseitig` (`tftn serie`).
+    serie: tftn_export::serie::Optionen,
 }
 
 fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
@@ -76,6 +81,7 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
     let mut beschreibungen = Vec::new();
     let mut daten = None;
     let mut anpassen = false;
+    let mut serie = tftn_export::serie::Optionen::default();
     while let Some(a) = it.next() {
         match a.as_str() {
             "-o" => ziel = Some(it.next().ok_or("-o braucht ein Ziel")?),
@@ -107,6 +113,23 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
                 ))
             }
             "--anpassen" => anpassen = true,
+            "--ausgabe" => {
+                use tftn_export::serie::Ausgabe;
+                let wert = it
+                    .next()
+                    .ok_or("--ausgabe braucht einzeln, gesamt oder beides")?;
+                serie.ausgabe = match wert.as_str() {
+                    "einzeln" => Ausgabe::Einzeln,
+                    "gesamt" => Ausgabe::Gesamt,
+                    "beides" => Ausgabe::Beides,
+                    _ => {
+                        return Err(format!(
+                            "--ausgabe: einzeln, gesamt oder beides, nicht {wert}"
+                        ));
+                    }
+                };
+            }
+            "--beidseitig" => serie.beidseitig = true,
             "--" => zusatz.extend(it.by_ref()),
             "-h" | "--help" => return Err(HILFE.to_string()),
             _ if ordner.is_none() && !a.starts_with('-') => ordner = Some(PathBuf::from(a)),
@@ -130,6 +153,7 @@ fn lesen(args: Vec<String>) -> Result<Aufruf, String> {
         beschreibungen,
         daten,
         anpassen,
+        serie,
     })
 }
 
@@ -267,15 +291,27 @@ fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {
             }
             let q = serie::lesen(quelle)?;
             let cli = TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
-            let stuecke = serie::erzeugen(&projekt, &cli, &q, |f, g, n| eprintln!("{f}/{g} {n}"))
-                .map_err(|e| e.to_string())?;
+            let ergebnis = serie::erzeugen(&projekt, &cli, &q, aufruf.serie, |f, g, n| {
+                eprintln!("{f}/{g} {n}")
+            })
+            .map_err(|e| e.to_string())?;
+            let stuecke = &ergebnis.stuecke;
             let mut fehler = 0;
-            for s in &stuecke {
+            for s in stuecke {
                 match (&s.pdf, &s.fehler) {
-                    (Some(p), _) => println!("{}", p.display()),
+                    (Some(p), _) if aufruf.serie.ausgabe.einzeln() => println!("{}", p.display()),
+                    (Some(_), _) => {}
                     (None, f) => {
                         fehler += 1;
                         eprintln!("{}: {}", s.name, f.as_deref().unwrap_or(""));
+                    }
+                }
+            }
+            if let Some(g) = &ergebnis.gesamt {
+                match (&g.pdf, &g.fehler) {
+                    (Some(p), _) => println!("{} ({} Seiten)", p.display(), g.seiten),
+                    (None, f) => {
+                        return Err(format!("Sammel-PDF: {}", f.as_deref().unwrap_or("")));
                     }
                 }
             }

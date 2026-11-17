@@ -241,7 +241,17 @@ Brief und Rechnung haben dafür das Feld „Anrede“. Wer mehr im Text austausc
 beim Export mit der typst-CLI, die Gegenprobe-Zeilen stehen im Dialog. Dafür liest die Hauptdatei
 ihre Daten über `toml(sys.inputs.at("daten", default: "dokument.toml"))`; bei älteren Dokumenten
 passt „Hauptdatei anpassen“ diese eine Stelle an. Ein fehlerhafter Datensatz hält die anderen nicht
-auf und wird am Ende gemeldet. Auf der Kommandozeile: `tftn serie <projekt> --daten <ordner oder datei>`.
+auf und wird am Ende gemeldet.
+
+**Alles in einem PDF:** Unter „Ausgabe“ stehen „je Datensatz ein PDF“, „alle in einem PDF (ein
+Drucklauf)“ und „beides“. Das Sammel-PDF heißt wie die Daten mit `-alle` (`november-alle.pdf`) und
+liegt ebenfalls bei den Daten. Mit „beidseitig drucken“ folgt nach einem Dokument mit ungerader
+Seitenzahl eine Leerseite, damit beim Duplexdruck jeder Brief auf einer Vorderseite beginnt. Auch das
+Sammel-PDF entsteht mit der typst-CLI: `_lokal/serie/alle.typ` bindet die fertigen PDFs Seite für Seite
+ein, der Text bleibt dabei Text. Bei „nur gesamt“ liegen die Einzelnen in `_lokal/serie/pdf/`.
+Fehlerhafte Datensätze fehlen im Sammel-PDF und werden gemeldet.
+
+Auf der Kommandozeile: `tftn serie <projekt> --daten <ordner oder datei> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
 
 ## 8. Sichern und Fassungen
 
@@ -355,7 +365,7 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 | `tftn build <ordner> --png [--ppi 144]` | Seitenbilder statt PDF |
 | `tftn export <ordner> [--profil archiv] [--abnehmen]` | Export-Profil des Dokumenttyps |
 | `tftn gegenprobe <ordner>` | die gleichwertige `typst compile`-Zeile ausgeben |
-| `tftn serie <ordner> --daten <quelle> [--anpassen]` | ein PDF je Datensatz (Serie) |
+| `tftn serie <ordner> --daten <quelle> [--ausgabe einzeln\|gesamt\|beides] [--beidseitig] [--anpassen]` | ein PDF je Datensatz oder alle in einem (Serie) |
 | `tftn katalog <ordner>` | Bausteine des Projekts auflisten |
 | `tftn typ-pruefen <ordner>` | alle Bausteine eines Dokumenttyps prüfen |
 

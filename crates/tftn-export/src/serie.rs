@@ -9,6 +9,11 @@
 //! jeder Datensatz kommt als `--input daten=_lokal/serie/<name>.toml` an die CLI. So lässt sich
 //! jedes PDF mit seiner `typst compile`-Zeile ohne TFTN nachbauen (Gegenprobe). Die Datensätze
 //! bleiben bis zum nächsten Lauf in `_lokal/serie/` liegen (nicht synchronisiert).
+//!
+//! Für einen einzigen Drucklauf fasst ein zweiter CLI-Lauf alle PDFs zu einem zusammen
+//! (`_lokal/serie/alle.typ` bindet sie Seite für Seite als Bild ein; typst übernimmt PDF-Seiten
+//! als Vektorgrafik, der Text bleibt Text). Beidseitig: Nach einem Dokument mit ungerader
+//! Seitenzahl folgt eine leere Seite, damit jedes auf einer Vorderseite beginnt.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -28,6 +33,33 @@ pub const EINTRAEGE: &str = "serie";
 pub const DATEI: &str = "datei";
 /// Frist je Dokument.
 pub const FRIST: Duration = Duration::from_secs(60);
+/// Frist für das Sammel-PDF.
+pub const FRIST_GESAMT: Duration = Duration::from_secs(300);
+
+/// Was entsteht: je Datensatz ein PDF, ein Sammel-PDF für den Druck, oder beides.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Ausgabe {
+    #[default]
+    Einzeln,
+    Gesamt,
+    Beides,
+}
+
+impl Ausgabe {
+    pub fn einzeln(self) -> bool {
+        self != Ausgabe::Gesamt
+    }
+    pub fn gesamt(self) -> bool {
+        self != Ausgabe::Einzeln
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Optionen {
+    pub ausgabe: Ausgabe,
+    /// Sammel-PDF: jedes Dokument beginnt auf einer Vorderseite (Leerseite nach ungerader Zahl).
+    pub beidseitig: bool,
+}
 
 /// Ein Datensatz: Name des PDFs (ohne Endung) und seine Werte (noch ohne Projektdaten).
 #[derive(Debug, Clone, PartialEq)]
@@ -42,6 +74,15 @@ pub struct Quelle {
     pub datensaetze: Vec<Datensatz>,
     /// Hierhin kommen die PDFs: der Ordner selbst bzw. der Ordner der Datei.
     pub zielordner: PathBuf,
+    /// Name des Ordners bzw. der Datei (ohne Endung); daraus der Name des Sammel-PDFs.
+    pub stamm: String,
+}
+
+impl Quelle {
+    /// Dateiname des Sammel-PDFs (ohne `.pdf`).
+    pub fn gesamt_name(&self) -> String {
+        tr!("{name}-alle", name = self.stamm)
+    }
 }
 
 /// Liest die Datensätze aus einem Ordner (`*.toml`, alphabetisch) oder einer Datei
@@ -49,6 +90,11 @@ pub struct Quelle {
 pub fn lesen(quelle: &Path) -> Result<Quelle, String> {
     let mut datensaetze = Vec::new();
     let zielordner;
+    let quell_stamm = quelle
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "serie".into());
     if quelle.is_dir() {
         zielordner = quelle.to_path_buf();
         // Ein Projektordner hat auch .toml-Dateien (tftn.toml, dokument.toml) – Datensätze sind das nicht.
@@ -100,10 +146,7 @@ pub fn lesen(quelle: &Path) -> Result<Quelle, String> {
                 datei = quelle.display()
             ));
         };
-        let stamm = quelle
-            .file_stem()
-            .map(|s| s.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "serie".into());
+        let stamm = &quell_stamm;
         for (i, e) in eintraege.iter().enumerate() {
             let Value::Table(t) = e else {
                 return Err(tr!(
@@ -132,9 +175,12 @@ pub fn lesen(quelle: &Path) -> Result<Quelle, String> {
             ));
         }
     }
+    // Sauberer Name auch für einen Ordner wie „Serie: Nov“.
+    let stamm = name_nehmen(&mut Table::new(), &quell_stamm, quelle)?;
     Ok(Quelle {
         datensaetze,
         zielordner,
+        stamm,
     })
 }
 
@@ -240,17 +286,65 @@ pub struct Stueck {
     pub fehler: Option<String>,
     /// die `typst compile`-Zeile (im Projektordner auszuführen)
     pub gegenprobe: String,
+    /// Seitenzahl (aus der Vorprüfung)
+    pub seiten: usize,
+}
+
+/// Ergebnis einer Serie.
+#[derive(Debug, Clone)]
+pub struct Serie {
+    pub stuecke: Vec<Stueck>,
+    /// das Sammel-PDF, wenn verlangt (und mindestens ein Dokument entstand)
+    pub gesamt: Option<Stueck>,
+}
+
+/// Der Typst-Text des Sammel-PDFs: `(pfad relativ zu alle.typ, seiten)` je Dokument.
+pub fn gesamt_quelltext(stuecke: &[(String, usize)], beidseitig: bool) -> String {
+    let liste: String = stuecke
+        .iter()
+        .map(|(p, n)| {
+            format!(
+                "  (\"{}\", {n}),\n",
+                p.replace('\\', "\\\\").replace('"', "\\\"")
+            )
+        })
+        .collect();
+    format!(
+        "// Von TFTN erzeugt: alle PDFs der Serie hintereinander, für einen Drucklauf.\n\
+         #set page(width: auto, height: auto, margin: 0pt)\n\
+         #let beidseitig = {beidseitig}\n\
+         #let stuecke = (\n{liste})\n\
+         #for (datei, seiten) in stuecke {{\n\
+         \x20 for i in range(1, seiten + 1) {{ page(image(datei, page: i)) }}\n\
+         \x20 // Beidseitig: Leerseite in der Größe der letzten, damit das nächste vorne beginnt.\n\
+         \x20 if beidseitig and calc.odd(seiten) {{ page(hide(image(datei, page: seiten))) }}\n\
+         }}\n"
+    )
 }
 
 /// Erzeugt die Serie: je Datensatz Prüfung mit der Vorschau-World, dann die CLI. Fehler eines
 /// Datensatzes halten die anderen nicht auf. `fortschritt(fertig, gesamt, name)` nach jedem Stück.
+/// Mit `Ausgabe::Gesamt`/`Beides` danach das Sammel-PDF (ohne die fehlerhaften Datensätze).
 /// Die Hauptdatei muss `Hauptdatei::Bereit` sein.
 pub fn erzeugen(
     projekt: &Projekt,
     cli: &TypstCli,
     quelle: &Quelle,
+    optionen: Optionen,
     mut fortschritt: impl FnMut(usize, usize, &str),
-) -> Result<Vec<Stueck>, ExportFehler> {
+) -> Result<Serie, ExportFehler> {
+    let gesamt_name = quelle.gesamt_name();
+    if optionen.ausgabe.gesamt()
+        && quelle
+            .datensaetze
+            .iter()
+            .any(|d| d.name.eq_ignore_ascii_case(&gesamt_name))
+    {
+        return Err(ExportFehler::Sonstiges(tr!(
+            "Ein Datensatz heißt wie das Sammel-PDF („{name}“); bitte umbenennen.",
+            name = gesamt_name
+        )));
+    }
     let daten = datendatei(projekt);
     let haupt_text = std::fs::read_to_string(projekt.haupt())
         .map_err(|e| ExportFehler::Sonstiges(e.to_string()))?;
@@ -268,7 +362,8 @@ pub fn erzeugen(
     crate::vorpruefung(projekt)?;
     let ordner = projekt.wurzel.join(ORDNER);
     let _ = std::fs::remove_dir_all(&ordner);
-    std::fs::create_dir_all(&ordner).map_err(|e| ExportFehler::Sonstiges(e.to_string()))?;
+    std::fs::create_dir_all(ordner.join("pdf"))
+        .map_err(|e| ExportFehler::Sonstiges(e.to_string()))?;
     std::fs::create_dir_all(&quelle.zielordner)
         .map_err(|e| ExportFehler::Sonstiges(e.to_string()))?;
     let mut world =
@@ -285,21 +380,27 @@ pub fn erzeugen(
         let text = toml::to_string(&werte).unwrap_or_default();
         let rel = format!("{ORDNER}/{}.toml", d.name);
         let zusatz = vec!["--input".to_string(), format!("daten={rel}")];
-        let pdf = quelle.zielordner.join(format!("{}.pdf", d.name));
+        // Nur fürs Sammel-PDF: die Einzelnen im Projekt (typst liest nur unter --root).
+        let pdf = if optionen.ausgabe.einzeln() {
+            quelle.zielordner.join(format!("{}.pdf", d.name))
+        } else {
+            ordner.join("pdf").join(format!("{}.pdf", d.name))
+        };
         let pdf_text = pdf.to_string_lossy().into_owned();
         let mut stueck = Stueck {
             name: d.name.clone(),
             pdf: None,
             fehler: None,
             gegenprobe: gegenprobe_zeile(projekt, &pdf_text, &zusatz),
+            seiten: 0,
         };
-        let ergebnis = (|| -> Result<(), String> {
+        let ergebnis = (|| -> Result<usize, String> {
             std::fs::write(projekt.wurzel.join(&rel), &text).map_err(|e| e.to_string())?;
             // Vorab mit der Vorschau-World: genaue Fehlermeldungen, ohne die CLI zu bemühen.
             world.zuruecksetzen();
             world.quelle_setzen(Source::new(daten_id, text.clone()));
             let probe = kompilieren(&world);
-            if probe.dokument.is_none() {
+            let Some(dokument) = probe.dokument else {
                 let fehler: Vec<String> = probe
                     .meldungen
                     .iter()
@@ -307,18 +408,89 @@ pub fn erzeugen(
                     .map(|m| m.to_string())
                     .collect();
                 return Err(fehler.join("\n"));
-            }
+            };
             ausfuehren(projekt, cli, &pdf, &zusatz, FRIST).map_err(|e| e.to_string())?;
-            Ok(())
+            Ok(dokument.pages().len())
         })();
         match ergebnis {
-            Ok(()) => stueck.pdf = Some(pdf),
+            Ok(seiten) => {
+                stueck.pdf = Some(pdf);
+                stueck.seiten = seiten;
+            }
             Err(e) => stueck.fehler = Some(e),
         }
         aus.push(stueck);
         fortschritt(i + 1, gesamt, &d.name);
     }
-    Ok(aus)
+    let gesamt_stueck = if optionen.ausgabe.gesamt() && aus.iter().any(|s| s.pdf.is_some()) {
+        Some(gesamt_erzeugen(
+            projekt,
+            cli,
+            &aus,
+            &quelle.zielordner.join(format!("{gesamt_name}.pdf")),
+            optionen.beidseitig,
+            &gesamt_name,
+        ))
+    } else {
+        None
+    };
+    Ok(Serie {
+        stuecke: aus,
+        gesamt: gesamt_stueck,
+    })
+}
+
+/// Das Sammel-PDF: die fertigen PDFs (nach `_lokal/serie/pdf/` kopiert, falls sie woanders
+/// liegen) über `_lokal/serie/alle.typ` mit einem zweiten CLI-Lauf.
+fn gesamt_erzeugen(
+    projekt: &Projekt,
+    cli: &TypstCli,
+    stuecke: &[Stueck],
+    ziel: &Path,
+    beidseitig: bool,
+    name: &str,
+) -> Stueck {
+    let ordner = projekt.wurzel.join(ORDNER);
+    let haupt = format!("{ORDNER}/alle.typ");
+    let mut p = projekt.clone();
+    p.konfig.haupt = haupt.clone();
+    let mut stueck = Stueck {
+        name: name.to_string(),
+        pdf: None,
+        fehler: None,
+        gegenprobe: gegenprobe_zeile(&p, &ziel.to_string_lossy(), &[]),
+        seiten: 0,
+    };
+    let ergebnis = (|| -> Result<usize, String> {
+        let mut liste = Vec::new();
+        for s in stuecke {
+            let Some(pdf) = &s.pdf else { continue };
+            let im_projekt = ordner.join("pdf").join(format!("{}.pdf", s.name));
+            if *pdf != im_projekt {
+                std::fs::copy(pdf, &im_projekt).map_err(|e| format!("{}: {e}", pdf.display()))?;
+            }
+            liste.push((format!("pdf/{}.pdf", s.name), s.seiten));
+        }
+        let seiten: usize = liste
+            .iter()
+            .map(|(_, n)| if beidseitig { n + n % 2 } else { *n })
+            .sum();
+        std::fs::write(
+            projekt.wurzel.join(&haupt),
+            gesamt_quelltext(&liste, beidseitig),
+        )
+        .map_err(|e| e.to_string())?;
+        ausfuehren(&p, cli, ziel, &[], FRIST_GESAMT).map_err(|e| e.to_string())?;
+        Ok(seiten)
+    })();
+    match ergebnis {
+        Ok(seiten) => {
+            stueck.pdf = Some(ziel.to_path_buf());
+            stueck.seiten = seiten;
+        }
+        Err(e) => stueck.fehler = Some(e),
+    }
+    stueck
 }
 
 #[cfg(test)]
@@ -363,6 +535,18 @@ mod tests {
             "datei geht nicht an die Vorlage"
         );
         assert_eq!(q.zielordner, o);
+        let _ = std::fs::remove_dir_all(&o);
+    }
+
+    #[test]
+    fn sammel_quelltext_und_name() {
+        let t = gesamt_quelltext(&[("pdf/a \"b\".pdf".into(), 3)], true);
+        assert!(t.contains(r#"("pdf/a \"b\".pdf", 3),"#), "{t}");
+        assert!(t.contains("#let beidseitig = true"), "{t}");
+        let o = ordner("sammel");
+        let d = o.join("november.toml");
+        std::fs::write(&d, "[[serie]]\nnummer = \"1\"\n").unwrap();
+        assert_eq!(lesen(&d).unwrap().gesamt_name(), "november-alle");
         let _ = std::fs::remove_dir_all(&o);
     }
 

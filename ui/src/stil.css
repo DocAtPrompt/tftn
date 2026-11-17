@@ -2035,6 +2035,20 @@ button:hover .ikone {
 .serie-dateien {
   overflow-wrap: anywhere;
 }
+.serie-wahl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.serie-beidseitig {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.serie-beidseitig[hidden] {
+  display: none;
+}
 .serie-hinweis {
   display: flex;
   gap: 8px;

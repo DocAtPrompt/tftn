@@ -54,10 +54,17 @@ datum = "kein Datum"
     let cli =
         TypstCli::finden(&projekt.konfig.typst).expect("typst-CLI in der Projektversion nötig");
     let mut meldungen = Vec::new();
-    let stuecke = serie::erzeugen(&projekt, &cli, &quelle, |f, g, n| {
-        meldungen.push(format!("{f}/{g} {n}"))
-    })
+    let ergebnis = serie::erzeugen(
+        &projekt,
+        &cli,
+        &quelle,
+        serie::Optionen::default(),
+        |f, g, n| meldungen.push(format!("{f}/{g} {n}")),
+    )
     .unwrap();
+    assert!(ergebnis.gesamt.is_none(), "ohne Sammel-PDF verlangt");
+    let stuecke = ergebnis.stuecke;
+    assert_eq!(stuecke[0].seiten, 1);
     assert_eq!(
         meldungen,
         ["1/3 2026-101 Huber", "2/3 2026-102 Gruber", "3/3 kaputt"]
@@ -93,5 +100,68 @@ datum = "kein Datum"
     );
     // Gruber hat keine eigenen Posten: die aus dem Projekt
     assert!(satz.contains("Fahrtkosten"), "{satz}");
+
+    // Beides, beidseitig: Einzelne bei den Daten (außerhalb des Projekts, also kopiert) und
+    // ein Sammel-PDF mit je einer Leerseite nach den einseitigen Rechnungen.
+    for f in ["2026-101 Huber.pdf", "2026-102 Gruber.pdf"] {
+        std::fs::remove_file(daten.join(f)).unwrap();
+    }
+    let beides = serie::erzeugen(
+        &projekt,
+        &cli,
+        &quelle,
+        serie::Optionen {
+            ausgabe: serie::Ausgabe::Beides,
+            beidseitig: true,
+        },
+        |_, _, _| {},
+    )
+    .unwrap();
+    assert!(daten.join("2026-101 Huber.pdf").exists());
+    let gesamt = beides.gesamt.expect("Sammel-PDF verlangt");
+    let pdf = gesamt
+        .pdf
+        .as_ref()
+        .unwrap_or_else(|| panic!("{:?}", gesamt.fehler));
+    assert_eq!(*pdf, daten.join("november-alle.pdf"));
+    assert_eq!(gesamt.seiten, 4);
+    assert_eq!(seiten(pdf), 4, "zwei Rechnungen, je mit Leerseite");
+    assert!(
+        gesamt.gegenprobe.contains("_lokal/serie/alle.typ"),
+        "{}",
+        gesamt.gegenprobe
+    );
+
+    // Nur gesamt, einseitig: keine Einzelnen bei den Daten.
+    std::fs::remove_file(daten.join("2026-101 Huber.pdf")).unwrap();
+    let nur = serie::erzeugen(
+        &projekt,
+        &cli,
+        &quelle,
+        serie::Optionen {
+            ausgabe: serie::Ausgabe::Gesamt,
+            beidseitig: false,
+        },
+        |_, _, _| {},
+    )
+    .unwrap();
+    assert!(!daten.join("2026-101 Huber.pdf").exists());
+    let g = nur.gesamt.unwrap();
+    assert_eq!(seiten(g.pdf.as_ref().unwrap()), 2);
     let _ = std::fs::remove_dir_all(&wurzel);
+}
+
+/// Seiten eines von typst geschriebenen PDFs (Seitenobjekte zählen).
+fn seiten(pdf: &Path) -> usize {
+    let d = std::fs::read(pdf).unwrap();
+    let muster = b"/Type /Page";
+    let muster2 = b"/Type/Page";
+    let mut n = 0;
+    for m in [&muster[..], &muster2[..]] {
+        n += d
+            .windows(m.len() + 1)
+            .filter(|w| &w[..m.len()] == m && w[m.len()] != b's')
+            .count();
+    }
+    n
 }

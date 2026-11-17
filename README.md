@@ -32,6 +32,10 @@ with Typst without handing them to a third party.
   on any machine.
 - **Import** from Word, OpenDocument, Markdown, HTML, EPUB and LaTeX, **export** to PDF (incl.
   PDF/A) and to Word for proofreading – both via Pandoc.
+- **Series for letters and invoices:** one `.toml` with many records, or a folder of `.toml` files,
+  run over the document – one PDF per record, or all in one PDF for a single print run (optionally
+  with blank pages for double-sided printing). Each record holds only what changes; sender, bank
+  and the rest come from the project.
 - **Autosave with versions**, outline with drag-and-drop sections, spell checking, word count,
   distraction-free focus view.
 - **AI assistants via MCP** (opt-in): Claude Code or a local model can read and edit the open
@@ -151,7 +155,7 @@ Every visible text is written in German in the code (`tr!("…")` in Rust, `t("�
 
 ## Command line
 
-`tftn neu`, `check`, `build`, `export`, `gegenprobe`, `katalog`, `typ-pruefen` – see the
+`tftn neu`, `check`, `build`, `export`, `serie`, `gegenprobe`, `katalog`, `typ-pruefen` – see the
 [manual](docs/manual.md#12-command-line).
 
 ## License

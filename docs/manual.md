@@ -240,7 +240,17 @@ Letter and invoice have a “Salutation” field for this. To swap more of the t
 Each one is made with the typst CLI like any export; the dialog shows the cross-check commands. For
 this the main file reads its data with `toml(sys.inputs.at("daten", default: "dokument.toml"))`; for
 older documents “Adjust main file” changes that one spot. A faulty record does not stop the others and
-is reported at the end. On the command line: `tftn serie <project> --daten <folder or file>`.
+is reported at the end.
+
+**Everything in one PDF:** “Output” offers “one PDF per record”, “all in one PDF (one print run)” and
+“both”. The combined PDF is named after the data with `-all` (`november-all.pdf`) and is also written
+to the data folder. With “double-sided printing” a blank page follows a document with an odd number of
+pages, so that in duplex printing every letter starts on a front page. The combined PDF is made with
+the typst CLI too: `_lokal/serie/alle.typ` embeds the finished PDFs page by page, and the text stays
+text. With “all in one PDF” only, the single PDFs stay in `_lokal/serie/pdf/`. Faulty records are
+left out of the combined PDF and reported.
+
+On the command line: `tftn serie <project> --daten <folder or file> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
 
 ## 8. Saving and versions
 
@@ -355,7 +365,7 @@ The `tftn` program (built from source) works without the window:
 | `tftn build <folder> --png [--ppi 144]` | page images instead of a PDF |
 | `tftn export <folder> [--profil archiv] [--abnehmen]` | export profile of the document type |
 | `tftn gegenprobe <folder>` | print the equivalent `typst compile` command |
-| `tftn serie <folder> --daten <source> [--anpassen]` | one PDF per record (series) |
+| `tftn serie <folder> --daten <source> [--ausgabe einzeln\|gesamt\|beides] [--beidseitig] [--anpassen]` | one PDF per record or all in one (series) |
 | `tftn katalog <folder>` | list the project’s blocks |
 | `tftn typ-pruefen <folder>` | check all blocks of a document type |
 

@@ -905,6 +905,8 @@ struct SerieJs {
     hauptdatei: &'static str,
     /// Name der Datendatei, etwa `dokument.toml`
     daten: String,
+    /// Dateiname des Sammel-PDFs (ohne Endung)
+    gesamt_name: String,
 }
 
 #[derive(Serialize)]
@@ -913,6 +915,25 @@ struct StueckJs {
     pdf: Option<String>,
     fehler: Option<String>,
     gegenprobe: String,
+    seiten: usize,
+}
+
+impl From<tftn_export::serie::Stueck> for StueckJs {
+    fn from(s: tftn_export::serie::Stueck) -> Self {
+        StueckJs {
+            name: s.name,
+            pdf: s.pdf.map(|p| p.display().to_string()),
+            fehler: s.fehler,
+            gegenprobe: s.gegenprobe,
+            seiten: s.seiten,
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct SerieErgebnisJs {
+    stuecke: Vec<StueckJs>,
+    gesamt: Option<StueckJs>,
 }
 
 fn serie_projekt(zustand: &Zustand) -> Result<Projekt, String> {
@@ -938,6 +959,7 @@ fn serie_pruefen(quelle: String, zustand: State<'_, Zustand>) -> Result<SerieJs,
             .unwrap_or_default()
     };
     Ok(SerieJs {
+        gesamt_name: q.gesamt_name(),
         namen: q.datensaetze.into_iter().map(|d| d.name).collect(),
         zielordner: q.zielordner.display().to_string(),
         hauptdatei: match serie::hauptdatei_pruefen(&text, &daten) {
@@ -954,8 +976,16 @@ fn serie_pruefen(quelle: String, zustand: State<'_, Zustand>) -> Result<SerieJs,
 fn serie_erzeugen(
     app: tauri::AppHandle,
     quelle: String,
+    ausgabe: String,
+    beidseitig: bool,
     zustand: State<'_, Zustand>,
-) -> Result<Vec<StueckJs>, String> {
+) -> Result<SerieErgebnisJs, String> {
+    use tftn_export::serie::{Ausgabe, Optionen};
+    let ausgabe = match ausgabe.as_str() {
+        "gesamt" => Ausgabe::Gesamt,
+        "beides" => Ausgabe::Beides,
+        _ => Ausgabe::Einzeln,
+    };
     {
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
@@ -970,28 +1000,33 @@ fn serie_erzeugen(
     let projekt = serie_projekt(&zustand)?;
     let q = tftn_export::serie::lesen(Path::new(quelle.trim()))?;
     let cli = tftn_export::TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
-    let stuecke = tftn_export::serie::erzeugen(&projekt, &cli, &q, |fertig, gesamt, name| {
-        let _ = app.emit("serie-fortschritt", (fertig, gesamt, name.to_string()));
-    })
-    .map_err(|e| e.to_string())?;
-    let gut = stuecke.iter().filter(|s| s.pdf.is_some()).count();
+    let optionen = Optionen {
+        ausgabe,
+        beidseitig,
+    };
+    let serie =
+        tftn_export::serie::erzeugen(&projekt, &cli, &q, optionen, |fertig, gesamt, name| {
+            let _ = app.emit("serie-fortschritt", (fertig, gesamt, name.to_string()));
+        })
+        .map_err(|e| e.to_string())?;
+    let gut = serie.stuecke.iter().filter(|s| s.pdf.is_some()).count();
+    let sammel = match &serie.gesamt {
+        Some(g) if g.pdf.is_some() => format!(", Sammel-PDF {} Seiten", g.seiten),
+        Some(_) => ", Sammel-PDF fehlgeschlagen".into(),
+        None => String::new(),
+    };
     protokollieren(
         &projekt,
         &format!(
-            "Serie: {gut} von {} nach {}",
-            stuecke.len(),
+            "Serie: {gut} von {} nach {}{sammel}",
+            serie.stuecke.len(),
             q.zielordner.display()
         ),
     );
-    Ok(stuecke
-        .into_iter()
-        .map(|s| StueckJs {
-            name: s.name,
-            pdf: s.pdf.map(|p| p.display().to_string()),
-            fehler: s.fehler,
-            gegenprobe: s.gegenprobe,
-        })
-        .collect())
+    Ok(SerieErgebnisJs {
+        stuecke: serie.stuecke.into_iter().map(StueckJs::from).collect(),
+        gesamt: serie.gesamt.map(StueckJs::from),
+    })
 }
 
 // --- Dokumenttypen, Neues Projekt, Projektwechsel (PLAN-M2 AP8) ---------------------------------
