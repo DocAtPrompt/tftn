@@ -26,7 +26,8 @@ Aufruf:
                                                  Parameter, Schnipsel übersetzt)
 
 TYP ist ein Paket aus types/, z. B. tftn-fachartikel (Ordner aus --typen, TFTN_TYPEN
-oder dem TFTN-Quellordner).
+oder dem TFTN-Quellordner). Dokumente ohne eigenen Ordner fonts/ setzen wie in der App
+mit den Schriften der Dokumenttypen aus diesem Ordner.
 --sprache en legt die englische Vorlage an, wenn der Typ eine hat (sonst die deutsche).
 --abnehmen setzt den Zeitstempel in tftn.toml auf jetzt und legt das Ergebnis mit
 Gegenprobe-Notiz unter export/ ab; sonst landet es unter _renders/.
@@ -195,6 +196,20 @@ fn typen_ordner(aufruf: &Aufruf) -> PathBuf {
         .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types"))
 }
 
+/// Die Schriftordner der Dokumenttypen (`<typen>/*/schriften`), wie `typen::schriftvorrat` der App.
+fn schriftvorrat(typen: &Path) -> Vec<PathBuf> {
+    let mut aus: Vec<PathBuf> = std::fs::read_dir(typen)
+        .map(|e| {
+            e.filter_map(Result::ok)
+                .map(|e| e.path().join("schriften"))
+                .filter(|p| p.is_dir())
+                .collect()
+        })
+        .unwrap_or_default();
+    aus.sort();
+    aus
+}
+
 fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {
     if aufruf.befehl == "neu" {
         let typ = aufruf.typ.as_deref().ok_or("neu braucht --typ")?;
@@ -212,6 +227,9 @@ fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {
         }
         return Ok(());
     }
+    // Wie die App: Dokumente ohne eingebundene Schriften (`fonts/`) setzen mit den Schriften der
+    // Dokumenttypen. Ohne sie bliebe der Text unsichtbar.
+    tftn_core::schriftvorrat_setzen(schriftvorrat(&typen_ordner(&aufruf)));
     let projekt = Projekt::oeffnen(&aufruf.ordner).map_err(|e| e.to_string())?;
     let ziel = aufruf
         .ziel

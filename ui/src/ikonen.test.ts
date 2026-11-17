@@ -9,6 +9,10 @@ describe("ikonen", () => {
     for (const n of namen) expect(IKONEN, n).toHaveProperty(n);
   });
 
+  it("jeder Reiter der Seitenleiste hat ein Symbol", () => {
+    for (const n of ["hier", "baustein", "formel", "seite", "dokument", "pakete"]) expect(IKONEN, n).toHaveProperty(n);
+  });
+
   it("Strichzeichnung in Textfarbe, für Vorleser unsichtbar", () => {
     const s = ikoneSvg("zahnrad");
     expect(s).toMatch(/^<svg [^>]*viewBox="0 0 24 24"/);

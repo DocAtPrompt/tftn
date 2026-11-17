@@ -545,8 +545,9 @@ body {
 }
 
 .leiste-kopf {
+  container-type: inline-size;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2px;
   align-items: center;
   padding: 4px 6px;
@@ -554,17 +555,42 @@ body {
   background: var(--flaeche);
 }
 
+/* Reiter: Symbol, beim offenen Fach mit Namen; der Name steht immer im Titel. */
 .leiste-reiter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  min-width: 28px;
+  height: 26px;
+  justify-content: center;
   border: none;
   background: none;
   color: var(--leise);
-  padding: 2px 6px;
+  padding: 0 5px;
   border-radius: 4px;
+  white-space: nowrap;
 }
-
+.leiste-reiter .ikone {
+  color: inherit;
+}
+.leiste-reiter:hover {
+  color: var(--text);
+}
+.leiste-reiter .reiter-name {
+  display: none;
+}
 .leiste-reiter.aktiv {
   color: var(--text);
   background: var(--grund);
+}
+.leiste-reiter.aktiv .reiter-name {
+  display: inline;
+}
+@container (max-width: 300px) {
+  .leiste-reiter.aktiv .reiter-name {
+    display: none;
+  }
 }
 
 .leiste-zu {
@@ -2080,4 +2106,101 @@ button:hover .ikone {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-size: 11px;
+}
+
+/* Weitere Schrift: installierte Schrift oder Schriftdatei ins Dokument */
+.seite-weitere {
+  align-self: flex-start;
+}
+.neu-dialog.schriftwahl-dialog {
+  inset: auto;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(620px, 90vw);
+  height: 80vh;
+}
+.schriftwahl-hilfe,
+.schriftwahl-leise {
+  margin: 0;
+  color: var(--leise);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.schriftwahl-zeile {
+  display: flex;
+  gap: 6px;
+}
+.schriftwahl-suche {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+  background: var(--grund);
+  color: var(--text);
+}
+.schriftwahl-liste {
+  flex: 1;
+  min-height: 120px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+  padding: 4px;
+}
+.schriftwahl-eintrag {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+}
+.schriftwahl-eintrag:hover {
+  background: color-mix(in srgb, var(--akzent) 6%, transparent);
+}
+.schriftwahl-eintrag.gewaehlt {
+  border-color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 12%, transparent);
+}
+.schriftwahl-name {
+  font-weight: 600;
+}
+.schriftwahl-probe {
+  font-size: 15px;
+}
+.schriftwahl-info {
+  color: var(--leise);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.schriftwahl-fehlt,
+.schriftwahl-meldung {
+  color: var(--warn);
+  font-size: 12px;
+}
+.schriftwahl-meldung {
+  margin: 0;
+  min-height: 1.2em;
+  white-space: pre-wrap;
+}
+.schriftwahl-knoepfe {
+  display: flex;
+  justify-content: flex-end;
+}
+.schriftwahl-voll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
 }

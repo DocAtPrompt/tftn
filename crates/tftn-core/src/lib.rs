@@ -63,17 +63,42 @@ pub fn kompilieren(world: &ProjektWorld) -> Ergebnis {
             None
         }
     };
+    if world.book().families().next().is_none() {
+        meldungen.push(Meldung {
+            fehler: false,
+            ort: None,
+            text: tr!(
+                "Keine Schriften gefunden: Das Dokument hat keinen Ordner fonts/, und TFTN kennt keinen Schriftvorrat. Der Text bleibt unsichtbar. In der App „Schriften einbinden“ wählen."
+            ),
+            stelle: None,
+        });
+    }
+    if let Some(doc) = &dokument {
+        meldungen.extend(
+            schriften::ersatzzeichen(doc, &|span| in_formel(world, span))
+                .into_iter()
+                .map(|e| ersatz_meldung(world, &e)),
+        );
+    }
     Ergebnis {
         dokument,
         meldungen,
     }
 }
 
-fn meldung(world: &ProjektWorld, d: &SourceDiagnostic) -> Meldung {
-    let stelle = d.span.id().zip(world.range(d.span));
-    let ort = d.span.id().and_then(|id| {
+/// Ort (`datei:zeile:spalte`) und Bytebereich einer Stelle.
+fn ort_und_stelle(
+    world: &ProjektWorld,
+    id: Option<typst::syntax::FileId>,
+    bereich: Option<std::ops::Range<usize>>,
+) -> (
+    Option<String>,
+    Option<(typst::syntax::FileId, std::ops::Range<usize>)>,
+) {
+    let stelle = id.zip(bereich.clone());
+    let ort = id.and_then(|id| {
         let quelle = world.source(id).ok()?;
-        let start = world.range(d.span)?.start;
+        let start = bereich?.start;
         let zeile = quelle.lines().byte_to_line(start)? + 1;
         let spalte = quelle.lines().byte_to_column(start)? + 1;
         Some(format!(
@@ -81,6 +106,61 @@ fn meldung(world: &ProjektWorld, d: &SourceDiagnostic) -> Meldung {
             id.vpath().get_without_slash()
         ))
     });
+    (ort, stelle)
+}
+
+/// Liegt die Stelle in einer Formel (`$…$`)?
+fn in_formel(world: &ProjektWorld, span: typst::syntax::Span) -> bool {
+    let Some(quelle) = span.id().and_then(|id| world.source(id).ok()) else {
+        return false;
+    };
+    let mut knoten = quelle.find(span);
+    while let Some(k) = knoten {
+        if k.kind() == typst::syntax::SyntaxKind::Equation {
+            return true;
+        }
+        knoten = k.parent().cloned();
+    }
+    false
+}
+
+fn ersatz_meldung(world: &ProjektWorld, e: &schriften::Ersatz) -> Meldung {
+    let (ort, stelle) = ort_und_stelle(
+        world,
+        e.span.id(),
+        world.range(e.span).map(|r| {
+            // Das Zeichen im Knoten, wenn der Versatz hineinpasst (Text aus Markup).
+            let von = r.start + usize::from(e.versatz);
+            if von + e.zeichen.len_utf8() <= r.end {
+                von..von + e.zeichen.len_utf8()
+            } else {
+                r
+            }
+        }),
+    );
+    let text = match &e.ersatz {
+        Some(ersatz) => tr!(
+            "Der Schrift „{schrift}“ fehlt das Zeichen „{zeichen}“; es kommt aus „{ersatz}“ und sieht deshalb anders aus.",
+            schrift = e.schrift,
+            zeichen = e.zeichen,
+            ersatz = ersatz
+        ),
+        None => tr!(
+            "Das Zeichen „{zeichen}“ fehlt in allen Schriften des Dokuments und erscheint als leeres Kästchen (Schrift „{schrift}“).",
+            zeichen = e.zeichen,
+            schrift = e.schrift
+        ),
+    };
+    Meldung {
+        fehler: false,
+        ort,
+        text,
+        stelle,
+    }
+}
+
+fn meldung(world: &ProjektWorld, d: &SourceDiagnostic) -> Meldung {
+    let (ort, stelle) = ort_und_stelle(world, d.span.id(), world.range(d.span));
     let hinweise: Vec<&str> = d.hints.iter().map(|h| h.v.as_str()).collect();
     let text = deutsch::meldungstext(&d.message, &hinweise);
     Meldung {

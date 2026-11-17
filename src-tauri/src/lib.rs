@@ -46,6 +46,7 @@ mod mcp;
 mod pakete;
 mod projektdateien;
 mod rechtschreibung;
+mod schriftwahl;
 mod skins;
 mod sprachen;
 mod typen;
@@ -3682,6 +3683,9 @@ pub fn run() {
             seite_stand,
             seite_setzen,
             schriften_einbinden,
+            schriftwahl::schriften_suchen,
+            schriftwahl::schriftdatei_lesen,
+            schriftwahl::schrift_hinzufuegen,
             datei_waehlen_dialog,
             importieren,
             einfuegen_umwandeln,

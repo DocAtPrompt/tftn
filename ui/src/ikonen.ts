@@ -30,7 +30,13 @@ export const IKONEN: Record<string, string> = {
   zitat:
     "M10 11H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v6c0 2.7-1.3 4.3-4 5 M19 11h-4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v6c0 2.7-1.3 4.3-4 5",
   gliederung: "M9 6h11 M9 12h11 M9 18h11 M5 6v.01 M5 12v.01 M5 18v.01",
-  seite: "M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2 M9 7h6 M9 11h6 M9 15h3",
+  // Seite mit Satzspiegel (Ränder)
+  seite: "M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2 M8.5 6.5h7v11h-7z",
+  // Reiter der Seitenleiste
+  hier: "M12 3v3 M12 18v3 M3 12h3 M18 12h3 M12 7a5 5 0 1 0 0 10a5 5 0 1 0 0-10 M12 12v.01",
+  formel: "M17 5H6l6 7-6 7h11",
+  dokument: "M9 3h6v3H9z M9 4.5H6.5a1.5 1.5 0 0 0-1.5 1.5v13.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H15 M8.5 11h7 M8.5 14.5h7 M8.5 18h4",
+  pakete: "M12 3l8 4.5v9L12 21l-8-4.5v-9z M4 7.5l8 4.5 8-4.5 M12 12v9 M8 5.25l8 4.5",
   pfeil: "M6 9l6 6 6-6",
   schliessen: "M6 6l12 12 M18 6L6 18",
 };

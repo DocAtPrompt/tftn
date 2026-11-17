@@ -82,12 +82,7 @@ impl ProjektWorld {
             .map_err(|e| WorldFehler::Hauptdatei(format!("{e:?}")))?;
         let haupt = RootedPath::new(VirtualRoot::Project, vpath).intern();
 
-        // Wie `typst compile --ignore-system-fonts --ignore-embedded-fonts --font-path fonts`;
-        // ohne eingebundene Schriften der Vorrat der App.
-        let mut schriften = FontStore::new();
-        for ordner in projekt.schriftordner() {
-            schriften.extend(fonts::scan(&ordner));
-        }
+        let schriften = schriften_lesen(projekt);
 
         let library = Library::builder().with_inputs(Dict::new()).build();
 
@@ -103,6 +98,11 @@ impl ProjektWorld {
             ueberlagert: HashMap::new(),
             zeit: Time::fixed_timestamp(projekt.epoche()).expect("Zeitstempel im gültigen Bereich"),
         })
+    }
+
+    /// Liest die Schriftordner neu, etwa nachdem eine Familie nach `fonts/` kopiert wurde.
+    pub fn schriften_neu_lesen(&mut self, projekt: &Projekt) {
+        self.schriften = schriften_lesen(projekt);
     }
 
     /// Kennung der Hauptdatei.
@@ -167,4 +167,14 @@ impl typst_ide::IdeWorld for ProjektWorld {
     fn upcast(&self) -> &dyn World {
         self
     }
+}
+
+/// Wie `typst compile --ignore-system-fonts --ignore-embedded-fonts --font-path fonts`;
+/// ohne eingebundene Schriften der Vorrat der App.
+fn schriften_lesen(projekt: &Projekt) -> FontStore {
+    let mut schriften = FontStore::new();
+    for ordner in projekt.schriftordner() {
+        schriften.extend(fonts::scan(&ordner));
+    }
+    schriften
 }

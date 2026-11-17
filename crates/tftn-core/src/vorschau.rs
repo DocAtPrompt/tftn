@@ -92,6 +92,12 @@ impl Vorschau {
         &self.world
     }
 
+    /// Liest die Schriften neu (nach `schriften::familie_einbinden`); der nächste Lauf setzt mit
+    /// ihnen.
+    pub fn schriften_neu_lesen(&mut self, projekt: &Projekt) {
+        self.world.schriften_neu_lesen(projekt);
+    }
+
     pub fn gut(&self) -> Option<&GuterStand> {
         self.gut.as_ref()
     }

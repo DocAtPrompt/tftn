@@ -54,6 +54,8 @@ export class SeiteFach {
       stand(): Promise<SeitenJs>;
       setzen(feld: SeitenFeld): Promise<void>;
       einbinden(): Promise<void>;
+      /** Dialog „Weitere Schrift“ öffnen */
+      weitereSchrift(): void;
     },
   ) {}
 
@@ -174,6 +176,7 @@ export class SeiteFach {
         s.schrift ?? "Libertinus Serif",
         (wert) => ({ art: "schrift", wert }),
       ),
+      this.weitereKnopf(),
       this.zahl(t("Größe (pt)"), s.groesse ?? 11, 4, 144, 0.5, (wert) => void this.aendern({ art: "groesse", wert })),
       this.zahl(t("Zeilenabstand (em)"), s.zeilenabstand ?? 0.65, 0.1, 3, 0.05, (wert) =>
         void this.aendern({ art: "zeilenabstand", wert }),
@@ -214,6 +217,13 @@ export class SeiteFach {
       teile.push(el("p", "leiste-hilfe", t("Kopf- und Fußzeilen und Randtext gibt es in neu angelegten leeren Dokumenten.")));
     }
     this.huelle.replaceChildren(...teile, ...this.einbindenTeil(s));
+  }
+
+  private weitereKnopf(): HTMLElement {
+    const k = el("button", "seite-weitere", t("Weitere Schrift …"));
+    k.title = t("Eine installierte Schrift oder eine Schriftdatei ins Dokument übernehmen");
+    k.addEventListener("click", () => this.a.weitereSchrift());
+    return k;
   }
 
   private einbindenTeil(s: SeitenJs): HTMLElement[] {

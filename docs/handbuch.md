@@ -160,6 +160,21 @@ Zeilenabstand, Blocksatz, nummerierte Überschriften, Sprache, Seitenzahl, Kopf-
 `{seite}` und `{kapitel}`). Jede Einstellung steht als `#set`-Zeile oben im Text. Vorlagen wie der
 Fachartikel legen das selbst fest. Mit „Schriften einbinden“ kommen die benutzten Schriften ins Projekt.
 
+**Weitere Schriften:** „Weitere Schrift …“ unter der Schriftwahl zeigt die auf dem Rechner
+installierten Schriften, jede mit einer Probezeile, der Zahl der Schnitte und der Größe. Mit
+„Schriftdatei …“ (Mac) bzw. einem Pfad (Windows) kommt eine `.otf`- oder `.ttf`-Datei dazu; Fett und
+Kursiv aus demselben Ordner gehen mit. Fehlen der Schrift Zeichen der Dokumentsprache, etwa ß, Umlaute,
+„ “ oder €, steht das gleich dabei („Es fehlen: ß €“); solche Schriften sind zunächst ausgeblendet.
+„Schrift übernehmen“ kopiert die ganze Familie nach `fonts/` und setzt sie als Schrift des Dokuments.
+Systemschriften kommen nie direkt in den Satz: Vorschau, Export und die Gegenprobe-Zeile sehen dieselben
+Dateien in `fonts/`, auch auf einem Rechner, auf dem die Schrift nicht installiert ist. Verbietet die
+Lizenz einer Schrift das Einbetten in PDFs, lehnt TFTN sie ab. Schriften, die mit dem System kamen (etwa
+von Apple oder Microsoft), nur für eigene Dokumente verwenden und `fonts/` nicht weitergeben.
+
+**Fehlende Zeichen:** Hat eine Schrift ein Zeichen nicht, nimmt Typst es still aus einer anderen
+Schrift oder zeichnet ein leeres Kästchen. TFTN meldet beides als Warnung mit Sprung an die Stelle:
+„Der Schrift „…“ fehlt das Zeichen „ß“; es kommt aus „…““ bzw. „… erscheint als leeres Kästchen“.
+
 **Titelei** (Fach „Dokument“, Cmd/Strg+Umschalt+O): ein Formular aus dem Dokumenttyp – Titel,
 Autorinnen und Autoren, Datum (`31.12.2026`), Zusammenfassung, Schlagwörter, Literaturdateien und
 Zitierstil (eingebauter Name wie `ieee` oder eine `.csl`-Datei im Projekt). Jeder Wert wird geprüft und

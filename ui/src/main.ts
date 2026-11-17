@@ -72,6 +72,7 @@ import { type Zahlen, zahlText } from "./zaehler";
 import { type RechtschreibungJs, falschSetzen, ohneIgnorierte, rechtschreibMenue } from "./rechtschreibung";
 import { abbildungText, blockEinfuegen, eingefuegterName, istBild } from "./bildeinfuegen";
 import { SeiteFach, type SeitenFeld, type SeitenJs } from "./seitefach";
+import { type EingebundenJs, type FamilieJs, SchriftwahlDialog } from "./schriftwahl";
 import { type TypenJs, oeffnenArt, wechselNachSpeichern, entwurfHatText, sperre } from "./neuprojekt";
 import type { Wert } from "./werte";
 import { HALTEN_MS, type MarkenEreignis, MarkenSchalter } from "./marken";
@@ -1782,6 +1783,38 @@ async function start() {
     zumEditor: () => view.focus(),
     cursor: () => view.state.selection.main.head,
   });
+  const seiteSetzen = (feld: SeitenFeld) =>
+    abfragen(async (r) => {
+      try {
+        patchAnwenden(await invoke<PatchJs>("seite_setzen", { rev: r, feld }), "input.tftn-seite");
+      } catch (fehler) {
+        fehlerMelden(fehler, t("Nicht geändert"));
+      }
+    });
+  const schriftwahl = new SchriftwahlDialog({
+    suchen: (neu) => invoke<FamilieJs[]>("schriften_suchen", { neu }),
+    dateiWaehlen: () =>
+      invoke<string | null>("datei_waehlen_dialog", { aufforderung: t("Schriftdatei (.otf, .ttf) wählen"), start: null }),
+    dateiLesen: (pfad) => invoke<FamilieJs[]>("schriftdatei_lesen", { pfad }),
+    hinzufuegen: (f) => invoke<EingebundenJs>("schrift_hinzufuegen", { name: f.name, datei: f.datei }),
+    gewaehlt: async (name, e) => {
+      await seiteSetzen({ art: "schrift", wert: name });
+      await seiteFach.zeichnen();
+      hinweis(
+        e.dateien.length
+          ? t("Schrift „{name}“ eingebunden: {n} Dateien in fonts/.", { name, n: e.dateien.length })
+          : t("Schrift „{name}“ gesetzt; sie war schon eingebunden.", { name }),
+      );
+    },
+    geschlossen: () => view.focus(),
+    dateiArt: oeffnenArt(PLATTFORM),
+  });
+  const seiteFach = new SeiteFach({
+    stand: () => abfragen(() => invoke<SeitenJs>("seite_stand")),
+    einbinden: () => invoke("schriften_einbinden"),
+    setzen: seiteSetzen,
+    weitereSchrift: () => schriftwahl.zeigen(),
+  });
   seitenleiste = new Seitenleiste(document.getElementById("links")!, {
     hier: hierAbfragen,
     setzen: wertSetzen,
@@ -1802,18 +1835,7 @@ async function start() {
       void bausteinEinsetzen(id, from, to, view.state.sliceDoc(from, to));
     },
     geschlossen: () => view.focus(),
-  }, dokumentFach, paketFach, formelFach, new SeiteFach({
-    stand: () => abfragen(() => invoke<SeitenJs>("seite_stand")),
-    einbinden: () => invoke("schriften_einbinden"),
-    setzen: (feld: SeitenFeld) =>
-      abfragen(async (r) => {
-        try {
-          patchAnwenden(await invoke<PatchJs>("seite_setzen", { rev: r, feld }), "input.tftn-seite");
-        } catch (fehler) {
-          fehlerMelden(fehler, t("Nicht geändert"));
-        }
-      }),
-  }));
+  }, dokumentFach, paketFach, formelFach, seiteFach);
   gliederung = new GliederungLeiste(gliederungOrt(), {
     springen: (von) => {
       zuStelle(von);

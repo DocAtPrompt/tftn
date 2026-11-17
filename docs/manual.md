@@ -161,6 +161,20 @@ for the page and `{kapitel}` for the chapter). Each setting is a `#set` line at 
 Templates such as the journal article set this themselves. “Embed fonts” copies the fonts in use into
 the project.
 
+**More fonts:** “More fonts …” below the font choice lists the fonts installed on the computer, each
+with a sample line, the number of styles and the size. “Font file …” (Mac) or a path (Windows) adds an
+`.otf` or `.ttf` file; bold and italic from the same folder come along. If the font lacks characters of
+the document language, such as “ ” or € (or ß and umlauts in German), this is shown right away
+(“Missing: €”); such fonts are hidden at first. “Use font” copies the whole family into `fonts/` and
+sets it as the document font. System fonts never enter typesetting directly: preview, export and the
+cross-check line see the same files in `fonts/`, even on a computer where the font is not installed.
+If a font’s license forbids embedding it in PDFs, TFTN refuses it. Use fonts that came with the system
+(such as Apple’s or Microsoft’s) only for your own documents, and do not pass `fonts/` on.
+
+**Missing characters:** If a font lacks a character, Typst silently takes it from another font or
+draws an empty box. TFTN reports both as a warning that jumps to the spot: “The font … lacks the
+character …; it is taken from …” or “… shows up as an empty box”.
+
 **Front matter** (“Document” panel, Cmd/Ctrl+Shift+O): a form defined by the document type – title,
 authors, date, abstract, keywords, bibliography files and citation style (a built-in name such as
 `ieee` or a `.csl` file in the project). Each value is checked before it is written to

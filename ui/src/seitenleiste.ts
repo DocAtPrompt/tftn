@@ -11,6 +11,7 @@ import type { SeiteFach } from "./seitefach";
 import type { PaketFach } from "./paketfach";
 import { editor } from "./editoren";
 import { breiteZiehbar } from "./breite";
+import { ikoneSvg } from "./ikonen";
 import { type Auswahl, type Knopf, type Tabelle, aktionFuer, auswahlNach, auswahlRechteck, bearbeitbar } from "./raster";
 import type { FeldJs, Wert } from "./werte";
 import { t } from "./sprache";
@@ -121,18 +122,24 @@ export class Seitenleiste {
     this.huelle.id = "seitenleiste";
     this.huelle.hidden = true;
     const kopf = el("div", "leiste-kopf");
-    const fach = (f: Fach, titel: string) => {
-      const b = el("button", "leiste-reiter", titel);
+    // Reiter als Symbol; der Name steht nur beim offenen Fach daneben (bei schmaler Leiste auch
+    // dort nicht), sonst im Titel. So bleibt der Kopf einzeilig.
+    const fach = (f: Fach, ikone: string, name: string, erklaerung: string) => {
+      const b = el("button", "leiste-reiter");
+      b.innerHTML = ikoneSvg(ikone);
+      b.append(el("span", "reiter-name", name));
+      b.title = `${name}: ${erklaerung}`;
+      b.setAttribute("aria-label", name);
       b.addEventListener("click", () => this.oeffnen(f));
       this.reiter.set(f, b);
       kopf.append(b);
     };
-    fach("hier", t("Hier"));
-    fach("einfuegen", t("Einfügen"));
-    fach("formel", t("Formel"));
-    fach("seite", t("Seite"));
-    fach("dokument", t("Dokument"));
-    fach("pakete", t("Pakete"));
+    fach("hier", "hier", t("Hier"), t("Werte an der Schreibmarke ändern"));
+    fach("einfuegen", "baustein", t("Einfügen"), t("Bausteine suchen und einfügen"));
+    fach("formel", "formel", t("Formel"), t("Formel mit Palette bearbeiten"));
+    fach("seite", "seite", t("Seite"), t("Format, Schrift und Sprache"));
+    fach("dokument", "dokument", t("Dokument"), t("Titelei und Angaben des Dokumenttyps"));
+    fach("pakete", "pakete", t("Pakete"), t("Typst-Pakete des Projekts"));
     const zu = el("button", "leiste-zu", "×");
     zu.title = t("Seitenleiste schließen");
     zu.addEventListener("click", () => this.schliessen());
@@ -180,7 +187,10 @@ export class Seitenleiste {
   oeffnen(fach: Fach) {
     this.fach = fach;
     this.huelle.hidden = false;
-    for (const [f, b] of this.reiter) b.classList.toggle("aktiv", f === fach);
+    for (const [f, b] of this.reiter) {
+      b.classList.toggle("aktiv", f === fach);
+      b.setAttribute("aria-pressed", String(f === fach));
+    }
     void this.laden();
   }
 

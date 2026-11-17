@@ -18,6 +18,10 @@ with Typst without handing them to a third party.
 - **Document types** as Typst packages, with a form for the front matter. TFTN ships a blank
   document, letter, invoice, medical report, report, journal article, book, poster and CV – and
   copies any of them into a custom type of your own in Settings.
+- **Any font, the same everywhere:** pick an installed font or a font file; TFTN copies the family
+  into the project, so preview, export and every other computer typeset with the very same files.
+  Missing characters (ß, umlauts, €, …) are flagged when you choose the font and wherever the text
+  falls back to another font or an empty box.
 - **Citations** from your BibTeX/BibLaTeX file, or straight from a DOI (Crossref, DataCite).
 - **Bibliography manager:** browse, search, edit, add and delete entries of your `.bib` file in a
   form; only the changed entry is rewritten, everything else in the file stays as it was. Entries
