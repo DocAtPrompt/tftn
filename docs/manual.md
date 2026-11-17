@@ -45,7 +45,11 @@ anything.
 
 **A new document:** TFTN starts with an empty draft. Just start writing; Cmd/Ctrl+S gives it a
 name and saves it in your Documents folder. “New” → “From template …” instead creates a document of a document
-type, for example a journal article with front matter and bibliography.
+type, for example a journal article with front matter and bibliography. Both when creating from a
+template and when saving for the first time with Cmd/Ctrl+S there is a checkbox “Embed fonts”: with
+it the document carries the fonts it uses in `fonts/` (usually 1 to 3 MB) and looks the same on every
+computer – recommended for sharing and archiving. Without it, it uses TFTN's fonts; you can embed them
+later in the “Page” panel.
 
 **Language of a new document:** new documents and the empty draft use the interface language –
 with an English interface you get an English template (hyphenation, spell checking, and labels such
@@ -84,7 +88,9 @@ sync it and keep working on another computer without a network.
   the percentage (click it for actual size). Cmd/Ctrl + mouse wheel or a two-finger pinch zooms around
   the pointer; a page wider than the column gets a horizontal scrollbar.
 - **Sidebar** (Cmd/Ctrl+Shift+P): panels “Here”, “Insert”, “Equation”, “Page”, “Document”,
-  “Packages”. Drag its edge to resize it.
+  “Packages”. The tabs at the top are icons; only the open panel shows its name (not even that in a
+  narrow sidebar), the others show name and purpose when you hover over them. “Insert” is the block
+  list with a search field: a click inserts the block at the cursor. Drag its edge to resize it.
 - **Outline** (“Outline” button): the headings next to the text; the second tab lists the comments.
 - **Status bar:** words and characters, document language, save state, network activity.
 
@@ -226,8 +232,32 @@ the bar, the preview shows the errors in the pasted text. You can also convert l
 in the editor, right-click the selection, “Convert to Typst”. Images from the internet are not
 downloaded.
 
-**PDF** (“Export”): the profiles come from the document type, for the journal article “vorschau”
-(preview) and “archiv” (PDF/A-2b). The PDF is produced by the bundled typst CLI and is reproducible.
+**PDF** (“Export”): the profiles come from the document type; the bundled ones have “PDF” and
+“Archive PDF (long-term, PDF/A-2b)” (`vorschau` and `archiv` in the manifest). The archive PDF is
+just the file; what it takes to typeset it again is in the archive package (below). The PDF is produced by the bundled typst CLI and is reproducible.
+Each profile has two buttons:
+
+- **Test build** saves the PDF in `_renders/`. That folder is not synced; use it to look at or print
+  the document in between.
+- **Finalize …** (a second click confirms) is the final version: the timestamp in `tftn.toml` jumps
+  to now (it sets the date in the PDF), the PDF goes to `export/`, and next to it lies
+  `<name>.gegenprobe.txt` with the typst command and the PDF's SHA-256.
+
+**Archive package** (“Export” → “Archive package (zip)” → “Archive”): one zip for your records, for example for medical
+reports you must keep for years. It is saved as `export/<document folder>-archive-<date>.zip` in the
+document folder (a second one on the same day replaces the first) and contains:
+
+- the PDF as PDF/A (the standard of the “archiv” profile, otherwise PDF/A-2b),
+- the source with data, images and bibliography,
+- all fonts used in `fonts/` and the packages in `packages/`,
+- `README.txt` with the typst version, the command line for macOS/Linux and Windows, and the
+  SHA-256 of the PDF.
+
+`_lokal/`, `_renders/`, earlier exports in `export/` and hidden folders such as `.fassungen/` stay
+out. The PDF is made in a copy of the document from nothing but what goes into the zip, without
+TFTN's own fonts – so anything missing shows up now, not in ten years. With the same typst version
+the unpacked folder gives the same PDF, byte for byte; the SHA-256 proves it. The document itself
+is not changed.
 
 **Word (.docx) for proofreading** (“Export”, requires Pandoc): title, headings, lists, tables, figures,
 real footnotes, equations, citations and bibliography come along; the page layout does not. The file
@@ -378,6 +408,7 @@ The `tftn` program (built from source) works without the window:
 | `tftn build <folder> [-o target]` | PDF via the typst CLI (into `_renders/`) |
 | `tftn build <folder> --png [--ppi 144]` | page images instead of a PDF |
 | `tftn export <folder> [--profil archiv] [--abnehmen]` | export profile of the document type |
+| `tftn archiv <folder>` | archive package in `export/` (PDF/A, source, fonts, packages, instructions) |
 | `tftn gegenprobe <folder>` | print the equivalent `typst compile` command |
 | `tftn serie <folder> --daten <source> [--ausgabe einzeln\|gesamt\|beides] [--beidseitig] [--anpassen]` | one PDF per record or all in one (series) |
 | `tftn katalog <folder>` | list the project’s blocks |

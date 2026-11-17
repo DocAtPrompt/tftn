@@ -31,26 +31,44 @@ pub fn gegenprobe_argumente(projekt: &Projekt, ziel: &str, zusatz: &[String]) ->
     a
 }
 
-/// Die Gegenprobe-Zeile zum Abtippen, für die Shell des laufenden Systems.
-pub fn gegenprobe_zeile(projekt: &Projekt, ziel: &str, zusatz: &[String]) -> String {
+/// Wie `gegenprobe_argumente`, aber nur mit den Schriften aus `fonts/`, nie mit denen der App.
+pub fn gegenprobe_argumente_eigen(projekt: &Projekt, ziel: &str, zusatz: &[String]) -> Vec<String> {
     let mut liste = gegenprobe_argumente(projekt, ziel, zusatz);
-    // Mit eingebundenen Schriften genügt `fonts`; die Ordner der App gehören nicht in die Zeile.
-    if projekt.schriften().is_dir() {
-        let mut i = 0;
-        while i + 1 < liste.len() {
-            if liste[i] == "--font-path" && liste[i + 1] != "fonts" {
-                liste.drain(i..i + 2);
-            } else {
-                i += 1;
-            }
+    let mut i = 0;
+    while i + 1 < liste.len() {
+        if liste[i] == "--font-path" && liste[i + 1] != "fonts" {
+            liste.drain(i..i + 2);
+        } else {
+            i += 1;
         }
     }
+    liste
+}
+
+/// Die Gegenprobe-Zeile zum Abtippen, für die Shell des laufenden Systems.
+pub fn gegenprobe_zeile(projekt: &Projekt, ziel: &str, zusatz: &[String]) -> String {
+    gegenprobe_zeile_fuer(projekt, ziel, zusatz, cfg!(windows))
+}
+
+/// Die Gegenprobe-Zeile für die PowerShell (`windows`) oder eine POSIX-Shell.
+pub fn gegenprobe_zeile_fuer(
+    projekt: &Projekt,
+    ziel: &str,
+    zusatz: &[String],
+    windows: bool,
+) -> String {
+    // Mit eingebundenen Schriften genügt `fonts`; die Ordner der App gehören nicht in die Zeile.
+    let liste = if projekt.schriften().is_dir() {
+        gegenprobe_argumente_eigen(projekt, ziel, zusatz)
+    } else {
+        gegenprobe_argumente(projekt, ziel, zusatz)
+    };
     let argumente = liste
         .iter()
         .map(|a| shell_wort(a))
         .collect::<Vec<_>>()
         .join(" ");
-    if cfg!(windows) {
+    if windows {
         format!(
             "$env:SOURCE_DATE_EPOCH={}; typst {argumente}",
             projekt.epoche()

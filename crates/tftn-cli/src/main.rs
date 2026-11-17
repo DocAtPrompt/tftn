@@ -15,6 +15,8 @@ Aufruf:
   tftn build [ORDNER] [-o ZIEL] [-- SCHALTER…]   PDF über die typst-CLI erzeugen
   tftn build [ORDNER] --png [--ppi N] [-o ZIEL]  Seitenbilder statt PDF (Standard 144 ppi)
   tftn export [ORDNER] --profil ID [--abnehmen]  Export-Profil des Dokumenttyps (ohne ID: Liste)
+  tftn archiv [ORDNER]                           Archivpaket nach export/: PDF/A, Quelltext,
+                                                 Schriften, Pakete und Anleitung in einem Zip
   tftn gegenprobe [ORDNER] [-o ZIEL]             die gleichwertige typst-Zeile ausgeben
   tftn serie [ORDNER] --daten QUELLE [--ausgabe einzeln|gesamt|beides] [--beidseitig] [--anpassen]
                                                  ein PDF je Datensatz (Serienbrief, Rechnungen)
@@ -339,6 +341,20 @@ fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {
                     stuecke.len()
                 ));
             }
+            Ok(())
+        }
+        "archiv" => {
+            let cli = TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
+            let a = tftn_export::archiv::archiv_erzeugen(&projekt, &cli, env!("CARGO_PKG_VERSION"))
+                .map_err(|e| e.to_string())?;
+            for w in a.warnungen {
+                eprintln!("{w}");
+            }
+            println!("{}", a.pfad.display());
+            println!(
+                "{} Dateien, {} Byte; darin {} ({}), SHA-256 {}",
+                a.dateien, a.groesse, a.pdf, a.standard, a.sha256
+            );
             Ok(())
         }
         "gegenprobe" => {

@@ -42,7 +42,11 @@ ausdrücklich erwünscht.
 **Ein neues Dokument:** TFTN startet mit einem leeren Entwurf. Einfach losschreiben; Cmd/Strg+S gibt
 ihm einen Namen und legt es im Ordner „Dokumente“ ab. „Neu“ → „Aus Vorlage …“ legt stattdessen ein
 Dokument eines Dokumenttyps an. Mitgeliefert sind: leeres Dokument, Brief, Rechnung, Befund/Arztbrief, Bericht,
-Fachartikel, Fachbuch, Plakat und Lebenslauf, jeweils auf Deutsch und Englisch.
+Fachartikel, Fachbuch, Plakat und Lebenslauf, jeweils auf Deutsch und Englisch. Beim Anlegen aus
+einer Vorlage und beim ersten Speichern mit Cmd/Strg+S gibt es das Häkchen „Schriften einbinden“: Damit
+bringt das Dokument die benutzten Schriften in `fonts/` mit (meist 1 bis 3 MB) und sieht auf jedem
+Rechner gleich aus, empfohlen zum Weitergeben und Archivieren. Ohne Häkchen nutzt es die Schriften von
+TFTN; einbinden lässt es sich später im Fach „Seite“.
 
 **Sprache eines neuen Dokuments:** Neue Dokumente und der leere Entwurf folgen der Sprache der
 Oberfläche – mit englischer Oberfläche entsteht eine englische Vorlage (Silbentrennung,
@@ -81,7 +85,9 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
   dem Trackpad zoomen um den Mauszeiger; ist die Seite breiter als die Spalte, gibt es eine waagrechte
   Laufleiste.
 - **Seitenleiste** (Cmd/Strg+Umschalt+P): Fächer „Hier“, „Einfügen“, „Formel“, „Seite“, „Dokument“,
-  „Pakete“. Ihre Breite lässt sich ziehen.
+  „Pakete“. Die Reiter oben sind Symbole; der Name steht nur beim offenen Fach (in einer schmalen
+  Leiste auch dort nicht), die anderen nennen ihn samt Zweck beim Darüberfahren.
+  „Einfügen“ ist die Bausteinliste mit Suche: ein Klick fügt den Baustein an der Schreibmarke ein. Ihre Breite lässt sich ziehen.
 - **Gliederung** (Knopf „Gliederung“): die Überschriften neben dem Text, im zweiten Reiter die
   Kommentare.
 - **Statuszeile:** Wörter und Zeichen, Dokumentsprache, Speicherstand, Netzzugriffe.
@@ -227,8 +233,32 @@ das Angebot nicht mehr; schließt man das Band, zeigt die Vorschau die Fehler im
 Später geht es auch so: Markdown im Editor markieren, Rechtsklick in die Auswahl, „In Typst
 umwandeln“. Bilder aus dem Netz werden nicht geholt.
 
-**PDF** („Export“): Die Profile kommen vom Dokumenttyp, beim Fachartikel etwa „vorschau“ und
-„archiv“ (PDF/A-2b). Das PDF entsteht mit der beigelegten typst-CLI und ist reproduzierbar.
+**PDF** („Export“): Die Profile kommen vom Dokumenttyp; die mitgelieferten haben „PDF“ und
+„Archiv-PDF (Langzeit, PDF/A-2b)“ (im Manifest `vorschau` und `archiv`). Das Archiv-PDF ist nur die
+Datei; was es braucht, um neu gesetzt zu werden, steckt im Archivpaket (unten). Das PDF entsteht mit der beigelegten typst-CLI und ist reproduzierbar. Je Profil
+gibt es zwei Knöpfe:
+
+- **Probe** legt das PDF unter `_renders/` ab. Dieser Ordner wird nicht synchronisiert; zum
+  Anschauen und Ausdrucken zwischendurch.
+- **Abnehmen …** (ein zweiter Klick bestätigt) ist die Endfassung: Der Zeitstempel in `tftn.toml`
+  springt auf jetzt (er bestimmt das Datum im PDF), das PDF kommt nach `export/`, und daneben liegt
+  `<name>.gegenprobe.txt` mit der typst-Zeile und der SHA-256 des PDFs.
+
+**Archivpaket** („Export“ → „Archivpaket (Zip)“ → „Archivieren“): ein Zip für die Ablage, etwa für Befunde mit
+Aufbewahrungspflicht. Es liegt als `export/<Dokumentordner>-archiv-<Datum>.zip` im Dokumentordner
+(ein zweites am selben Tag ersetzt das erste) und enthält:
+
+- das PDF als PDF/A (Standard des Profils „archiv“, sonst PDF/A-2b),
+- den Quelltext mit Daten, Bildern und Literatur,
+- alle benutzten Schriften in `fonts/` und die Pakete in `packages/`,
+- `LIESMICH.txt` mit der typst-Version, der Befehlszeile für macOS/Linux und Windows und der SHA-256
+  des PDFs.
+
+Nicht hinein kommen `_lokal/`, `_renders/`, frühere Exporte in `export/` und versteckte Ordner wie
+`.fassungen/`. Das PDF entsteht in einer Kopie des Dokuments und nur aus dem, was im Zip liegt, ohne
+die Schriften von TFTN. Fehlt etwas, fällt es also gleich auf und nicht erst in zehn Jahren. Mit
+derselben typst-Version entsteht aus dem ausgepackten Ordner dasselbe PDF, Byte für Byte; die SHA-256
+weist es nach. Das Dokument selbst bleibt unverändert.
 
 **Word (.docx) zum Gegenlesen** („Export“, braucht Pandoc): Titel, Überschriften, Listen, Tabellen,
 Abbildungen, echte Fußnoten, Formeln, Zitate und Literaturverzeichnis kommen mit, das Seitenlayout
@@ -379,6 +409,7 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 | `tftn build <ordner> [-o ziel]` | PDF über die typst-CLI (nach `_renders/`) |
 | `tftn build <ordner> --png [--ppi 144]` | Seitenbilder statt PDF |
 | `tftn export <ordner> [--profil archiv] [--abnehmen]` | Export-Profil des Dokumenttyps |
+| `tftn archiv <ordner>` | Archivpaket nach `export/` (PDF/A, Quelltext, Schriften, Pakete, Anleitung) |
 | `tftn gegenprobe <ordner>` | die gleichwertige `typst compile`-Zeile ausgeben |
 | `tftn serie <ordner> --daten <quelle> [--ausgabe einzeln\|gesamt\|beides] [--beidseitig] [--anpassen]` | ein PDF je Datensatz oder alle in einem (Serie) |
 | `tftn katalog <ordner>` | Bausteine des Projekts auflisten |

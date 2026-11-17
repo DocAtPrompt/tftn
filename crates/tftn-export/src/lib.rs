@@ -4,8 +4,10 @@
 //! Vorher prüft die netzlose World, dass alle Pakete im Projekt liegen, damit
 //! die CLI nie etwas herunterlädt.
 
+pub mod archiv;
 pub mod profil;
 pub mod serie;
+pub mod zip;
 
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -174,9 +176,24 @@ pub fn ausfuehren(
             pfad = ziel.display()
         ))
     })?;
+    ausfuehren_argumente(
+        projekt,
+        cli,
+        &gegenprobe_argumente(projekt, ziel_text, zusatz),
+        frist,
+    )
+}
+
+/// Führt die CLI mit genau diesen Argumenten im Projektordner aus (mit `SOURCE_DATE_EPOCH`).
+pub fn ausfuehren_argumente(
+    projekt: &Projekt,
+    cli: &TypstCli,
+    argumente: &[String],
+    frist: Duration,
+) -> Result<String, ExportFehler> {
     let mut befehl = Command::new(&cli.pfad);
     befehl
-        .args(gegenprobe_argumente(projekt, ziel_text, zusatz))
+        .args(argumente)
         .current_dir(&projekt.wurzel)
         .env("SOURCE_DATE_EPOCH", projekt.epoche().to_string())
         .stdin(Stdio::null())

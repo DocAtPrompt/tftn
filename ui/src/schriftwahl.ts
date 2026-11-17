@@ -2,7 +2,7 @@
 // Familie wird nach fonts/ kopiert; fehlende Zeichen der Dokumentsprache stehen gleich dabei.
 
 import { dialogAnmelden, dialogKopf } from "./dialoge";
-import { t } from "./sprache";
+import { groesse, t } from "./sprache";
 
 export interface FamilieJs {
   name: string;
@@ -48,14 +48,9 @@ export function filtern(liste: FamilieJs[], suche: string, vollstaendig = false)
 }
 
 /** „4 Schnitte · 1,2 MB“ */
-export function umfang(f: FamilieJs, sprache = "de"): string {
-  const mb = f.groesse / 1_000_000;
-  const groesse =
-    mb >= 0.1
-      ? `${mb.toLocaleString(sprache, { maximumFractionDigits: 1 })} MB`
-      : `${Math.max(1, Math.round(f.groesse / 1000)).toLocaleString(sprache)} kB`;
+export function umfang(f: FamilieJs): string {
   const schnitte = f.schnitte === 1 ? t("1 Schnitt") : t("{n} Schnitte", { n: f.schnitte });
-  return `${schnitte} · ${groesse}`;
+  return `${schnitte} · ${groesse(f.groesse)}`;
 }
 
 /** Warnung zu fehlenden Zeichen, leer ohne. Lange Listen werden gekürzt. */

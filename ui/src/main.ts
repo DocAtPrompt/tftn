@@ -28,7 +28,7 @@ import { ZitatPalette, type ZitatSuche } from "./zitat";
 import { LiteraturDialog } from "./literaturdialog";
 import type { LitDateiJs } from "./literatur";
 import type { DoiJs } from "./doi";
-import { type ExportJs, ExportMenue, type ProfilJs, type WordJs } from "./export";
+import { type ArchivJs, type ExportJs, ExportMenue, type ProfilJs, type WordJs } from "./export";
 import { SerieDialog, type SerieErgebnisJs, type SerieJs, hauptdateiAnpassung } from "./serie";
 import { autocompletion, startCompletion } from "@codemirror/autocomplete";
 import {
@@ -1954,6 +1954,11 @@ async function start() {
       zeigen: (pfad) => invoke("im_ordner_zeigen", { pfad }),
     },
     () => serieDialog.zeigen(),
+    async () => {
+      if (entwurf) throw new Error(t("Das Dokument braucht zuerst einen Namen: Cmd/Strg+S."));
+      if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht exportiert."));
+      return invoke<ArchivJs>("archivieren");
+    },
   );
   const serieDialog = new SerieDialog({
     pruefen: (quelle) => invoke<SerieJs>("serie_pruefen", { quelle }),

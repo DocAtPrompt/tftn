@@ -40,6 +40,10 @@ with Typst without handing them to a third party.
   run over the document – one PDF per record, or all in one PDF for a single print run (optionally
   with blank pages for double-sided printing). Each record holds only what changes; sender, bank
   and the rest come from the project.
+- **Archive package:** one click puts the PDF/A, the source, every font and package used and a
+  README with the exact `typst compile` command and the PDF's SHA-256 into a zip. The PDF is built
+  from the zip's contents alone, so years later – without TFTN – the same typst version gives the
+  same PDF, byte for byte.
 - **Autosave with versions**, outline with drag-and-drop sections, spell checking, word count,
   distraction-free focus view.
 - **AI assistants via MCP** (opt-in): Claude Code or a local model can read and edit the open

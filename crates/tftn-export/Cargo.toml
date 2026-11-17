@@ -10,6 +10,8 @@ license.workspace = true
 tftn-sprachen.workspace = true
 tftn-core.workspace = true
 tftn-manifest.workspace = true
+# Archivpaket: Zip mit Deflate (schon für die Pakete im Einsatz)
+flate2.workspace = true
 sha2 = "0.10"
 toml.workspace = true
 typst.workspace = true

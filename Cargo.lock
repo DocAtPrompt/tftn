@@ -4939,6 +4939,7 @@ dependencies = [
 name = "tftn-export"
 version = "0.6.0"
 dependencies = [
+ "flate2",
  "sha2",
  "tftn-core",
  "tftn-manifest",

@@ -343,10 +343,24 @@ body {
   padding: 4px 2px;
 }
 
+/* Die Zeile, deren Aufgabe gerade läuft oder lief, und ihr Ergebnis direkt darunter als ein Block. */
+.export-zeile-aktiv {
+  background: var(--flaeche);
+  border-radius: 6px 6px 0 0;
+}
+
 .export-ergebnis {
-  margin-top: 6px;
+  margin: 0 0 6px;
+  padding: 6px 8px 8px 10px;
+  background: var(--flaeche);
+  border-left: 3px solid var(--akzent);
+  border-radius: 0 0 6px 6px;
   color: var(--leise);
   overflow-wrap: anywhere;
+}
+
+.export-ergebnis button {
+  margin-top: 4px;
 }
 
 .export-ergebnis code {

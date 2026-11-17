@@ -895,6 +895,52 @@ async fn exportieren(
     })
 }
 
+#[derive(Serialize)]
+struct ArchivJs {
+    pfad: String,
+    relativ: String,
+    pdf: String,
+    standard: String,
+    sha256: String,
+    dateien: usize,
+    groesse: u64,
+    warnungen: Vec<String>,
+}
+
+/// Archivpaket nach `export/`: Projekt, Schriften, Pakete, PDF/A und Liesmich in einem Zip.
+#[tauri::command]
+async fn archivieren(zustand: State<'_, Zustand>) -> Result<ArchivJs, String> {
+    let projekt = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        if s.spiegel.pruefsumme() != s.auf_platte {
+            return Err(tr!(
+                "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
+            ));
+        }
+        s.projekt.clone()
+    };
+    let cli = tftn_export::TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
+    let a = tftn_export::archiv::archiv_erzeugen(&projekt, &cli, env!("CARGO_PKG_VERSION"))
+        .map_err(|e| e.to_string())?;
+    protokollieren(
+        &projekt,
+        &format!("archiviert: {} (PDF SHA-256 {})", a.relativ, a.sha256),
+    );
+    Ok(ArchivJs {
+        pfad: a.pfad.display().to_string(),
+        relativ: a.relativ,
+        pdf: a.pdf,
+        standard: a.standard,
+        sha256: a.sha256,
+        dateien: a.dateien,
+        groesse: a.groesse,
+        warnungen: a.warnungen,
+    })
+}
+
 // --- Serie (ein PDF je Datensatz) ------------------------------------------------------------
 
 #[derive(Serialize)]
@@ -3672,6 +3718,7 @@ pub fn run() {
             zitat_text,
             export_profile,
             exportieren,
+            archivieren,
             einstellungen,
             kuerzel_setzen,
             einstellungsordner_setzen,

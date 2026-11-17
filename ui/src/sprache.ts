@@ -38,6 +38,13 @@ export function dezimalzeichen(): string {
   }
 }
 
+/** Dateigröße: „3,4 MB“ ab 0,1 MB, sonst „40 kB“ (Dezimalzeichen der Oberfläche). */
+export function groesse(byte: number): string {
+  const mb = byte / 1_000_000;
+  if (mb >= 0.1) return `${mb.toFixed(1).replace(/\.0$/, "").replace(".", dezimalzeichen())} MB`;
+  return `${zahl(Math.max(1, Math.round(byte / 1000)))} kB`;
+}
+
 function einsetzen(vorlage: string, werte?: Record<string, string | number>): string {
   if (!werte) return vorlage;
   return vorlage.replace(/\{([\p{L}_][\p{L}\p{N}_]*)\}/gu, (ganz, name: string) =>
