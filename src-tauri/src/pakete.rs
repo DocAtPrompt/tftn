@@ -15,6 +15,8 @@ use tftn_einstellungen::Rechner;
 use tftn_pakete::{Index, PaketSpec, Uebernahme, Zwischenspeicher, uebernehmen};
 use tftn_sprachen::tr;
 
+use crate::netzprotokoll::{self, Abruf, Ausloeser};
+
 /// So lange wartet die App auf den Holer (er selbst beendet sich nach 600 s).
 pub const HOLER_FRIST: Duration = Duration::from_secs(660);
 
@@ -159,12 +161,13 @@ impl Drop for Lauf<'_> {
 }
 
 /// Startet den Holer, liest seine Antwort und beendet ihn nach `frist`. Läuft schon einer, wird
-/// nichts gestartet.
+/// nichts gestartet. Jeder gestartete Lauf kommt ins Netzprotokoll, auch ein gescheiterter.
 pub fn holer_aufrufen(
     programm: &Path,
     argumente: &[String],
     frist: Duration,
     laeuft: &AtomicBool,
+    ausloeser: Ausloeser,
 ) -> Result<HolerAntwort, String> {
     if laeuft.swap(true, Ordering::SeqCst) {
         return Err(tr!("Es wird schon geholt – bitte warten."));
@@ -200,23 +203,55 @@ pub fn holer_aufrufen(
         let _ = stdout.read_to_end(&mut daten);
         daten
     });
+    let beginn = std::time::SystemTime::now();
     let start = Instant::now();
+    let eintragen = |abrufe: Option<Vec<Abruf>>, fehler: Option<String>| {
+        netzprotokoll::holer_eintragen(
+            beginn,
+            start.elapsed(),
+            argumente,
+            ausloeser,
+            abrufe,
+            fehler,
+        );
+    };
     let status = loop {
-        match kind.try_wait().map_err(|e| e.to_string())? {
-            Some(s) => break s,
-            None if start.elapsed() > frist => {
+        let warten = kind.try_wait().map_err(|e| e.to_string());
+        match warten {
+            Err(e) => {
+                eintragen(None, Some(e.clone()));
+                return Err(e);
+            }
+            Ok(Some(s)) => break s,
+            Ok(None) if start.elapsed() > frist => {
                 let _ = kind.kill();
                 let _ = kind.wait();
-                return Err(tr!(
+                let fehler = tr!(
                     "Frist von {sekunden} s abgelaufen – der Holer wurde beendet.",
                     sekunden = frist.as_secs()
-                ));
+                );
+                eintragen(None, Some(fehler.clone()));
+                return Err(fehler);
             }
-            None => std::thread::sleep(Duration::from_millis(50)),
+            Ok(None) => std::thread::sleep(Duration::from_millis(50)),
         }
     };
     let daten = leser.join().unwrap_or_default();
-    antwort_lesen(&daten, status.code())
+    let ergebnis = antwort_lesen(&daten, status.code());
+    eintragen(abrufe_lesen(&daten), ergebnis.as_ref().err().cloned());
+    ergebnis
+}
+
+/// Die Verbindungen, die der Holer in seiner Antwort meldet (`abrufe`); `None` ohne lesbare Antwort.
+pub fn abrufe_lesen(stdout: &[u8]) -> Option<Vec<Abruf>> {
+    #[derive(Deserialize)]
+    struct NurAbrufe {
+        abrufe: Vec<Abruf>,
+    }
+    let text = String::from_utf8_lossy(stdout);
+    serde_json::from_str::<NurAbrufe>(text.lines().next()?)
+        .ok()
+        .map(|n| n.abrufe)
 }
 
 /// `--erwartet <spec>=sha256:<hex>` für jede Prüfsumme aus `[pakete]` in `tftn.toml`.
@@ -767,6 +802,7 @@ mod tests {
             &[],
             Duration::from_secs(1),
             &laeuft,
+            Ausloeser::Updates,
         )
         .unwrap_err();
         assert!(e.contains("schon geholt"), "{e}");
@@ -778,7 +814,8 @@ mod tests {
                 Path::new("/gibt/es/nicht"),
                 &[],
                 Duration::from_secs(1),
-                &laeuft
+                &laeuft,
+                Ausloeser::Updates,
             )
             .is_err()
         );
@@ -795,11 +832,60 @@ mod tests {
             &["30".to_string()],
             Duration::from_secs(1),
             &laeuft,
+            Ausloeser::Updates,
         )
         .unwrap_err();
         assert!(e.contains("Frist"), "{e}");
         assert!(start.elapsed() < Duration::from_secs(5));
         assert!(!laeuft.load(Ordering::SeqCst));
+        // Auch der abgebrochene Lauf steht im Netzprotokoll, ohne Bericht des Holers.
+        let p = netzprotokoll::stand();
+        assert!(
+            p.netz
+                .iter()
+                .any(|e| e.zweck == netzprotokoll::Zweck::Anderes("30".into())
+                    && e.abrufe.is_none()
+                    && e.fehler.as_deref().is_some_and(|f| f.contains("Frist"))),
+            "{:?}",
+            p.netz
+        );
+    }
+
+    /// Was der Holer unter `abrufe` meldet, landet im Netzprotokoll (hier spielt `echo` den Holer).
+    #[cfg(unix)]
+    #[test]
+    fn gemeldete_abrufe_im_netzprotokoll() {
+        let antwort = r#"{"ok":true,"abrufe":[{"url":"https://api.github.com/repos/typst/typst/releases/latest","status":200,"bytes":42,"fehler":null}]}"#;
+        let laeuft = AtomicBool::new(false);
+        holer_aufrufen(
+            Path::new("/bin/echo"),
+            &[antwort.to_string()],
+            Duration::from_secs(5),
+            &laeuft,
+            Ausloeser::Updates,
+        )
+        .unwrap();
+        let p = netzprotokoll::stand();
+        let e = p
+            .netz
+            .iter()
+            .find(|e| e.zweck == netzprotokoll::Zweck::Anderes(antwort.into()))
+            .expect("Eintrag fehlt");
+        assert_eq!(e.ausloeser, Ausloeser::Updates);
+        assert_eq!(e.hosts(), ["api.github.com"]);
+        assert_eq!(e.abrufe.as_ref().unwrap()[0].bytes, 42);
+        assert!(e.fehler.is_none());
+    }
+
+    #[test]
+    fn abrufe_aus_der_antwort() {
+        assert_eq!(abrufe_lesen(b""), None);
+        assert_eq!(abrufe_lesen(br#"{"ok":true}"#), None);
+        assert_eq!(abrufe_lesen(br#"{"ok":false,"abrufe":[]}"#), Some(vec![]));
+        let a = abrufe_lesen(br#"{"ok":false,"abrufe":[{"url":"https://x.org/a","status":null,"bytes":0,"fehler":"weg"}]}"#)
+            .unwrap();
+        assert_eq!(a[0].status, None);
+        assert_eq!(a[0].fehler.as_deref(), Some("weg"));
     }
 
     #[test]

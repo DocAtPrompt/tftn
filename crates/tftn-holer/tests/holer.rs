@@ -323,6 +323,8 @@ fn falscher_aufruf() {
     assert_eq!(code, 1, "{json}");
     assert!(json["fehler"].as_str().unwrap().contains("X"), "{json}");
     assert_eq!(a.verbindungen(), 0);
+    // Ohne Verbindung meldet er auch im Fehlerfall eine leere Liste.
+    assert_eq!(json["abrufe"], serde_json::json!([]), "{json}");
 }
 
 #[test]
@@ -362,4 +364,16 @@ fn versionen_ueber_programm() {
     assert_eq!(fehler.len(), 1, "{json}");
     assert!(fehler[0].as_str().unwrap().contains("TFTN"), "{json}");
     assert_eq!(a.verbindungen(), 2);
+    // Netzprotokoll: beide Verbindungen mit Adresse und Ergebnis.
+    let abrufe = json["abrufe"].as_array().unwrap();
+    assert_eq!(abrufe.len(), 2, "{json}");
+    assert_eq!(
+        abrufe[0]["url"],
+        format!("{}/repos/typst/typst/releases/latest", a.basis)
+    );
+    assert_eq!(abrufe[0]["status"], 200);
+    assert!(abrufe[0]["bytes"].as_u64().unwrap() > 0, "{json}");
+    assert!(abrufe[0]["fehler"].is_null(), "{json}");
+    assert_eq!(abrufe[1]["status"], 404);
+    assert!(abrufe[1]["fehler"].is_string(), "{json}");
 }

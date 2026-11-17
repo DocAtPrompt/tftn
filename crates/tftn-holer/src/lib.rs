@@ -10,6 +10,7 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt;
 use std::io::Read;
+use std::sync::Mutex;
 use std::time::Duration;
 use tftn_sprachen::tr;
 
@@ -272,15 +273,61 @@ impl Netz {
     }
 }
 
+/// Ein Verbindungsversuch, wie ihn der Holer der App meldet (Netzprotokoll): Adresse, Antwort
+/// des Servers (falls eine kam), gelesene Bytes und Fehler.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Abrufbericht {
+    pub url: String,
+    pub status: Option<u16>,
+    pub bytes: u64,
+    pub fehler: Option<String>,
+}
+
+/// Alle Verbindungsversuche dieses Laufs; ein Holer-Lauf ist ein Prozess, daher prozessweit.
+static ABRUFE: Mutex<Vec<Abrufbericht>> = Mutex::new(Vec::new());
+
+/// Die Verbindungsversuche dieses Laufs, in ihrer Reihenfolge. Abgelehnte Adressen fehlen: Zu
+/// ihnen wurde keine Verbindung aufgebaut.
+pub fn abrufe() -> Vec<Abrufbericht> {
+    ABRUFE.lock().unwrap_or_else(|e| e.into_inner()).clone()
+}
+
 impl Abruf for Netz {
     fn holen(&self, url: &str, max: u64) -> Result<Vec<u8>, HolerFehler> {
         adresse_pruefen(url, &self.erlaubnis)?;
+        let mut bericht = Abrufbericht {
+            url: url.to_string(),
+            status: None,
+            bytes: 0,
+            fehler: None,
+        };
+        let ergebnis = self.verbinden(url, max, &mut bericht);
+        if let Err(f) = &ergebnis {
+            bericht.fehler = Some(f.to_string());
+        }
+        ABRUFE
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(bericht);
+        ergebnis
+    }
+}
+
+impl Netz {
+    /// Die eigentliche Anfrage an eine schon geprüfte Adresse.
+    fn verbinden(
+        &self,
+        url: &str,
+        max: u64,
+        bericht: &mut Abrufbericht,
+    ) -> Result<Vec<u8>, HolerFehler> {
         let antwort = self
             .agent
             .get(url)
             .call()
             .map_err(|e| HolerFehler::Netz(format!("{url}: {e}")))?;
         let status = antwort.status().as_u16();
+        bericht.status = Some(status);
         if (300..400).contains(&status) {
             let ziel = antwort
                 .headers()
@@ -307,6 +354,7 @@ impl Abruf for Netz {
             .take(max + 1)
             .read_to_end(&mut daten)
             .map_err(|e| HolerFehler::Netz(format!("{url}: {e}")))?;
+        bericht.bytes = daten.len() as u64;
         if daten.len() as u64 > max {
             return Err(HolerFehler::ZuGross(tr!(
                 "Antwort von {url} ist zu groß (mehr als {max} Bytes)",

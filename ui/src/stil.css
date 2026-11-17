@@ -1050,9 +1050,19 @@ body {
   width: min(560px, 90vw);
 }
 
-/* Fach „Pakete“ (PLAN-M2 AP9) */
+/* Fach „Pakete“ (PLAN-M2 AP9): Ziel, solange der Holer läuft */
 #netz {
   color: var(--warn);
+}
+
+/* Netzprotokoll: nach einem Netzzugriff die Zahl als ruhiges, klickbares Abzeichen */
+#netz.zaehler {
+  padding: 1px 9px;
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--flaeche);
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 /* MCP: Abzeichen mit Punkt, an oder pausiert, klickbar; pulsiert, während ein Assistent zugreift */
@@ -2217,4 +2227,75 @@ button:hover .ikone {
   align-items: center;
   gap: 6px;
   font-size: 12px;
+}
+
+/* Netzprotokoll: jeder Netzzugriff seit dem Start */
+.neu-dialog.netz-dialog {
+  inset: auto;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, 92vw);
+  max-height: 80vh;
+}
+.netz-kopf {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+}
+.netz-kopf.ruhig {
+  background: color-mix(in srgb, var(--akzent) 12%, transparent);
+  color: var(--akzent);
+}
+.netz-hilfe {
+  margin: 0;
+  color: var(--leise);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.netz-liste {
+  overflow: auto;
+  min-height: 0;
+}
+.netz-tabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.netz-tabelle th {
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--text);
+  padding: 4px 6px;
+}
+.netz-tabelle td {
+  vertical-align: top;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--linie);
+}
+.netz-tabelle .netz-zeit,
+.netz-tabelle .netz-host {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.netz-tabelle tr.netz-fehler td {
+  color: var(--warn);
+}
+.netz-tabelle tr.netz-abrufe td {
+  padding-top: 0;
+  color: var(--leise);
+  font-size: 11px;
+  font-family: var(--editor-schrift);
+  overflow-wrap: anywhere;
+}
+.netz-unten {
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.netz-meldung {
+  overflow-wrap: anywhere;
 }

@@ -43,6 +43,7 @@ mod formular;
 mod helfer;
 mod import;
 mod mcp;
+mod netzprotokoll;
 mod pakete;
 mod projektdateien;
 mod rechtschreibung;
@@ -1437,6 +1438,7 @@ fn holer_paket(
     zs: &tftn_pakete::Zwischenspeicher,
     projekt: &Projekt,
     spec: &tftn_pakete::PaketSpec,
+    ausloeser: netzprotokoll::Ausloeser,
 ) -> Result<pakete::HolerAntwort, String> {
     let mut argumente = vec![
         "paket".to_string(),
@@ -1450,6 +1452,7 @@ fn holer_paket(
         &argumente,
         pakete::HOLER_FRIST,
         &zustand.holer_laeuft,
+        ausloeser,
     )
 }
 
@@ -1485,7 +1488,13 @@ fn wechsel_holen(
     let zs = zwischenspeicher(app)?;
     let rechner = tftn_einstellungen::Rechner::laden(&app_konfig(app)?);
     let (pakete, _) = pakete::holen_kern(&zs, &rechner, &neu, || {
-        holer_paket(zustand, &zs, projekt, &neu)
+        holer_paket(
+            zustand,
+            &zs,
+            projekt,
+            &neu,
+            netzprotokoll::Ausloeser::VersionWechseln,
+        )
     })?;
     Ok((zs, alt, pakete))
 }
@@ -1575,6 +1584,7 @@ fn pakete_index_holen(
         &argumente,
         pakete::HOLER_FRIST,
         &zustand.holer_laeuft,
+        netzprotokoll::Ausloeser::IndexHolen,
     )?;
     a.index
         .ok_or_else(|| tr!("Der Holer hat keinen Index gemeldet."))
@@ -1617,6 +1627,7 @@ fn literatur_aus_doi(
         &["doi".to_string(), eingabe],
         pakete::HOLER_FRIST,
         &zustand.holer_laeuft,
+        netzprotokoll::Ausloeser::Doi,
     )?;
     let (Some(doi), Some(bibtex)) = (a.doi, a.bibtex) else {
         return Err(tr!("Der Holer hat keinen Eintrag gemeldet."));
@@ -1670,6 +1681,7 @@ fn updates_pruefen(
         &["versionen".to_string()],
         pakete::HOLER_FRIST,
         &zustand.holer_laeuft,
+        netzprotokoll::Ausloeser::Updates,
     )?;
     let v = a.versionen.unwrap_or_default();
     Ok(pakete::updates_js(
@@ -1757,7 +1769,15 @@ fn paket_hinzufuegen(
     };
     let zs = zwischenspeicher(&app)?;
     let rechner = tftn_einstellungen::Rechner::laden(&app_konfig(&app)?);
-    let holer = || holer_paket(&zustand, &zs, &projekt, &spec);
+    let holer = || {
+        holer_paket(
+            &zustand,
+            &zs,
+            &projekt,
+            &spec,
+            netzprotokoll::Ausloeser::PaketHinzufuegen,
+        )
+    };
     let (u, warnungen) = pakete::hinzufuegen_kern(&projekt, &zs, &rechner, &spec, holer)?;
     if !uebernahme_einspielen(&zustand, &projekt.wurzel)? {
         return Err(tr!(
@@ -3572,6 +3592,59 @@ fn mcp_stand(app: tauri::AppHandle) -> mcp::McpJs {
     mcp::js(&app, None)
 }
 
+/// Das Netzprotokoll dieser Sitzung für das Fenster.
+#[tauri::command]
+fn netzprotokoll_lesen(app: tauri::AppHandle) -> netzprotokoll::ProtokollJs {
+    let offline = app_konfig(&app)
+        .map(|k| tftn_einstellungen::Rechner::laden(&k).ganz_offline)
+        .unwrap_or(false);
+    netzprotokoll::stand().js(offline, mcp::an(&app))
+}
+
+/// Das Blatt zum Netzprotokoll als PDF (Temp-Ordner) setzen und im PDF-Betrachter öffnen, von wo
+/// es sich drucken oder sichern lässt. `versatz_min`: Abstand der Ortszeit zu UTC in Minuten.
+#[tauri::command(async)]
+fn netzblatt_erzeugen(app: tauri::AppHandle, versatz_min: i32) -> Result<String, String> {
+    let offline = tftn_einstellungen::Rechner::laden(&app_konfig(&app)?).ganz_offline;
+    let jetzt = netzprotokoll::jetzt_ms();
+    let system = match std::env::consts::OS {
+        "macos" => "macOS",
+        "windows" => "Windows",
+        "linux" => "Linux",
+        andere => andere,
+    };
+    let angaben = netzprotokoll::BlattAngaben {
+        tftn_version: env!("CARGO_PKG_VERSION").into(),
+        typst_version: tftn_manifest::anlegen::TYPST_VERSION.into(),
+        system: format!("{system} ({})", std::env::consts::ARCH),
+        ganz_offline: offline,
+        mcp_an: mcp::an(&app),
+        jetzt_ms: jetzt,
+        versatz_min,
+        sprache: tftn_sprachen::aktuell().map_or_else(|| "de".to_string(), |k| k.kennung.clone()),
+    };
+    let daten = netzprotokoll::blatt_daten(&netzprotokoll::stand(), &angaben);
+    let (_, uhr) = netzprotokoll::ortszeit(jetzt, versatz_min);
+    let stempel = pakete::datum((jetzt / 1000) as i64 + i64::from(versatz_min) * 60);
+    let name = format!(
+        "{}-{stempel}-{}",
+        tr!("TFTN-Netzprotokoll"),
+        uhr.replace(':', "")
+    );
+    let cli = tftn_export::TypstCli::finden(tftn_manifest::anlegen::TYPST_VERSION)
+        .map_err(|e| e.to_string())?;
+    let ordner = std::env::temp_dir().join("tftn-netzblatt");
+    let pdf = netzprotokoll::blatt_setzen(
+        &ordner,
+        &name,
+        &daten,
+        &cli,
+        &typquellen(&app).map_or_else(|_| Vec::new(), |(q, _)| typen::schriftvorrat(&q)),
+    )?;
+    netzprotokoll::mit_system_oeffnen(&pdf)?;
+    Ok(pdf.display().to_string())
+}
+
 /// MCP ein- oder ausschalten (nur der Benutzer, über Einstellungen oder Statusleiste).
 #[tauri::command]
 fn mcp_setzen(app: tauri::AppHandle, an: bool) -> mcp::McpJs {
@@ -3684,6 +3757,11 @@ pub fn run() {
             if let Err(e) = einstellungen_beobachten(app.handle()) {
                 eprintln!("Einstellungen werden nicht beobachtet: {e}");
             }
+            // Netzprotokoll ab jetzt; jede Änderung erfährt die Oberfläche.
+            let melder = app.handle().clone();
+            netzprotokoll::beginnen(move || {
+                let _ = melder.emit("netzprotokoll", ());
+            });
             mcp::beim_start(app.handle());
             // Schriften für Dokumente, die keine eigenen eingebunden haben.
             if let Ok((quellen, _)) = typquellen(app.handle()) {
@@ -3784,6 +3862,8 @@ pub fn run() {
             paket_vergleichen,
             paket_wechseln,
             mcp_stand,
+            netzprotokoll_lesen,
+            netzblatt_erzeugen,
             mcp_setzen,
             mcp_beim_wechsel_aus,
             mcp_bestaetigen,

@@ -7,6 +7,9 @@
 //! tftn-holer versionen
 //! tftn-holer doi <doi>
 //! ```
+//!
+//! Jede Antwort nennt unter `abrufe` alle Verbindungsversuche des Laufs (Adresse, Status, Bytes,
+//! Fehler); die App trägt sie ins Netzprotokoll ein.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -14,7 +17,7 @@ use std::time::Duration;
 
 use serde_json::{Value, json};
 use tftn_holer::{
-    Erlaubnis, Netz, doi_holen, doi_lesen, index_holen, paket_holen, versionen_holen,
+    Erlaubnis, Netz, abrufe, doi_holen, doi_lesen, index_holen, paket_holen, versionen_holen,
 };
 use tftn_pakete::{PaketSpec, Zwischenspeicher};
 
@@ -33,21 +36,37 @@ fn main() {
         std::thread::sleep(FRIST);
         println!(
             "{}",
-            json!({"ok": false, "fehler": tftn_sprachen::tr!("Frist von {sekunden} s abgelaufen", sekunden = FRIST.as_secs())})
+            json!({
+                "ok": false,
+                "fehler": tftn_sprachen::tr!("Frist von {sekunden} s abgelaufen", sekunden = FRIST.as_secs()),
+                "abrufe": abrufe_json(),
+            })
         );
         std::process::exit(1);
     });
     let args: Vec<String> = std::env::args().skip(1).collect();
     match lauf(&args) {
-        Ok(wert) => {
+        Ok(mut wert) => {
+            wert["abrufe"] = abrufe_json();
             println!("{wert}");
             std::process::exit(0);
         }
         Err((code, text)) => {
-            println!("{}", json!({"ok": false, "fehler": text}));
+            println!(
+                "{}",
+                json!({"ok": false, "fehler": text, "abrufe": abrufe_json()})
+            );
             std::process::exit(code);
         }
     }
+}
+
+/// Die Verbindungsversuche dieses Laufs für die Antwort (Netzprotokoll der App).
+fn abrufe_json() -> Value {
+    abrufe()
+        .iter()
+        .map(|a| json!({"url": a.url, "status": a.status, "bytes": a.bytes, "fehler": a.fehler}))
+        .collect()
 }
 
 fn aufruf(text: impl Into<String>) -> (i32, String) {

@@ -126,6 +126,11 @@ pub fn js(app: &AppHandle, fehler: Option<String>) -> McpJs {
     }
 }
 
+/// Horcht MCP gerade (für Netzprotokoll und Blatt)?
+pub fn an(app: &AppHandle) -> bool {
+    app.state::<Zustand>().mcp.lock().unwrap().horcher.is_some()
+}
+
 fn melden(app: &AppHandle) {
     let _ = app.emit("mcp-geaendert", js(app, None));
 }
@@ -257,15 +262,21 @@ fn bedienen(app: &AppHandle, strom: TcpStream, schluessel: &str) {
         Ok(Some(z)) => z,
         Ok(None) => return,
         Err(e) => {
+            crate::netzprotokoll::mcp_eintragen(None);
             let antwort =
                 serde_json::to_string(&Ergebnis::fehler(e.to_string())).unwrap_or_default();
             let _ = writeln!(&strom, "{antwort}");
             return;
         }
     };
+    // Netzprotokoll: angenommene Aufrufe je Werkzeug, alle anderen als abgewiesen.
     let ergebnis = match serde_json::from_str::<Auftrag>(&zeile) {
-        Err(e) => Ergebnis::fehler(format!("unlesbarer Auftrag: {e}")),
+        Err(e) => {
+            crate::netzprotokoll::mcp_eintragen(None);
+            Ergebnis::fehler(format!("unlesbarer Auftrag: {e}"))
+        }
         Ok(a) if !tftn_mcp::schluessel_gleich(&a.schluessel, schluessel) => {
+            crate::netzprotokoll::mcp_eintragen(None);
             Ergebnis::fehler("falscher Schlüssel")
         }
         Ok(a) => {
@@ -274,6 +285,7 @@ fn bedienen(app: &AppHandle, strom: TcpStream, schluessel: &str) {
                 let m = zustand.mcp.lock().unwrap();
                 (m.horcher.is_some(), m.wartet)
             };
+            crate::netzprotokoll::mcp_eintragen((an && !wartet).then_some(a.werkzeug.as_str()));
             if !an {
                 Ergebnis::fehler("MCP ist in TFTN ausgeschaltet.")
             } else if wartet {

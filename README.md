@@ -53,8 +53,10 @@ with Typst without handing them to a third party.
 - **Skins and interface size:** light, dark, paper and high contrast, or your own; bars and dialogs
   scale from small to extra large.
 - **Offline by design:** no network access except on explicit request, through one small helper
-  with a fixed list of addresses. Your text stays plain Typst; `tftn gegenprobe` prints the
-  `typst compile` command that produces the identical PDF without TFTN.
+  with a fixed list of addresses. A **network log** shows every network access since the start –
+  normally none – and prints a one-page sheet for your records or data protection officer. Your
+  text stays plain Typst; `tftn gegenprobe` prints the `typst compile` command that produces the
+  identical PDF without TFTN.
 
 Interface and bundled document types in English and German; more interface languages can be added
 as plain files. New documents follow the interface language.

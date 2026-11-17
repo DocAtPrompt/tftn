@@ -397,6 +397,27 @@ this. Where the content goes depends on the assistant: a local model (in LM Stud
 everything on your computer, a cloud assistant sends it to its provider. MCP stays off until you turn
 it on.
 
+**Network log – provably offline.** TFTN keeps track of every network access since it started.
+Normally there is none. If TFTN did go online after a click, the status bar shows the count
+(“1 network access”); clicking it, or **Settings → Network log …**, opens the window:
+
+- at the top, one line saying whether and how often TFTN went online since the start;
+- for each access the time, purpose (for example “Fetch package @preview/cetz:0.3.4 with its
+  dependencies”), remote host, trigger (which click) and result, and below it every single connection
+  with address, response and amount of data, as reported by the downloader itself;
+- whether “Fully offline” is on, and how often AI programs accessed TFTN via MCP (counted per tool,
+  plus rejected attempts). MCP is not a network access by TFTN – the connection stays on the computer
+  (`127.0.0.1`) – but it passes text to another program, so it is listed as well.
+
+The log lives in memory only and ends with the program; it is never stored.
+
+**Data protection sheet.** “Data protection sheet (PDF) …” in the network log typesets one page of PDF
+for the record of processing activities or the data protection officer: what TFTN does on the
+computer, which network accesses are possible at all (purpose, remote host, trigger, what is
+transmitted) and which happened in this session – normally “No network access since TFTN started”.
+The sheet opens in the system's PDF viewer; print or save it from there. It is typeset with the
+bundled typst CLI, without network.
+
 ## 12. Command line
 
 The `tftn` program (built from source) works without the window:

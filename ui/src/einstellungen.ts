@@ -37,6 +37,8 @@ export interface EinstellAktionen {
   ordnerZeigen(): Promise<void>;
   offlineSetzen(an: boolean): Promise<void>;
   updatesPruefen(): Promise<UpdatesJs>;
+  /** Öffnet das Netzprotokoll (jeder Netzzugriff seit dem Start). */
+  netzprotokoll(): void;
   sprachenLesen(): Promise<SprachenJs>;
   /** `null`: wie das System. Gilt nach dem Neuladen. */
   spracheSetzen(kennung: string | null): Promise<void>;
@@ -157,7 +159,7 @@ export class EinstellDialog {
     this.huelle.innerHTML = `
       <div class="neu-kopf einst-kopf"><div class="palette-kopf">${t("Einstellungen")}</div></div>
       <div class="einst-ordner">
-        <div class="einst-zeile einst-updates"><button class="einst-updates-knopf" title="${t("Fragt GitHub nach den neuesten Versionen von TFTN und typst – nur auf Klick")}">${t("Nach Updates suchen")}</button><span class="einst-updates-text leiste-hilfe"></span></div>
+        <div class="einst-zeile einst-updates"><button class="einst-updates-knopf" title="${t("Fragt GitHub nach den neuesten Versionen von TFTN und typst – nur auf Klick")}">${t("Nach Updates suchen")}</button><button class="einst-netz-knopf" title="${t("Jeder Netzzugriff von TFTN seit dem Start, dazu ein Blatt für den Datenschutz")}">${t("Netzprotokoll …")}</button><span class="einst-updates-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-sprache"><label>${t("Sprache der Oberfläche")} <select class="einst-sprache-wahl"></select></label><button class="einst-sprachvorlage" title="${t("Legt eine Vorlage zum Übersetzen an und zeigt sie; übersetzt als <kennung>.toml speichern, etwa fr.toml")}">${t("Weitere Sprache …")}</button><span class="einst-sprache-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-skin"><label>${t("Aussehen")} <select class="einst-skin-wahl"></select></label><button class="einst-skinvorlage" title="${t("Legt eine Vorlage für einen eigenen Skin an und zeigt sie; Farben und Editorschrift lassen sich darin ändern")}">${t("Eigener Skin …")}</button><span class="einst-skin-text leiste-hilfe"></span></div>
         <div class="einst-zeile einst-groesse"><label>${t("Größe der Oberfläche")} <select class="einst-groesse-wahl" title="${t("Leisten, Knöpfe und Dialoge; Editor und Vorschau bleiben, wie sie sind")}">
@@ -203,6 +205,7 @@ export class EinstellDialog {
     const q = <T extends Element>(s: string) => this.huelle.querySelector<T>(s)!;
     q(".einst-kopf").append(schliessenKnopf(() => this.schliessen()));
     dialogAnmelden(this, this.huelle, document.getElementById("einstellungen-knopf"));
+    q(".einst-netz-knopf").addEventListener("click", () => this.a.netzprotokoll());
     const knopf = q<HTMLButtonElement>(".einst-updates-knopf");
     const text = q<HTMLSpanElement>(".einst-updates-text");
     knopf.addEventListener("click", async () => {

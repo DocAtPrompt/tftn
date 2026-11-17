@@ -59,6 +59,7 @@ import { DokumentFach } from "./dokumentfach";
 import { FormelFach, type FormelBildJs, type FormelStandJs, type PaletteJs } from "./formelfach";
 import { PaketFach, type PaketeStandJs } from "./paketfach";
 import { type Treffer, verbindungText } from "./pakete";
+import { NetzprotokollDialog, type NetzprotokollJs, statusAnzeige } from "./netzprotokoll";
 import type { FormularJs, ProjektJs, VergleichJs } from "./formular";
 import { NeuDialog, PfadDialog } from "./neudialog";
 import { einDialogOffen, escAktivieren } from "./dialoge";
@@ -537,6 +538,35 @@ let profile: ProfilJs[] = [];
 let einstellungen: EinstellungenJs | null = null;
 let belegung: Belegung | null = null;
 let einstellDialog: EinstellDialog;
+let netzDialog: NetzprotokollDialog;
+/** Statusleiste `#netz`: Text, solange der Holer läuft, sonst die Zahl der Netzzugriffe. */
+let netzLaeuft = "";
+let netzStand: NetzprotokollJs | null = null;
+
+function netzZeigen() {
+  const a = statusAnzeige(netzStand, netzLaeuft);
+  const e = document.getElementById("netz")!;
+  e.textContent = a.text;
+  e.title = a.titel;
+  e.classList.toggle("zaehler", !netzLaeuft && a.text !== "");
+  if (a.text) {
+    e.setAttribute("role", "button");
+    e.tabIndex = 0;
+  } else {
+    e.removeAttribute("role");
+    e.removeAttribute("tabindex");
+  }
+}
+
+async function netzNeu() {
+  try {
+    netzStand = await invoke<NetzprotokollJs>("netzprotokoll_lesen");
+  } catch {
+    // ohne Stand bleibt die Statusleiste leer
+  }
+  netzZeigen();
+  void netzDialog?.neu();
+}
 
 /** Rechnet die Belegung neu und tauscht das Keymap aus; wirkt sofort, ohne Neustart. */
 function tastenNeu() {
@@ -1760,7 +1790,8 @@ async function start() {
     wechseln: paketWechseln,
     hinweis: (text) => hinweis(text),
     verbindung: (an) => {
-      document.getElementById("netz")!.textContent = verbindungText(an);
+      netzLaeuft = verbindungText(an);
+      netzZeigen();
     },
   });
   /** Patch aus dem Fach „Formel“: ein Undo-Schritt; bei „veraltet“ ein Hinweis statt eines Fehlers. */
@@ -1885,6 +1916,7 @@ async function start() {
     }
   };
   einstellDialog = new EinstellDialog({
+    netzprotokoll: () => void netzDialog.zeigen(),
     kuerzelSetzen: (aktion, kuerzel) => mitHinweis(() => invoke("kuerzel_setzen", { aktion, kuerzel })),
     ordnerSetzen: (ordner, waehlen) => mitHinweis(() => invoke("einstellungsordner_setzen", { ordner, waehlen })),
     ordnerZeigen: () => invoke<void>("einstellungsordner_zeigen").catch((fehler) => hinweis(String(fehler))),
@@ -1933,6 +1965,24 @@ async function start() {
     geschlossen: () => view?.focus(),
   });
   document.getElementById("einstellungen-knopf")!.addEventListener("click", () => einstellDialog.oeffnen());
+  // Nach den Einstellungen anmelden: Aus ihnen geöffnet, liegt es oben (Esc, Klick daneben).
+  const netzElement = document.getElementById("netz")!;
+  netzDialog = new NetzprotokollDialog(
+    {
+      lesen: () => invoke<NetzprotokollJs>("netzprotokoll_lesen"),
+      blatt: (versatz) => invoke<string>("netzblatt_erzeugen", { versatzMin: versatz }),
+    },
+    [netzElement],
+  );
+  netzElement.addEventListener("click", () => void netzDialog.zeigen());
+  netzElement.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && netzElement.textContent) {
+      e.preventDefault();
+      void netzDialog.zeigen();
+    }
+  });
+  await listen("netzprotokoll", () => void netzNeu());
+  void netzNeu();
   await listen<EinstellungenJs>("einstellungen-geaendert", (e) => einstellungenSetzen(e.payload));
   await listen("katalog-geaendert", () => {
     void katalogNeu().then(() => seitenleiste?.nachladen());

@@ -398,6 +398,28 @@ Netz. Wohin das Gelesene geht, hängt am Assistenten: Ein lokales Modell (etwa i
 auf dem Rechner, ein Cloud-Assistent schickt es an seinen Anbieter. MCP bleibt aus, bis Sie es
 einschalten.
 
+**Netzprotokoll – nachweisbar offline.** TFTN führt Buch über jeden Netzzugriff seit dem Start. Im
+Normalfall gibt es keinen. Hat TFTN auf einen Klick hin doch ins Netz gegriffen, steht unten in der
+Statuszeile die Zahl („1 Netzzugriff“); ein Klick darauf oder **Einstellungen → Netzprotokoll …**
+öffnet das Fenster:
+
+- oben in einer Zeile, ob und wie oft TFTN seit dem Start im Netz war;
+- je Zugriff Uhrzeit, Zweck (etwa „Paket @preview/cetz:0.3.4 samt Abhängigkeiten holen“),
+  Gegenstelle, Auslöser (welcher Klick) und Ergebnis, darunter jede einzelne Verbindung mit Adresse,
+  Antwort und Datenmenge, wie sie der Holer selbst meldet;
+- ob „Ganz offline“ an ist, und wie oft KI-Programme über MCP zugegriffen haben (je Werkzeug gezählt,
+  dazu abgewiesene Versuche). MCP ist kein Netzzugriff von TFTN – die Verbindung bleibt auf dem Rechner
+  (`127.0.0.1`) –, gibt aber Text an ein anderes Programm weiter; deshalb steht es dabei.
+
+Das Protokoll lebt nur im Speicher und endet mit dem Programm; es wird nirgends gespeichert.
+
+**Blatt für den Datenschutz.** „Blatt für den Datenschutz (PDF) …“ im Netzprotokoll setzt eine Seite
+PDF für das Verarbeitungsverzeichnis oder die Datenschutzbeauftragte: was TFTN auf dem Rechner macht,
+welche Netzzugriffe es überhaupt geben kann (Zweck, Gegenstelle, Auslöser, was übertragen wird) und
+welche in dieser Sitzung stattfanden – im Normalfall „Keine Netzzugriffe seit dem Start“. Das Blatt
+öffnet sich im PDF-Betrachter des Systems; von dort drucken oder sichern. Gesetzt wird es mit der
+mitgelieferten typst-CLI, ohne Netz.
+
 ## 12. Kommandozeile
 
 Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
