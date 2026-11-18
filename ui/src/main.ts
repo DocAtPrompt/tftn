@@ -49,7 +49,7 @@ import { einsetzenSpec, felder } from "./felder";
 import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte, normalisieren } from "./tasten";
 import { editorKeymaps } from "./reserviert";
-import { type SkinsJs, skinAnwenden } from "./skin";
+import { farbart, type SkinJs, type SkinsJs, skinAnwenden } from "./skin";
 import { trennerZiehbar } from "./breite";
 import { type McpAuftrag, type McpJs, type McpZugriff, mcpAnzeige, mcpFragtNoch, mcpWechselAbschliessen } from "./mcp";
 import { InkognitoDialog, type InkognitoJs } from "./inkognito";
@@ -2549,8 +2549,19 @@ function oberflaecheAnwenden(prozent: number) {
 /** CSS-Variablen, die der geltende Skin gesetzt hat (für den nächsten Wechsel). */
 let skinVariablen: string[] = [];
 
+let skinAktiv: SkinJs | null = null;
+const systemDunkel = window.matchMedia("(prefers-color-scheme: dark)");
+
+function farbartSetzen() {
+  document.documentElement.dataset.farbart = farbart(skinAktiv, systemDunkel.matches);
+}
+systemDunkel.addEventListener("change", farbartSetzen);
+farbartSetzen();
+
 function skinsSetzen(s: SkinsJs) {
   skinVariablen = skinAnwenden(document.documentElement.style, skinVariablen, s.aktiv);
+  skinAktiv = s.aktiv;
+  farbartSetzen();
 }
 
 async function start() {

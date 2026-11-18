@@ -228,6 +228,72 @@ body.trenner-zieht {
   max-width: 52em;
 }
 
+/* Editor im Dunkeln: CodeMirror kennt den Skin nicht und zeichnet sonst seine hellen Standardfarben
+   (graue Zeilennummern-Leiste, schwarzer Cursor, helle Auswahl, Suchleiste und Vorschlagsliste).
+   `data-farbart` setzt main.ts aus dem Skin bzw. dem System. Im Hellen bleibt alles, wie es war. */
+:root[data-farbart="dunkel"] #editor .cm-gutters {
+  background-color: var(--grund);
+  color: var(--leise);
+  border-color: var(--linie);
+}
+:root[data-farbart="dunkel"] #editor .cm-activeLineGutter {
+  background-color: var(--flaeche);
+  color: var(--text);
+}
+:root[data-farbart="dunkel"] body:not(.schreibansicht) #editor .cm-activeLine {
+  background-color: color-mix(in srgb, var(--flaeche) 55%, transparent);
+}
+:root[data-farbart="dunkel"] #editor .cm-content {
+  caret-color: var(--text);
+}
+:root[data-farbart="dunkel"] #editor .cm-cursor,
+:root[data-farbart="dunkel"] #editor .cm-dropCursor {
+  border-left-color: var(--text);
+}
+:root[data-farbart="dunkel"] #editor .cm-selectionBackground {
+  background: color-mix(in srgb, var(--akzent) 22%, transparent);
+}
+:root[data-farbart="dunkel"] #editor .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+  background: color-mix(in srgb, var(--akzent) 35%, transparent);
+}
+:root[data-farbart="dunkel"] #editor .cm-specialChar {
+  color: var(--warn);
+}
+:root[data-farbart="dunkel"] #editor .cm-searchMatch {
+  background-color: color-mix(in srgb, var(--syntax-marker) 30%, transparent);
+}
+:root[data-farbart="dunkel"] #editor .cm-searchMatch-selected {
+  background-color: color-mix(in srgb, var(--syntax-marker) 55%, transparent);
+}
+:root[data-farbart="dunkel"] #editor .cm-snippetField {
+  background-color: #ffffff22;
+}
+:root[data-farbart="dunkel"] #editor .cm-panels {
+  background-color: var(--flaeche);
+  color: var(--text);
+  border-color: var(--linie);
+}
+:root[data-farbart="dunkel"] #editor .cm-textfield {
+  background-color: var(--grund);
+  color: var(--text);
+  border-color: var(--linie);
+}
+:root[data-farbart="dunkel"] #editor .cm-button {
+  background-image: none;
+  background-color: var(--grund);
+  color: var(--text);
+  border-color: var(--linie);
+}
+:root[data-farbart="dunkel"] #editor .cm-tooltip {
+  background-color: var(--flaeche);
+  color: var(--text);
+  border-color: var(--linie);
+}
+:root[data-farbart="dunkel"] #editor .cm-tooltip-autocomplete ul li[aria-selected] {
+  background: var(--akzent);
+  color: var(--grund);
+}
+
 /* Klassen aus typst-syntax (Tag::css_class) */
 .typ-comment { color: var(--leise); font-style: italic; }
 .typ-punct, .typ-math-delim { color: var(--leise); }

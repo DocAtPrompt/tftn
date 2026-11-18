@@ -38,6 +38,16 @@ export function skinAnwenden(stil: Stil, vorher: string[], skin: SkinJs | null):
   return namen;
 }
 
+/**
+ * Gilt gerade hell oder dunkel? Ein Skin sagt es selbst (`art`), ohne Skin entscheidet das System.
+ * main.ts setzt das Ergebnis als `data-farbart` an :root; stil.css färbt damit den Editor
+ * (CodeMirror kennt den Skin nicht und bliebe sonst hell: Zeilennummern, Cursor, Auswahl, Suche).
+ */
+export function farbart(skin: SkinJs | null, systemDunkel: boolean): "hell" | "dunkel" {
+  if (skin) return skin.art;
+  return systemDunkel ? "dunkel" : "hell";
+}
+
 /** Einträge der Auswahl „Aussehen“: „Wie das System“, dann die Skins; ein fehlender gewählter bleibt sichtbar. */
 export function skinOptionen(
   liste: { kennung: string; name: string }[],

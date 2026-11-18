@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type SkinJs, skinAnwenden, skinOptionen } from "./skin";
+import { farbart, type SkinJs, skinAnwenden, skinOptionen } from "./skin";
 
 class Stil {
   werte = new Map<string, string>();
@@ -64,5 +64,15 @@ describe("skinOptionen", () => {
     expect(skinOptionen(liste, "papier").find((o) => o.gewaehlt)?.wert).toBe("papier");
     const weg = skinOptionen(liste, "geloescht");
     expect(weg.at(-1)).toEqual({ wert: "geloescht", text: "geloescht (nicht gefunden)", gewaehlt: true });
+  });
+});
+
+describe("farbart", () => {
+  const skin = (art: "hell" | "dunkel"): SkinJs => ({ kennung: art, name: art, art, variablen: {}, warnungen: [] });
+  it("ein Skin bestimmt selbst, ohne Skin das System", () => {
+    expect(farbart(skin("dunkel"), false)).toBe("dunkel");
+    expect(farbart(skin("hell"), true)).toBe("hell");
+    expect(farbart(null, true)).toBe("dunkel");
+    expect(farbart(null, false)).toBe("hell");
   });
 });
