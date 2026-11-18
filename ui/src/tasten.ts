@@ -30,6 +30,7 @@ export const HELFER: { id: string; titel: string; gruppe: string }[] = [
   { id: "helfer/vervollstaendigen", titel: t("Vervollständigen"), gruppe: t("Helfer") },
   { id: "helfer/einstellungen", titel: t("Einstellungen"), gruppe: t("Helfer") },
   { id: "helfer/ueber", titel: t("Über TFTN und Tastenkürzel"), gruppe: t("Helfer") },
+  { id: "helfer/projektsuche", titel: t("Im Projekt suchen und ersetzen"), gruppe: t("Helfer") },
   { id: "ansicht/schrift-groesser", titel: t("Editorschrift größer"), gruppe: t("Ansicht") },
   { id: "ansicht/schrift-kleiner", titel: t("Editorschrift kleiner"), gruppe: t("Ansicht") },
   { id: "ansicht/schrift-normal", titel: t("Editorschrift normal"), gruppe: t("Ansicht") },
@@ -57,6 +58,8 @@ export const STANDARD: Record<string, Partial<Record<Plattform, string[]>>> = {
   "helfer/vervollstaendigen": { mac: ["Ctrl-Space", "Alt-`"], win: ["Ctrl-Space"] },
   "helfer/einstellungen": beide("Mod-,"),
   "helfer/ueber": beide("F1"),
+  // Wie „In Dateien ersetzen“ in VS Code; Cmd/Strg+Umschalt+F ist hier die Fußnote.
+  "helfer/projektsuche": beide("Mod-Shift-h"),
   // „+“ hat auf deutschen Tastaturen eine eigene Taste, auf US-Tastaturen liegt es auf „=“.
   "ansicht/schrift-groesser": beide("Mod-+", "Mod-="),
   "ansicht/schrift-kleiner": beide("Mod--"),

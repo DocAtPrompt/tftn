@@ -115,7 +115,7 @@ sync it and keep working on another computer without a network.
 - **Panels such as Export, New or Versions** close with ×, Esc or a click outside. Once you have
   typed something into a dialog (a project name, say), only × or Esc closes it.
 - **Editor** (left): Typst source with highlighting. Above it: “Block”, “Citation”, “Outline”,
-  “Page” and, as icons, sidebar and focus view.
+  “Page” and, as icons, “Search in project” (magnifier), sidebar and focus view.
 - **Tabs** above the editor: the main file and further chapter files (`.typ`, included for example
   with `#include "chapters/one.typ"`). “+” opens a chapter file of the project; clicking text from a
   chapter in the preview opens its tab by itself and jumps to the spot. If you write
@@ -221,6 +221,24 @@ its subsections, as does Alt+↑/↓ on an entry. Every move is one undo step.
 **Comments:** anything after `//` (or between `/*` and `*/`) is a note that is not printed. The
 “Comments” tab in the outline lists them by section; a click jumps there. Several `//` lines in a row
 count as one comment.
+
+**Find and replace:** Cmd/Ctrl+F opens the search bar below the editor; it finds and replaces in the
+active tab (with “match case”, “by word” and “regexp”).
+
+**Search in project** (magnifier above the editor or Cmd/Ctrl+Shift+H) searches all `.typ` files of
+the project: the main file and every chapter, including those not open as a tab (not in hidden
+folders, `packages/`, `export/`, `_lokal/` and `_renders/`). For open tabs, the text in the editor
+counts, even if unsaved. A selection in the text is already in the search field when the window opens.
+The same switches as in the search bar: “Match case”, “by word”, “regexp” (as in JavaScript; a broken
+expression is explained below the field). Matches are grouped by file with line number and excerpt; a
+click opens the file as a tab and selects the match. At most 1,000 matches are listed; counting goes
+on, and the line above the list says so. “Replace” (shown when hovering a match) replaces that one;
+“Replace all …” first states the number of matches and files, a second click replaces. In the
+replacement, `\n` stands for a line break, and with regular expressions `$1`, `$2` … for the groups and
+`$&` for the whole match. Replacing happens in the editor, not directly in the files: files that are
+not open yet open as tabs; Cmd/Ctrl+Z undoes the replacement per tab, and saving works as usual. The
+list is a snapshot: after further typing, press Enter in the search field to search again; a match that
+has moved in the meantime is not replaced blindly.
 
 **Focus view** (“Focus view” button or Cmd/Ctrl+Shift+Enter): just the text, centered and a little
 larger. Everything else steps back; the preview keeps updating in the background. Esc, the same
@@ -443,6 +461,8 @@ shortcuts are shown for Mac **and** Windows.
 | Complete | Ctrl+Space, on the Mac also ⌥` |
 | Settings | Mod+, |
 | About TFTN and keyboard shortcuts | F1 |
+| Find and replace in the active tab (editor) | Mod+F |
+| Search and replace in project | Mod+Shift+H |
 | Editor font larger / smaller / as in the skin | Mod++ (also Mod+=) / Mod+− / Mod+0 |
 | Values at this position (markers) | Mod+Shift+M or hold ⌥/Alt |
 | Save selection as text block … | none (assignable); right-click into the selection |

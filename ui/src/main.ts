@@ -54,6 +54,7 @@ import { InkognitoDialog, type InkognitoJs } from "./inkognito";
 import { ikonenSetzen } from "./ikonen";
 import { KnopfMenue } from "./knopfmenue";
 import { ReiterLeiste, nachSchliessen } from "./reiter";
+import { type DateiText, ProjektSuche, type SuchAnfrage, type Treffer as SuchTreffer, ersatzFuer, ersetzungen, fundBei } from "./projektsuche";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
 import { UeberDialog, type UeberJs } from "./ueber";
 import { schriftGemerkt, schriftSetzen, schriftStufe } from "./editorschrift";
@@ -274,6 +275,84 @@ async function reiterSchliessen(datei: string) {
     hinweis(String(fehler));
   }
   reiterZeigen();
+}
+
+// --- Im Projekt suchen und ersetzen (projektsuche.ts) ---------------------------------------
+
+let projektSuche: ProjektSuche | undefined;
+
+/** Texte aller `.typ`-Dateien; offene Reiter mit dem Stand im Editor (auch ungespeichert). */
+async function projektTexte(): Promise<DateiText[]> {
+  const texte = await invoke<(DateiText & { haupt: boolean })[]>("projekt_texte");
+  return texte.map((d) => {
+    // Der Reiter der Hauptdatei heißt so, wie das Projekt sie nennt.
+    const datei = d.haupt ? hauptDatei : d.datei;
+    if (datei === aktiveDatei) return { datei, text: view.state.doc.toString() };
+    const r = reiter.find((x) => x.datei === datei);
+    return { datei, text: r?.state ? r.state.doc.toString() : d.text };
+  });
+}
+
+/** Öffnet die Datei des Treffers als Reiter und wählt ihn aus. */
+async function trefferZeigen(tr: SuchTreffer) {
+  await reiterWaehlen(tr.datei);
+  if (aktiveDatei !== tr.datei) return;
+  const doc = view.state.doc;
+  if (tr.bis > doc.length || doc.sliceString(tr.von, tr.bis) !== tr.text) {
+    meldung(t("Die Stelle hat sich geändert; bitte neu suchen."));
+    return;
+  }
+  view.dispatch({ selection: { anchor: tr.von, head: tr.bis }, effects: EditorView.scrollIntoView(tr.von, { y: "center" }) });
+  view.focus();
+}
+
+/** Ersetzt einen Treffer im Editor (ein Rückgängig-Schritt); `false`, wenn er sich verschoben hat. */
+async function trefferErsetzen(tr: SuchTreffer, a: SuchAnfrage): Promise<boolean> {
+  await reiterWaehlen(tr.datei);
+  if (aktiveDatei !== tr.datei) return false;
+  const f = fundBei(view.state.doc.toString(), a, tr.von, tr.bis);
+  if (!f) return false;
+  const insert = ersatzFuer(a, f);
+  view.dispatch({
+    changes: { from: f.von, to: f.bis, insert },
+    selection: { anchor: f.von, head: f.von + insert.length },
+    effects: EditorView.scrollIntoView(f.von, { y: "center" }),
+    annotations: isolateHistory.of("full"),
+    userEvent: "input.replace",
+  });
+  return true;
+}
+
+/**
+ * Ersetzt alle Treffer in diesen Dateien, je Datei eine Transaktion im Editor (Rückgängig je
+ * Reiter); nicht offene Dateien gehen dafür als Reiter auf. Danach ist der vorige Reiter wieder aktiv.
+ */
+async function alleErsetzen(dateien: string[], a: SuchAnfrage): Promise<number> {
+  const zurueck = aktiveDatei;
+  const nicht: string[] = [];
+  let n = 0;
+  for (const datei of dateien) {
+    await reiterWaehlen(datei);
+    if (aktiveDatei !== datei) {
+      nicht.push(datei);
+      continue;
+    }
+    const changes = ersetzungen(view.state.doc.toString(), a);
+    if (!changes.length) continue;
+    view.dispatch({ changes, annotations: isolateHistory.of("full"), userEvent: "input.replace.all" });
+    n += changes.length;
+  }
+  await reiterWaehlen(zurueck);
+  if (nicht.length) hinweis(t("Nicht ersetzt in: {dateien}", { dateien: nicht.join(", ") }));
+  return n;
+}
+
+/** Die Auswahl im Editor, wenn sie in einer Zeile liegt (wie die Suchleiste von CodeMirror). */
+function auswahlEinzeilig(): string {
+  if (!view) return "";
+  const s = view.state.selection.main;
+  const text = view.state.sliceDoc(s.from, s.to);
+  return s.empty || text.includes("\n") ? "" : text;
 }
 
 // --- Positionen älterer Revisionen auf den aktuellen Text abbilden (Klicksprung, KONZEPT 4.3) ----
@@ -711,6 +790,7 @@ const UEBERALL = new Set([
   "helfer/schreibansicht",
   "app/drucken",
   "helfer/ueber",
+  "helfer/projektsuche",
   "ansicht/schrift-groesser",
   "ansicht/schrift-kleiner",
   "ansicht/schrift-normal",
@@ -733,6 +813,7 @@ function tastenNeu() {
   document.getElementById("ueber-knopf")!.title = titel("helfer/ueber", t("Über TFTN: Version, Links, Tastenkürzel"));
   document.getElementById("seitenleiste-knopf")!.title = titel("helfer/seitenleiste", t("Seitenleiste: was an der Schreibmarke steht"));
   document.getElementById("schreibansicht-knopf")!.title = titel("helfer/schreibansicht", t("Nur der Text, ohne Ablenkung"));
+  document.getElementById("projektsuche-knopf")!.title = titel("helfer/projektsuche", t("Im Projekt suchen und ersetzen (alle Dateien)"));
 }
 
 /** Bausteine mit dem Kürzel, das gerade gilt (für Menü und Palette). */
@@ -772,6 +853,9 @@ function ausfuehren(id: string): boolean {
       return true;
     case "helfer/ueber":
       void ueberDialog.zeigen();
+      return true;
+    case "helfer/projektsuche":
+      projektSuche?.oeffnen();
       return true;
     case "app/drucken":
       meldung(t("Setze das PDF zum Drucken …"));
@@ -2184,6 +2268,14 @@ async function start() {
   document.getElementById("seite-knopf")!.addEventListener("click", () => seitenleisteOeffnen("seite"));
   document.getElementById("seitenleiste-knopf")!.addEventListener("click", seitenleisteUmschalten);
   document.getElementById("schreibansicht-knopf")!.addEventListener("click", () => schreibansichtSchalten(true));
+  projektSuche = new ProjektSuche({
+    texte: projektTexte,
+    zeigen: trefferZeigen,
+    ersetzen: trefferErsetzen,
+    alleErsetzen,
+    auswahl: auswahlEinzeilig,
+  });
+  document.getElementById("projektsuche-knopf")!.addEventListener("click", () => projektSuche?.oeffnen());
   schaltZustand("gliederung-knopf", gliederungOrt(), "hidden", () => !gliederungOrt().hidden);
   schaltZustand("seitenleiste-knopf", document.getElementById("seitenleiste")!, "hidden", () => seitenleiste?.offen ?? false);
   schaltZustand("schreibansicht-knopf", document.body, "class", () => schreibansicht.istAn());

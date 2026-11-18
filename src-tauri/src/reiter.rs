@@ -270,6 +270,79 @@ pub fn kapiteldateien(zustand: State<'_, Zustand>) -> Result<Vec<String>, String
     Ok(liste)
 }
 
+/// Eine Datei des Projekts mit ihrem Text (für „Im Projekt suchen“).
+#[derive(Serialize, Debug, PartialEq)]
+pub struct DateiTextJs {
+    /// Pfad relativ zum Projekt, mit `/`.
+    pub datei: String,
+    pub haupt: bool,
+    /// Zeilenenden als `\n`, wie im Editor.
+    pub text: String,
+}
+
+/// Größere Dateien durchsucht „Im Projekt suchen“ nicht (das sind keine Kapitel).
+const SUCHE_HOECHSTENS: u64 = 4 * 1024 * 1024;
+
+/// Alle `.typ`-Dateien des Projekts (dieselben wie bei `kapiteldateien`, dazu die Hauptdatei als
+/// erste) mit Text: offene aus `offen` (Stand im Editor, auch ungespeichert), sonst von der Platte.
+/// Nicht lesbare oder sehr große Dateien fehlen.
+pub fn texte_sammeln(
+    wurzel: &Path,
+    haupt: &str,
+    offen: impl Fn(&Path) -> Option<String>,
+) -> Vec<DateiTextJs> {
+    let mut liste = Vec::new();
+    sammeln(wurzel, wurzel, 0, &mut liste);
+    liste.retain(|d| d != haupt);
+    liste.sort();
+    liste.insert(0, haupt.to_string());
+    liste
+        .into_iter()
+        .filter_map(|datei| {
+            let pfad = wurzel.join(&datei);
+            let kanonisch = pfad.canonicalize().ok()?;
+            let text = match offen(&kanonisch) {
+                Some(t) => t,
+                None => {
+                    if std::fs::metadata(&kanonisch).ok()?.len() > SUCHE_HOECHSTENS {
+                        return None;
+                    }
+                    zeilenenden_lf(&std::fs::read_to_string(&kanonisch).ok()?)
+                }
+            };
+            Some(DateiTextJs {
+                haupt: datei == haupt,
+                datei,
+                text,
+            })
+        })
+        .collect()
+}
+
+/// Texte aller `.typ`-Dateien des Projekts für „Im Projekt suchen“ (gesucht wird im Editor).
+#[tauri::command(async)]
+pub fn projekt_texte(zustand: State<'_, Zustand>) -> Result<Vec<DateiTextJs>, String> {
+    // Unter der Sperre nur die offenen Stände abschreiben; die Platte danach ohne Sperre lesen.
+    let (wurzel, haupt, offen) = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        let offen: Vec<(PathBuf, String)> = std::iter::once((&s.datei, &s.spiegel))
+            .chain(s.geparkt.iter().map(|g| (&g.datei, &g.spiegel)))
+            .filter_map(|(d, sp)| Some((d.canonicalize().ok()?, sp.text().to_string())))
+            .collect();
+        (
+            s.projekt.wurzel.clone(),
+            s.projekt.konfig.haupt.clone(),
+            offen,
+        )
+    };
+    Ok(texte_sammeln(&wurzel, &haupt, |p| {
+        offen.iter().find(|(d, _)| d == p).map(|(_, t)| t.clone())
+    }))
+}
+
 /// `.typ`-Dateien unter `ordner`, höchstens vier Ebenen tief, ohne gesperrte Ordner und die
 /// Hauptdatei des Projekts.
 fn sammeln(wurzel: &Path, ordner: &Path, tiefe: usize, aus: &mut Vec<String>) {
@@ -625,6 +698,42 @@ mod tests {
         )
         .unwrap();
         assert_eq!(geparkt.len(), 1);
+        let _ = std::fs::remove_dir_all(&o);
+    }
+
+    #[test]
+    fn texte_fuer_die_projektsuche() {
+        let o = ordner("texte");
+        std::fs::write(o.join("main.typ"), "Haupt\r\nZeile").unwrap();
+        std::fs::create_dir_all(o.join("export")).unwrap();
+        std::fs::write(o.join("export/alt.typ"), "x").unwrap();
+        std::fs::write(o.join("a.typ"), "Äpfel").unwrap();
+        std::fs::write(o.join("kapitel/eins.typ"), "auf der Platte").unwrap();
+        let offen_pfad = o.join("kapitel/eins.typ").canonicalize().unwrap();
+        let texte = texte_sammeln(&o, "main.typ", |p| {
+            (p == offen_pfad).then(|| "im Editor, ungespeichert".to_string())
+        });
+        assert_eq!(
+            texte,
+            vec![
+                DateiTextJs {
+                    datei: "main.typ".into(),
+                    haupt: true,
+                    text: "Haupt\nZeile".into()
+                },
+                DateiTextJs {
+                    datei: "a.typ".into(),
+                    haupt: false,
+                    text: "Äpfel".into()
+                },
+                DateiTextJs {
+                    datei: "kapitel/eins.typ".into(),
+                    haupt: false,
+                    text: "im Editor, ungespeichert".into()
+                },
+            ],
+            "Hauptdatei zuerst, Zeilenenden wie im Editor; packages/, _lokal/, versteckte und export/ nicht"
+        );
         let _ = std::fs::remove_dir_all(&o);
     }
 

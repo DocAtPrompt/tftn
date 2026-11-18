@@ -4186,6 +4186,7 @@ pub fn run() {
             reiter::datei_aktivieren,
             reiter::datei_schliessen,
             reiter::kapiteldateien,
+            reiter::projekt_texte,
             reiter::fehlende_kapitel,
             reiter::kapitel_anlegen,
             reiter::kapitel_aufraeumen,

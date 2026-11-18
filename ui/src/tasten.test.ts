@@ -24,7 +24,7 @@ const hinweis: EintragJs = {
   gruppe: null,
   herkunft: "dokumenttyp",
   modus: ["markup"],
-  kuerzel: "Mod-Shift-h",
+  kuerzel: "Mod-Shift-d",
 };
 
 const alle = (eigene: Record<string, string> = {}) => ({

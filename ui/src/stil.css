@@ -2545,3 +2545,116 @@ button:hover .ikone {
 .reiter:not(:has(.reiter-zu)) {
   padding-right: 10px;
 }
+
+/* Im Projekt suchen (projektsuche.ts): rechts über der Vorschau, der Editor bleibt frei */
+.neu-dialog.psuche-dialog {
+  inset: auto;
+  top: 8%;
+  right: 16px;
+  bottom: 6%;
+  width: min(460px, calc(100vw - 32px));
+  gap: 6px;
+  overflow: hidden;
+}
+.psuche-feld {
+  font: inherit;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.psuche-dialog > .psuche-feld {
+  width: 100%;
+}
+.psuche-feld.psuche-fehler {
+  outline: 2px solid var(--warn);
+}
+.psuche-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: center;
+}
+.psuche-zeile .psuche-feld {
+  flex: 1;
+}
+.psuche-schalter {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.psuche-stand {
+  margin: 0;
+  font-size: 12px;
+  color: var(--leise);
+  min-height: 1.4em;
+  overflow-wrap: anywhere;
+}
+.psuche-liste {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid var(--linie);
+}
+.psuche-dateikopf {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 2px 2px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.psuche-dateiname {
+  overflow-wrap: anywhere;
+}
+.psuche-zahl {
+  color: var(--leise);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.psuche-treffer {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+.psuche-stelle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  text-align: left;
+  font-size: 12px;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  color: inherit;
+  cursor: pointer;
+}
+.psuche-stelle:hover,
+.psuche-stelle:focus-visible {
+  background: var(--flaeche);
+}
+.psuche-nr {
+  min-width: 3ch;
+  text-align: right;
+  color: var(--leise);
+  font-variant-numeric: tabular-nums;
+}
+.psuche-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+  font-family: var(--editor-schrift, ui-monospace, monospace);
+}
+.psuche-text mark {
+  background: color-mix(in srgb, var(--akzent) 30%, transparent);
+  color: inherit;
+  border-radius: 2px;
+}
+.psuche-ersetzen {
+  font-size: 11px;
+  padding: 0 6px;
+  visibility: hidden;
+}
+.psuche-treffer:hover .psuche-ersetzen,
+.psuche-treffer:focus-within .psuche-ersetzen {
+  visibility: visible;
+}

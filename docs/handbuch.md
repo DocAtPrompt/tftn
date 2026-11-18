@@ -110,7 +110,7 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
 - **Fenster wie Export, Neu oder Fassungen** schließen mit ×, Esc oder einem Klick daneben. Hat man
   in einem Dialog schon etwas eingetippt (etwa einen Projektnamen), schließt ihn nur × oder Esc.
 - **Editor** (links): Typst-Quelltext mit Hervorhebung. Darüber die Knöpfe „Baustein“, „Zitat“,
-  „Gliederung“, „Seite“ und als Symbole Seitenleiste und Schreibansicht.
+  „Gliederung“, „Seite“ und als Symbole „Im Projekt suchen“ (Lupe), Seitenleiste und Schreibansicht.
 - **Reiter** über dem Editor: die Hauptdatei und weitere Kapiteldateien (`.typ`, etwa mit
   `#include "kapitel/eins.typ"` eingebunden). „+“ öffnet eine Kapiteldatei des Projekts; ein Klick in
   der Vorschau auf Text aus einem Kapitel öffnet dessen Reiter von selbst und springt an die Stelle.
@@ -220,6 +220,25 @@ Rückgängig-Schritt.
 **Kommentare:** Was nach `//` steht (oder zwischen `/*` und `*/`), ist eine Notiz, die nicht gedruckt
 wird. Der Reiter „Kommentare“ in der Gliederung listet sie nach Abschnitten; ein Klick springt hin.
 Mehrere `//`-Zeilen untereinander gelten als ein Kommentar.
+
+**Suchen und Ersetzen:** Cmd/Strg+F öffnet die Suchleiste unter dem Editor; sie sucht und ersetzt im
+aktiven Reiter (mit „Groß/klein beachten“, „ganzes Wort“ und „regulärer Ausdruck“).
+
+**Im Projekt suchen** (Lupe über dem Editor oder Cmd/Strg+Umschalt+H) durchsucht alle `.typ`-Dateien
+des Projekts: die Hauptdatei und alle Kapitel, auch die, die gerade nicht als Reiter offen sind (nicht
+in versteckten Ordnern, `packages/`, `export/`, `_lokal/` und `_renders/`). Für offene Reiter gilt der
+Stand im Editor, auch ungespeichert. Eine markierte Stelle im Text steht beim Öffnen schon im Suchfeld.
+Dieselben Schalter wie in der Suchleiste: „Groß/klein“, „ganzes Wort“, „regulärer Ausdruck“ (wie in
+JavaScript; ein fehlerhafter Ausdruck wird unter dem Feld erklärt). Die Treffer stehen nach Datei
+geordnet mit Zeilennummer und Ausschnitt; ein Klick öffnet die Datei als Reiter und markiert den
+Treffer. Gezeigt werden höchstens 1.000 Treffer; gezählt wird weiter, die Zeile über der Liste sagt es.
+„Ersetzen“ (erscheint beim Darüberfahren über einem Treffer) ersetzt diesen einen, „Alle ersetzen …“
+nennt zuerst die Zahl der Treffer und Dateien, ein zweiter Klick ersetzt. Im Ersatz steht `\n` für
+einen Zeilenumbruch, bei regulären Ausdrücken `$1`, `$2` … für die Gruppen und `$&` für den ganzen
+Treffer. Ersetzt wird im Editor, nicht direkt in den Dateien: Dateien, die noch nicht offen sind, gehen
+dafür als Reiter auf; Cmd/Strg+Z macht das Ersetzen je Reiter rückgängig, gespeichert wird wie gewohnt.
+Die Liste ist ein Schnappschuss: Wer danach weiterschreibt, sucht mit Enter im Suchfeld neu; ein
+Treffer, der sich inzwischen verschoben hat, wird nicht blind ersetzt.
 
 **Schreibansicht ohne Ablenkung** (Knopf „Schreibansicht“ oder Cmd/Strg+Umschalt+Eingabe): nur der
 Text, mittig und etwas größer. Alles andere tritt zurück; die Vorschau rechnet im Hintergrund weiter.
@@ -443,6 +462,8 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Vervollständigen | Strg+Leertaste, am Mac auch ⌥` |
 | Einstellungen | Mod+, |
 | Über TFTN und Tastenkürzel | F1 |
+| Suchen und Ersetzen im aktiven Reiter (Editor) | Mod+F |
+| Im Projekt suchen und ersetzen | Mod+Umschalt+H |
 | Editorschrift größer / kleiner / wie im Skin | Mod++ (auch Mod+=) / Mod+− / Mod+0 |
 | Werte an dieser Stelle (Marken) | Mod+Umschalt+M oder ⌥ bzw. Alt halten |
 | Auswahl als Textbaustein speichern … | keins (belegbar); Rechtsklick in die Markierung |
