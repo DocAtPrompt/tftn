@@ -10,15 +10,16 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::{
-    cargo, holer_bauen, host_ziel, mit_frist, projektordner, referenzen, sha256, tftn_bauen,
+    cargo, holer_bauen, host_ziel, mit_app, mit_frist, projektordner, referenzen, sha256,
+    tftn_bauen,
 };
 
-/// Linux-Runner haben kein WebKitGTK; dort ohne App (wie in der CI).
+/// Linux ohne WebKitGTK: ohne App (siehe `mit_app`).
 fn ohne_app() -> &'static [&'static str] {
-    if cfg!(target_os = "linux") {
-        &["--exclude", "tftn-app"]
-    } else {
+    if mit_app() {
         &[]
+    } else {
+        &["--exclude", "tftn-app"]
     }
 }
 
@@ -100,10 +101,10 @@ pub fn ci() -> Result<(), String> {
 /// Kein HTTP-Client in App, Kommandozeile und `tftn-pakete` (KONZEPT 4.8); `tftn-holer` nur mit
 /// ureq und rustls (Entwurf 8.2, PLAN-M2 AP9).
 pub fn netzfreiheit() -> Result<(), String> {
-    let pakete: &[&str] = if cfg!(target_os = "linux") {
-        &["tftn-cli", "tftn-pakete", "tftn-holer"]
-    } else {
+    let pakete: &[&str] = if mit_app() {
         &["tftn-app", "tftn-cli", "tftn-pakete", "tftn-holer"]
+    } else {
+        &["tftn-cli", "tftn-pakete", "tftn-holer"]
     };
     for p in pakete {
         let aus = cargo()

@@ -25,21 +25,21 @@ const FRIST: Duration = Duration::from_secs(120);
 /// Meldung, wenn Pandoc für den Import fehlt.
 pub fn fehlt() -> String {
     tr!(
-        "Für den Import braucht TFTN das Programm Pandoc (ab 3.1.2). Mac: „brew install pandoc“, Windows: „winget install --id JohnMacFarlane.Pandoc“. Danach TFTN neu starten."
+        "Für den Import braucht TFTN das Programm Pandoc (ab 3.1.2). Mac: „brew install pandoc“, Windows: „winget install --id JohnMacFarlane.Pandoc“, Linux: „sudo apt install pandoc“. Danach TFTN neu starten."
     )
 }
 
 /// Meldung, wenn Pandoc für Word fehlt.
 pub fn fehlt_fuer_word() -> String {
     tr!(
-        "Für Word braucht TFTN das Programm Pandoc (ab 3.1.2). Mac: „brew install pandoc“, Windows: „winget install --id JohnMacFarlane.Pandoc“. Danach TFTN neu starten."
+        "Für Word braucht TFTN das Programm Pandoc (ab 3.1.2). Mac: „brew install pandoc“, Windows: „winget install --id JohnMacFarlane.Pandoc“, Linux: „sudo apt install pandoc“. Danach TFTN neu starten."
     )
 }
 
 /// Meldung, wenn Pandoc zum Umwandeln eingefügten Textes fehlt.
 pub fn fehlt_fuer_umwandeln() -> String {
     tr!(
-        "Zum Umwandeln braucht TFTN das Programm Pandoc (ab 3.1.2). Mac: „brew install pandoc“, Windows: „winget install --id JohnMacFarlane.Pandoc“. Danach TFTN neu starten."
+        "Zum Umwandeln braucht TFTN das Programm Pandoc (ab 3.1.2). Mac: „brew install pandoc“, Windows: „winget install --id JohnMacFarlane.Pandoc“, Linux: „sudo apt install pandoc“. Danach TFTN neu starten."
     )
 }
 

@@ -39,6 +39,13 @@ notarized: on first launch, right-click → “Open”. The matching typst CLI i
 current user without admin rights. The installer is not signed: if SmartScreen warns, choose
 “More info” → “Run anyway”.
 
+**Linux:** download `TFTN-<version>-linux-x64.AppImage` (Intel/AMD) or `…-linux-arm64.AppImage`
+from the releases page, make it executable (`chmod +x TFTN-*.AppImage`) and start it; everything,
+including the typst CLI, is inside. It runs on Ubuntu 22.04 or comparable systems and later. If it
+does not start, FUSE is usually missing: `sudo apt install libfuse2` (Ubuntu 24.04: `libfuse2t64`).
+As on Windows, the Ctrl shortcuts apply, and opening asks for a path instead of showing a folder
+dialog. The Linux build is new and has hardly been tried by hand yet.
+
 **Try it:** use “Open” → “Open project …” and choose the `demo/` folder from the source. The sample article shows
 equations, a figure, a table, footnotes, cross-references and citations. Feel free to change
 anything.
@@ -234,7 +241,9 @@ effect immediately.
 OpenDocument (.odt), Markdown, HTML, EPUB, LaTeX and RTF become a new document. Headings, lists,
 tables, footnotes, equations and images come along; layout, comments and tracked changes do not.
 The original stays untouched. Pandoc runs sandboxed and fetches nothing from the network. Install:
-Mac `brew install pandoc`, Windows `winget install --id JohnMacFarlane.Pandoc`.
+Mac `brew install pandoc`, Windows `winget install --id JohnMacFarlane.Pandoc`, Linux through the
+package manager (Ubuntu 24.04: `sudo apt install pandoc`; older systems often ship a version that is
+too old, then use the package from pandoc.org).
 
 **Paste with conversion** (also requires Pandoc): when you paste Markdown with Cmd/Ctrl+V (such as
 `# Title`, `**bold**`, `[link](…)`, tables) or formatted text from a browser or Word, it first appears

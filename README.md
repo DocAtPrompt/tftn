@@ -1,6 +1,6 @@
 # TFTN – Typst for the Noobs
 
-A native, offline writing app for [Typst](https://typst.app) on macOS and Windows: write on the
+A native, offline writing app for [Typst](https://typst.app) on macOS, Windows and Linux: write on the
 left, see the finished page on the right as you type. Built with Rust, Tauri 2 and CodeMirror 6.
 
 ![TFTN with a journal article: comment overview, Typst source and live preview](docs/images/main.png)
@@ -72,7 +72,8 @@ as plain files. New documents follow the interface language.
 *Bibliography manager: search your `.bib` file, edit an entry in a form, see what you have not cited yet.*
 
 **Status:** early but usable day to day on macOS (Apple silicon). The Windows build passes the test
-suite and an automated install check, but has hardly been used by hand yet.
+suite and an automated install check, but has hardly been used by hand yet. Linux (AppImage for x64
+and arm64) is new: built and checked automatically, barely tried by hand.
 
 ## Documentation
 

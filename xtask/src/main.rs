@@ -113,7 +113,7 @@ fn tftn_bauen() -> Result<PathBuf, String> {
         "--exclude",
         "xtask",
     ]);
-    if cfg!(target_os = "linux") {
+    if !mit_app() {
         befehl.args(["--exclude", "tftn-app"]);
     }
     mit_frist(&mut befehl, 3600)?;
@@ -135,7 +135,7 @@ fn holer_bauen(release: bool) -> Result<PathBuf, String> {
     let von = projektordner().join(format!("target/{profil}/tftn-holer{exe}"));
     let ordner = projektordner().join("target/sidecar");
     std::fs::create_dir_all(&ordner).map_err(|e| format!("{}: {e}", ordner.display()))?;
-    let nach = ordner.join(format!("tftn-holer-{}{exe}", host_ziel()));
+    let nach = ordner.join(format!("tftn-holer-{}{exe}", sidecar_ziel()));
     std::fs::copy(&von, &nach)
         .map_err(|e| format!("{} → {}: {e}", von.display(), nach.display()))?;
     // Der Holer beendet sich bei falschem Aufruf sofort (und sonst nach seiner eigenen Frist).
@@ -229,6 +229,29 @@ fn host_ziel() -> &'static str {
     }
 }
 
+/// Zielplattform in der Schreibweise von Rust, die Tauri an `externalBin` anhängt. Unter Linux ist
+/// die App gegen glibc gebaut (`-gnu`), die typst-CLI und der Holer laufen dort aber auch so.
+fn sidecar_ziel() -> String {
+    sidecar_ziel_fuer(std::env::consts::OS, std::env::consts::ARCH, host_ziel())
+}
+
+fn sidecar_ziel_fuer(os: &str, arch: &str, host: &str) -> String {
+    if os == "linux" {
+        format!("{arch}-unknown-linux-gnu")
+    } else {
+        host.to_string()
+    }
+}
+
+/// Unter Linux die App nur mit WebKitGTK (pkg-config kennt `webkit2gtk-4.1`); sonst ohne sie.
+fn mit_app() -> bool {
+    !cfg!(target_os = "linux")
+        || Command::new("pkg-config")
+            .args(["--exists", "webkit2gtk-4.1"])
+            .status()
+            .is_ok_and(|s| s.success())
+}
+
 fn typst_holen(version: &str, nur_host: bool) -> Result<(), String> {
     let ablage = projektordner().join("_lokal/typst-cli").join(version);
     let arbeit = ablage.join("download");
@@ -288,6 +311,12 @@ fn typst_holen(version: &str, nur_host: bool) -> Result<(), String> {
         std::fs::copy(ordner.join(format!("typst{endung}")), &ziel).map_err(|e| e.to_string())?;
         std::fs::copy(ordner.join("LICENSE"), ablage.join("LICENSE")).map_err(|e| e.to_string())?;
         println!("abgelegt {}", ziel.display());
+        // Tauri sucht die Beilage unter dem Ziel von Rust (Linux: -gnu statt -musl).
+        if e.ziel == host_ziel() && sidecar_ziel() != e.ziel {
+            let beilage = ablage.join(format!("typst-{}{endung}", sidecar_ziel()));
+            std::fs::copy(&ziel, &beilage).map_err(|e| e.to_string())?;
+            println!("abgelegt {}", beilage.display());
+        }
     }
     std::fs::write(
         ablage.join("HERKUNFT.txt"),
@@ -315,5 +344,30 @@ fn ausfuehren(befehl: &mut Command) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!("{befehl:?} endete mit {status}"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sidecar_ziel_fuer;
+
+    #[test]
+    fn beilagen_unter_linux_mit_gnu() {
+        assert_eq!(
+            sidecar_ziel_fuer("linux", "x86_64", "x86_64-unknown-linux-musl"),
+            "x86_64-unknown-linux-gnu"
+        );
+        assert_eq!(
+            sidecar_ziel_fuer("linux", "aarch64", "aarch64-unknown-linux-musl"),
+            "aarch64-unknown-linux-gnu"
+        );
+        assert_eq!(
+            sidecar_ziel_fuer("macos", "aarch64", "aarch64-apple-darwin"),
+            "aarch64-apple-darwin"
+        );
+        assert_eq!(
+            sidecar_ziel_fuer("windows", "x86_64", "x86_64-pc-windows-msvc"),
+            "x86_64-pc-windows-msvc"
+        );
     }
 }

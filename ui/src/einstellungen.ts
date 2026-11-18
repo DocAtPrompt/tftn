@@ -100,7 +100,7 @@ export function updatesText(u: UpdatesJs): string[] {
 }
 
 const HERKUNFT: Record<string, string> = { eigene: t("eigene"), vorschlag: "", standard: "TFTN", keine: "" };
-const PLATTFORM_NAME: Record<Plattform, string> = { mac: "Mac", win: "Windows" };
+const PLATTFORM_NAME: Record<Plattform, string> = { mac: "Mac", win: t("Windows und Linux") };
 
 /** Was der Dialog über `tasten.toml` sagt: Nur eine unlesbare Datei sperrt das Umbelegen. */
 export function einstellHinweise(

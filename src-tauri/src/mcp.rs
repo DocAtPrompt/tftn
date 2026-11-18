@@ -119,11 +119,23 @@ pub fn js(app: &AppHandle, fehler: Option<String>) -> McpJs {
         an: m.horcher.is_some(),
         wartet: m.wartet,
         beim_wechsel_aus: rechner.mcp_beim_wechsel_aus,
-        programm: std::env::current_exe()
-            .map(|p| p.display().to_string())
-            .unwrap_or_default(),
+        programm: programm_aus(
+            std::env::var_os("APPIMAGE").map(PathBuf::from),
+            std::env::current_exe().ok(),
+        ),
         fehler,
     }
+}
+
+/// Programm für die Brücke. In einem AppImage liegt die App unter einem Pfad, der bei jedem Start
+/// wechselt (`/tmp/.mount_…`); dort zählt die AppImage-Datei selbst (`APPIMAGE`), die `--mcp` an
+/// die App weiterreicht.
+fn programm_aus(appimage: Option<PathBuf>, exe: Option<PathBuf>) -> String {
+    appimage
+        .filter(|p| p.is_file())
+        .or(exe)
+        .map(|p| p.display().to_string())
+        .unwrap_or_default()
 }
 
 /// Horcht MCP gerade (für Netzprotokoll und Blatt)?
@@ -1295,6 +1307,30 @@ pub fn bruecke() -> std::process::ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn im_appimage_die_appimage_datei() {
+        let exe = PathBuf::from("/tmp/.mount_TFTNab/usr/bin/tftn-app");
+        let datei = std::env::temp_dir().join(format!("tftn-mcp-appimage-{}", std::process::id()));
+        std::fs::write(&datei, b"").unwrap();
+        assert_eq!(
+            programm_aus(Some(datei.clone()), Some(exe.clone())),
+            datei.display().to_string()
+        );
+        // Ohne AppImage (oder wenn es die Datei nicht gibt): das Programm selbst.
+        assert_eq!(
+            programm_aus(None, Some(exe.clone())),
+            exe.display().to_string()
+        );
+        assert_eq!(
+            programm_aus(
+                Some(PathBuf::from("/gibt/es/nicht.AppImage")),
+                Some(exe.clone())
+            ),
+            exe.display().to_string()
+        );
+        let _ = std::fs::remove_file(&datei);
+    }
 
     #[test]
     fn vormerken_gewinnt_gegen_das_benennen_des_entwurfs() {

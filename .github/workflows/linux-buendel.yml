@@ -1,0 +1,99 @@
+# Linux-AppImages zu einem Release (von Hand: Actions → Linux-Bündel → Run workflow).
+# Baut aus dem Stand des Tags je ein AppImage für x64 und arm64, prüft die mitgelieferten Teile im
+# entpackten Abbild und hängt beide an das Release des Tags. Gebaut wird auf Ubuntu 22.04, damit das
+# AppImage auch auf älteren Systemen läuft (glibc 2.35).
+name: Linux-Bündel
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release-Tag, z. B. v0.7.0"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  TYPST: "0.15.1"
+
+jobs:
+  buendel:
+    name: AppImage (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: "Linux x64", os: ubuntu-22.04, arch: x64 }
+          - { name: "Linux arm64", os: ubuntu-22.04-arm, arch: arm64 }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Platz schaffen und Pakete für Tauri (WebKitGTK, AppImage)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev build-essential \
+            curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: typst-CLI holen (geprüft gegen xtask/typst-cli.sha256)
+        run: cargo xtask typst-holen ${{ env.TYPST }} --nur-host
+
+      - name: Oberfläche
+        run: npm ci
+
+      - name: AppImage bauen (Tauri-Bundler)
+        run: npx tauri build --bundles appimage --config src-tauri/tauri.buendel.json
+
+      - name: AppImage benennen, Prüfsumme
+        id: datei
+        run: |
+          set -euo pipefail
+          von=$(ls target/release/bundle/appimage/*.AppImage | head -1)
+          version="${{ inputs.tag }}"; version="${version#v}"
+          name="TFTN-${version}-linux-${{ matrix.arch }}.AppImage"
+          mv "$von" "$name"
+          chmod +x "$name"
+          sha256sum "$name" | tee "$name.sha256"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      # Ohne FUSE: entpacken und die Teile darin prüfen.
+      - name: Abbild entpacken und Teile prüfen
+        run: |
+          set -euo pipefail
+          "./${{ steps.datei.outputs.name }}" --appimage-extract > /dev/null
+          ls squashfs-root/usr/bin
+          for t in tftn-app typst tftn-holer; do test -x "squashfs-root/usr/bin/$t" || { echo "fehlt: $t"; exit 1; }; done
+          for t in types/tftn-fachartikel/vorlage-en/main.typ types/tftn-leer/typst.toml languages/en.toml \
+                   package-descriptions lizenzen/typst-LICENSE.txt; do
+            test -n "$(find squashfs-root -path "*/$t" -print -quit)" || { echo "fehlt: $t"; exit 1; }
+          done
+          squashfs-root/usr/bin/typst --version
+          # Holer ohne Prüfserver: falscher Aufruf endet mit Exit 2 (PLAN-M2 AP9)
+          set +e; squashfs-root/usr/bin/tftn-holer; test $? -eq 2
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tftn-linux-${{ matrix.arch }}
+          path: |
+            ${{ steps.datei.outputs.name }}
+            ${{ steps.datei.outputs.name }}.sha256
+
+      - name: An das Release hängen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ inputs.tag }}" "${{ steps.datei.outputs.name }}" --clobber

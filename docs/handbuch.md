@@ -35,6 +35,13 @@ nicht notarisiert: Beim ersten Start Rechtsklick → „Öffnen“. Die passende
 für den aktuellen Benutzer, ohne Administratorrechte. Der Installer ist nicht signiert: Warnt
 SmartScreen, „Weitere Informationen“ → „Trotzdem ausführen“.
 
+**Linux:** `TFTN-<version>-linux-x64.AppImage` (Intel/AMD) bzw. `…-linux-arm64.AppImage` von der
+Release-Seite laden, ausführbar machen (`chmod +x TFTN-*.AppImage`) und starten; alles, auch die
+typst-CLI, steckt darin. Läuft ab Ubuntu 22.04 bzw. vergleichbaren Systemen. Startet es nicht, fehlt
+meist FUSE: `sudo apt install libfuse2` (Ubuntu 24.04: `libfuse2t64`). Wie unter Windows gelten die
+Strg-Kürzel, und statt eines Ordnerdialogs gibt man beim Öffnen den Pfad ein. Die Linux-Fassung ist
+neu und erst wenig von Hand ausprobiert.
+
 **Ausprobieren:** Mit „Öffnen“ → „Projekt öffnen …“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
 zeigt Formeln, eine Abbildung, eine Tabelle, Fußnoten, Querverweise und Zitate. Ändern ist
 ausdrücklich erwünscht.
@@ -235,7 +242,9 @@ wirken sofort.
 OpenDocument (.odt), Markdown, HTML, EPUB, LaTeX und RTF werden zu einem neuen Dokument. Überschriften,
 Listen, Tabellen, Fußnoten, Formeln und Bilder kommen mit; Layout, Kommentare und Änderungsverfolgung
 nicht. Das Original bleibt unberührt. Pandoc läuft abgeschottet und holt nichts aus dem Netz.
-Installieren: Mac `brew install pandoc`, Windows `winget install --id JohnMacFarlane.Pandoc`.
+Installieren: Mac `brew install pandoc`, Windows `winget install --id JohnMacFarlane.Pandoc`, Linux
+über die Paketverwaltung (Ubuntu 24.04: `sudo apt install pandoc`; ältere Systeme haben oft eine zu alte
+Fassung, dann das Paket von pandoc.org).
 
 **Einfügen mit Umwandlung** (braucht ebenfalls Pandoc): Fügt man mit Cmd/Strg+V Markdown ein (etwa
 `# Titel`, `**fett**`, `[Link](…)`, Tabellen) oder formatierten Text aus dem Browser oder aus Word,
