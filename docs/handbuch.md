@@ -90,7 +90,10 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
   „Einfügen“ ist die Bausteinliste mit Suche: ein Klick fügt den Baustein an der Schreibmarke ein. Ihre Breite lässt sich ziehen.
 - **Gliederung** (Knopf „Gliederung“): die Überschriften neben dem Text, im zweiten Reiter die
   Kommentare.
-- **Statuszeile:** Wörter und Zeichen, Dokumentsprache, Speicherstand, Netzzugriffe.
+- **Statuszeile:** Wörter und Zeichen, Dokumentsprache, Speicherstand („gespeichert“ oder
+  „ungespeichert“), nach einem Netzzugriff dessen Zahl (Kapitel 11), „MCP an“, solange MCP eingeschaltet
+  ist (Kapitel 13), und wie lange Typst für den letzten Lauf gebraucht hat („Vorschau: 87 ms“, ab einer
+  Sekunde etwa „Vorschau: 1,2 s“).
 
 ## 3. Schreiben
 

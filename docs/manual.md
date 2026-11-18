@@ -92,7 +92,10 @@ sync it and keep working on another computer without a network.
   narrow sidebar), the others show name and purpose when you hover over them. “Insert” is the block
   list with a search field: a click inserts the block at the cursor. Drag its edge to resize it.
 - **Outline** (“Outline” button): the headings next to the text; the second tab lists the comments.
-- **Status bar:** words and characters, document language, save state, network activity.
+- **Status bar:** words and characters, document language, save state (“saved” or “unsaved”), the
+  number of network accesses once there has been one (chapter 11), “MCP on” while MCP is switched on
+  (chapter 13), and how long Typst took for its last run (“Preview: 87 ms”, from one second on e.g.
+  “Preview: 1.2 s”).
 
 ## 3. Writing
 
