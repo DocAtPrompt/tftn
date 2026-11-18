@@ -35,7 +35,8 @@ with Typst without handing them to a third party.
 - **Typst Universe packages** vendored into the project with checksums – documents build offline,
   on any machine.
 - **Import** from Word, OpenDocument, Markdown, HTML, EPUB and LaTeX, **export** to PDF (incl.
-  PDF/A), to Word for proofreading (via Pandoc) and to a self-contained web page (HTML).
+  PDF/A), to Word for proofreading and to an e-book (EPUB, both via Pandoc) and to a
+  self-contained web page (HTML).
 - **Series for letters and invoices:** one `.toml` with many records, or a folder of `.toml` files,
   run over the document – one PDF per record, or all in one PDF for a single print run (optionally
   with blank pages for double-sided printing). Each record holds only what changes; sender, bank
@@ -99,7 +100,7 @@ Download from the [releases](https://github.com/DocAtPrompt/tftn/releases):
 
 The matching typst CLI is bundled.
 
-Optional: [Pandoc](https://pandoc.org) 3.1.2 or later for import, Word export and paste conversion
+Optional: [Pandoc](https://pandoc.org) 3.1.2 or later for import, Word and EPUB export and paste conversion
 (`brew install pandoc`, `winget install --id JohnMacFarlane.Pandoc`, `sudo apt install pandoc`).
 
 ## Build from source
@@ -109,7 +110,7 @@ Optional: [Pandoc](https://pandoc.org) 3.1.2 or later for import, Word export an
 | Rust | 1.92.0 | pinned in `rust-toolchain.toml`, rustup installs it |
 | Node.js | 26.12 LTS | pinned in `.nvmrc` |
 | typst CLI | exactly 0.15.1 | `cargo xtask typst-holen` downloads and verifies it into `_lokal/`; or put it on `PATH` / in `TFTN_TYPST` |
-| Pandoc | ≥ 3.1.2 | optional: import, Word export |
+| Pandoc | ≥ 3.1.2 | optional: import, Word and EPUB export |
 | veraPDF + Java | ≥ 1.30 / ≥ 11 | optional: PDF/A checks in the tests |
 | Windows | MSVC Build Tools, WebView2 | “Desktop development with C++” |
 | Linux | WebKitGTK 4.1 and build tools | see [Building on Linux](#building-on-linux) |

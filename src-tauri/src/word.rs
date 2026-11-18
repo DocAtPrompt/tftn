@@ -18,7 +18,12 @@ pub struct WordJs {
 }
 
 /// Ersetzt jedes Stück von `anfang` bis einschließlich des nächsten `ende`, für das `f` etwas liefert.
-fn stuecke(s: &str, anfang: &str, ende: &str, f: impl Fn(&str) -> Option<String>) -> String {
+pub(crate) fn stuecke(
+    s: &str,
+    anfang: &str,
+    ende: &str,
+    f: impl Fn(&str) -> Option<String>,
+) -> String {
     let mut aus = String::with_capacity(s.len());
     let mut rest = s;
     while let Some(i) = rest.find(anfang) {
@@ -35,7 +40,7 @@ fn stuecke(s: &str, anfang: &str, ende: &str, f: impl Fn(&str) -> Option<String>
     aus
 }
 
-fn wert<'a>(s: &'a str, name: &str) -> Option<&'a str> {
+pub(crate) fn wert<'a>(s: &'a str, name: &str) -> Option<&'a str> {
     let a = s.find(&format!("{name}=\""))? + name.len() + 2;
     let l = s[a..].find('"')?;
     Some(&s[a..a + l])
@@ -112,14 +117,19 @@ pub fn fehlt_in_word(stderr: &str) -> Vec<String> {
         .collect()
 }
 
-/// Name der Word-Datei: wie der Dokumentordner.
-pub fn dateiname(projekt: &Projekt) -> String {
+/// Name einer exportierten Datei: wie der Dokumentordner, mit `endung`.
+pub fn dateiname_mit(projekt: &Projekt, endung: &str) -> String {
     let name = projekt
         .wurzel
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| "Dokument".into());
-    format!("{name}.docx")
+    format!("{name}.{endung}")
+}
+
+/// Name der Word-Datei: wie der Dokumentordner.
+pub fn dateiname(projekt: &Projekt) -> String {
+    dateiname_mit(projekt, "docx")
 }
 
 /// Word legt neben einer geöffneten Datei `~$…` an (bei langen Namen ohne die ersten zwei Zeichen).
@@ -132,6 +142,71 @@ fn in_word_offen(ziel: &Path) -> bool {
     [format!("~${name}"), format!("~${kurz}")]
         .iter()
         .any(|n| ordner.join(n).exists())
+}
+
+/// Gemeinsamer Weg von Word und E-Book: typst setzt das Dokument als HTML, `vorbereiten` schreibt es
+/// für Pandoc um, Pandoc macht daraus im abgeschotteten Modus (`--sandbox`, liest nur die genannte
+/// Datei, holt nichts aus dem Netz) das Format `format` (mit den Schaltern `zusatz`) und legt es als
+/// `ziel` ab. Gibt zurück, was typst im HTML weglassen musste (`fehlt_in_word`).
+pub fn ueber_pandoc(
+    projekt: &Projekt,
+    cli: &tftn_export::TypstCli,
+    pandoc: &Path,
+    format: &str,
+    zusatz: &[String],
+    vorbereiten: impl FnOnce(&str) -> String,
+    ziel: &Path,
+) -> Result<Vec<String>, String> {
+    // Je Lauf ein eigener Zwischenordner, auch bei zwei Exporten in derselben Sekunde.
+    static LAUF: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let tmp = std::env::temp_dir().join(format!(
+        "tftn-{format}-lauf-{}-{}-{}",
+        std::process::id(),
+        crate::fassungen::jetzt(),
+        LAUF.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
+    std::fs::create_dir_all(&tmp).map_err(|e| e.to_string())?;
+    let ergebnis = (|| -> Result<Vec<String>, String> {
+        let html = tmp.join("dokument.html");
+        let html_zusatz = ["--features", "html", "--format", "html"].map(String::from);
+        let warnungen = tftn_export::ausfuehren(
+            projekt,
+            cli,
+            &html,
+            &html_zusatz,
+            tftn_export::STANDARD_FRIST,
+        )
+        .map_err(|e| {
+            tr!(
+                "typst konnte das Dokument nicht als HTML setzen: {fehler}",
+                fehler = e
+            )
+        })?;
+        let text = std::fs::read_to_string(&html).map_err(|e| e.to_string())?;
+        let umgeschrieben = tmp.join("fuer-pandoc.html");
+        std::fs::write(&umgeschrieben, vorbereiten(&text)).map_err(|e| e.to_string())?;
+        let aus_datei = tmp.join(format!("dokument.{format}"));
+        let aus = Command::new(pandoc)
+            .arg("--sandbox")
+            .args(["-f", "html", "-t", format])
+            .args(zusatz)
+            .arg("-o")
+            .arg(&aus_datei)
+            .arg(&umgeschrieben)
+            .stdin(Stdio::null())
+            .output()
+            .map_err(|e| tr!("Pandoc ließ sich nicht starten: {fehler}", fehler = e))?;
+        if !aus.status.success() {
+            return Err(tr!(
+                "Pandoc meldet: {meldung}",
+                meldung = String::from_utf8_lossy(&aus.stderr).trim()
+            ));
+        }
+        std::fs::copy(&aus_datei, ziel).map_err(|e| format!("{}: {e}", ziel.display()))?;
+        Ok(fehlt_in_word(&warnungen))
+    })();
+    let _ = std::fs::remove_dir_all(&tmp);
+    ergebnis
 }
 
 pub fn exportieren(
@@ -147,53 +222,12 @@ pub fn exportieren(
             datei
         ));
     }
-    // Je Lauf ein eigener Zwischenordner, auch bei zwei Exporten in derselben Sekunde.
-    static LAUF: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let tmp = std::env::temp_dir().join(format!(
-        "tftn-word-lauf-{}-{}-{}",
-        std::process::id(),
-        crate::fassungen::jetzt(),
-        LAUF.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-    ));
-    std::fs::create_dir_all(&tmp).map_err(|e| e.to_string())?;
-    let ergebnis = (|| -> Result<WordJs, String> {
-        let html = tmp.join("dokument.html");
-        let zusatz = ["--features", "html", "--format", "html"].map(String::from);
-        let warnungen =
-            tftn_export::ausfuehren(projekt, cli, &html, &zusatz, tftn_export::STANDARD_FRIST)
-                .map_err(|e| {
-                    tr!(
-                        "typst konnte das Dokument nicht als HTML setzen: {fehler}",
-                        fehler = e
-                    )
-                })?;
-        let text = std::fs::read_to_string(&html).map_err(|e| e.to_string())?;
-        let umgeschrieben = tmp.join("fuer-pandoc.html");
-        std::fs::write(&umgeschrieben, html_fuer_pandoc(&text)).map_err(|e| e.to_string())?;
-        let docx = tmp.join("dokument.docx");
-        let aus = Command::new(pandoc)
-            .arg("--sandbox")
-            .args(["-f", "html", "-t", "docx", "-o"])
-            .arg(&docx)
-            .arg(&umgeschrieben)
-            .stdin(Stdio::null())
-            .output()
-            .map_err(|e| tr!("Pandoc ließ sich nicht starten: {fehler}", fehler = e))?;
-        if !aus.status.success() {
-            return Err(tr!(
-                "Pandoc meldet: {meldung}",
-                meldung = String::from_utf8_lossy(&aus.stderr).trim()
-            ));
-        }
-        std::fs::copy(&docx, &ziel).map_err(|e| format!("{}: {e}", ziel.display()))?;
-        Ok(WordJs {
-            pfad: ziel.display().to_string(),
-            datei: datei.clone(),
-            fehlt: fehlt_in_word(&warnungen),
-        })
-    })();
-    let _ = std::fs::remove_dir_all(&tmp);
-    ergebnis
+    let fehlt = ueber_pandoc(projekt, cli, pandoc, "docx", &[], html_fuer_pandoc, &ziel)?;
+    Ok(WordJs {
+        pfad: ziel.display().to_string(),
+        datei,
+        fehlt,
+    })
 }
 
 /// Zeigt `pfad` im Finder bzw. Explorer.

@@ -37,6 +37,7 @@
 
 mod ablage;
 mod bilder;
+mod ebook;
 mod fassungen;
 mod formel;
 mod formular;
@@ -3396,6 +3397,26 @@ fn word_exportieren(zustand: State<'_, Zustand>) -> Result<word::WordJs, String>
     word::exportieren(&projekt, &cli, &pandoc)
 }
 
+/// Export als E-Book (EPUB) über typst (HTML) und Pandoc; die Datei liegt im Dokumentordner.
+#[tauri::command(async)]
+fn epub_exportieren(zustand: State<'_, Zustand>) -> Result<word::WordJs, String> {
+    let projekt = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        if !reiter::alles_gespeichert(s) {
+            return Err(tr!(
+                "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
+            ));
+        }
+        s.projekt.clone()
+    };
+    let pandoc = import::pandoc_finden().ok_or_else(import::fehlt_fuer_epub)?;
+    let cli = tftn_export::TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
+    ebook::exportieren(&projekt, &cli, &pandoc)
+}
+
 /// Eine Datei des offenen Dokuments im Finder bzw. Explorer zeigen.
 #[tauri::command]
 fn im_ordner_zeigen(pfad: String, zustand: State<'_, Zustand>) -> Result<(), String> {
@@ -4222,6 +4243,7 @@ pub fn run() {
             bild_ablegen,
             bild_waehlen,
             word_exportieren,
+            epub_exportieren,
             html_exportieren,
             html_oeffnen,
             im_ordner_zeigen,

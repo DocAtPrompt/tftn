@@ -378,6 +378,17 @@ Weitergeben, Hochladen oder Lesen auf dem Telefon. „Im Browser öffnen“ zeig
 HTML weglässt, nennt der Dialog („Auf der Webseite fehlt: …“). Der HTML-Export von typst ist noch neu;
 Vorlagen mit aufwendigem Layout sehen im Web schlichter aus als auf Papier.
 
+**E-Book (EPUB)** („Export“ → „E-Book (EPUB)“ → „Exportieren“, braucht Pandoc): Derselbe Weg wie bei
+Word – typst setzt das Dokument als HTML, Pandoc macht daraus ein EPUB 3 für E-Book-Reader, Apple Books
+oder Calibre. Es hat eine Titelseite, ein Inhaltsverzeichnis über zwei Ebenen und je Kapitel (Überschrift
+erster Ebene) einen eigenen Abschnitt; Fußnoten, Tabellen, Bilder, Formeln (als MathML), Zitate und
+Literaturverzeichnis kommen mit, das Seitenlayout nicht – Schrift und Größe wählt der Leser. Titel,
+Autorinnen und Autoren und die Sprache kommen aus dem Dokument, das Datum aus dem Datumsfeld im Fach
+„Dokument“ (sonst der Zeitstempel des Projekts). TFTN legt ein schlichtes Stilblatt dazu (Abbildungen
+höchstens so breit wie die Seite). Die Datei liegt als `<Dokumentname>.epub` im Dokumentordner und wird
+beim nächsten Export überschrieben; was typst im HTML weglässt, nennt der Dialog („Im E-Book fehlt: …“).
+Pandoc läuft abgeschottet und lädt nichts aus dem Netz. Ein Titelbild gibt es nicht.
+
 **Serie** („Export“ → „Serie …“): ein PDF je Datensatz, etwa für Serienbriefe und Rechnungen. Die
 Datensätze liegen entweder als Ordner mit `.toml`-Dateien vor (je Datei ein Dokument, das PDF heißt
 wie die Datei) oder als eine `.toml` mit Abschnitten `[[serie]]`. Ein Datensatz enthält nur, was sich

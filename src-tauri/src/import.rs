@@ -36,6 +36,13 @@ pub fn fehlt_fuer_word() -> String {
     )
 }
 
+/// Meldung, wenn Pandoc für das E-Book fehlt (dieselben Hinweise wie für Word).
+pub fn fehlt_fuer_epub() -> String {
+    tr!(
+        "Für das E-Book (EPUB) braucht TFTN das Programm Pandoc (ab 3.1.2). Mac: „brew install pandoc“, Windows: „winget install --id JohnMacFarlane.Pandoc“, Linux: „sudo apt install pandoc“. Danach TFTN neu starten."
+    )
+}
+
 /// Meldung, wenn Pandoc zum Umwandeln eingefügten Textes fehlt.
 pub fn fehlt_fuer_umwandeln() -> String {
     tr!(

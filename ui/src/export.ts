@@ -94,6 +94,8 @@ export class ExportMenue {
     private html?: HtmlAktionen,
     /** Setzt das gewöhnliche PDF und öffnet es im PDF-Betrachter; gibt den Pfad zurück. */
     private drucken?: () => Promise<string>,
+    /** E-Book (EPUB) über Pandoc; gleiche Antwort wie Word. */
+    private ebook?: () => Promise<WordJs>,
   ) {
     this.menue = document.createElement("div");
     this.menue.id = "export-menue";
@@ -211,6 +213,20 @@ export class ExportMenue {
       h.append(hName, hKnopf);
       this.menue.append(h);
     }
+    if (this.ebook) {
+      const e = document.createElement("div");
+      e.className = "export-zeile";
+      const eName = document.createElement("span");
+      eName.textContent = t("E-Book (EPUB)");
+      eName.title = t(
+        "Für E-Book-Reader: Titel, Inhaltsverzeichnis, ein Abschnitt je Kapitel, Fußnoten, Tabellen, Bilder, Formeln, Zitate und Literatur; ohne Seitenlayout. Über Pandoc, lädt nichts aus dem Netz.",
+      );
+      const eKnopf = document.createElement("button");
+      eKnopf.textContent = t("Exportieren");
+      eKnopf.onclick = () => void this.ebookLos(e);
+      e.append(eName, eKnopf);
+      this.menue.append(e);
+    }
     if (this.serie) {
       const s = document.createElement("div");
       s.className = "export-zeile";
@@ -277,6 +293,31 @@ export class ExportMenue {
         }
       } catch (fehler) {
         ergebnis.textContent = t("Export nach Word fehlgeschlagen: {fehler}", { fehler: String(fehler) });
+      }
+    });
+  }
+
+  private ebookLos(zeile: HTMLElement) {
+    const ebook = this.ebook!;
+    return this.lauf(zeile, t("Exportiere als E-Book …"), async (ergebnis) => {
+      try {
+        const e = await ebook();
+        ergebnis.replaceChildren();
+        const kopf = document.createElement("div");
+        kopf.textContent = t("Fertig: „{datei}“ im Dokumentordner. Seitenlayout (Ränder, Kopfzeilen, Seitenzahlen) gibt es im E-Book nicht.", {
+          datei: e.datei,
+        });
+        const zeigen = document.createElement("button");
+        zeigen.textContent = t("Im Ordner zeigen");
+        zeigen.onclick = () => void this.word.zeigen(e.pfad).catch((f) => (kopf.textContent = String(f)));
+        ergebnis.append(kopf, zeigen);
+        if (e.fehlt.length) {
+          const d = document.createElement("div");
+          d.textContent = t("Im E-Book fehlt: {liste}", { liste: e.fehlt.join(", ") });
+          ergebnis.append(d);
+        }
+      } catch (fehler) {
+        ergebnis.textContent = t("Export als E-Book fehlgeschlagen: {fehler}", { fehler: String(fehler) });
       }
     });
   }

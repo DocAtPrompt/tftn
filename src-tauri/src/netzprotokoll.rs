@@ -465,7 +465,7 @@ pub fn blatt_daten(p: &Protokoll, a: &BlattAngaben) -> Value {
             "Texte, Vorschau, Rechtschreibprüfung, Literaturverwaltung und Formulare arbeiten nur mit Dateien auf diesem Rechner. Es gibt kein Konto, keine Cloud-Speicherung und keine Nutzungsstatistik."
         ),
         tr!(
-            "Der Export (PDF, PDF/A, Archivpaket, Serie) läuft mit der mitgelieferten typst-CLI; vorher prüft TFTN, dass alle Pakete lokal vorliegen, sonst bricht es ab. Word-Export und -Import laufen mit pandoc auf diesem Rechner, beim Export im abgeschotteten Modus (--sandbox)."
+            "Der Export (PDF, PDF/A, Archivpaket, Serie) läuft mit der mitgelieferten typst-CLI; vorher prüft TFTN, dass alle Pakete lokal vorliegen, sonst bricht es ab. Word- und E-Book-Export sowie Word-Import laufen mit pandoc auf diesem Rechner, beim Export im abgeschotteten Modus (--sandbox)."
         ),
         tr!(
             "Die Oberfläche lädt nichts von außen (Content-Security-Policy nur für eigene Inhalte). Schriften und Wörterbücher liegen auf dem Rechner. Webseiten öffnet TFTN nur auf Klick auf einen Link in „Über TFTN“, und zwar im Standardbrowser."

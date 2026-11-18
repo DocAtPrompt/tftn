@@ -2429,6 +2429,11 @@ async function start() {
       oeffnen: (pfad) => invoke("html_oeffnen", { pfad }),
     },
     druckenVorbereiten,
+    async () => {
+      if (entwurf) throw new Error(t("Das Dokument braucht zuerst einen Namen: Cmd/Strg+S."));
+      if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht exportiert."));
+      return invoke<WordJs>("epub_exportieren");
+    },
   );
   const serieDialog = new SerieDialog({
     pruefen: (quelle) => invoke<SerieJs>("serie_pruefen", { quelle }),

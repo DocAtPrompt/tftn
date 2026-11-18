@@ -376,6 +376,17 @@ pass on, upload or read on a phone. “Open in browser” shows it right away; w
 of the HTML is listed in the dialog (“Missing from the web page: …”). typst's HTML export is still
 new; templates with an elaborate layout look plainer on the web than on paper.
 
+**E-book (EPUB)** (“Export” → “E-book (EPUB)” → “Export”, requires Pandoc): the same route as Word –
+typst sets the document as HTML, Pandoc turns it into an EPUB 3 for e-book readers, Apple Books or
+Calibre. It has a title page, a table of contents over two levels and a section of its own for each
+chapter (first-level heading); footnotes, tables, images, equations (as MathML), citations and
+bibliography come along, the page layout does not – the reader chooses font and size. Title, authors
+and language come from the document, the date from the date field in the “Document” panel (otherwise
+the project's timestamp). TFTN adds a plain stylesheet (figures at most as wide as the page). The file
+is saved as `<document name>.epub` in the document folder and overwritten by the next export; whatever
+typst leaves out of the HTML is listed in the dialog (“Missing from the e-book: …”). Pandoc runs
+sandboxed and loads nothing from the internet. There is no cover image.
+
 **Series** (“Export” → “Series …”): one PDF per record, e.g. for mail merge and invoices. The records
 are either a folder of `.toml` files (one document per file, the PDF is named after the file) or one
 `.toml` with `[[serie]]` sections. A record holds only what changes; everything else – sender, bank,
