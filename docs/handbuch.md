@@ -400,6 +400,7 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Vervollständigen | Strg+Leertaste, am Mac auch ⌥` |
 | Einstellungen | Mod+, |
 | Über TFTN und Tastenkürzel | F1 |
+| Editorschrift größer / kleiner / wie im Skin | Mod++ (auch Mod+=) / Mod+− / Mod+0 |
 | Werte an dieser Stelle (Marken) | Mod+Umschalt+M oder ⌥ bzw. Alt halten |
 | Seitenleiste | Mod+Umschalt+P |
 | Seitenleiste: Dokument / Pakete / Formel | Mod+Umschalt+O / +Y / +X |
@@ -429,6 +430,10 @@ Wahl gilt je Rechner.
 **Größe der Oberfläche:** Klein, Normal, Groß oder Sehr groß vergrößert Leisten, Knöpfe und Dialoge
 sofort. Editor und Vorschau bleiben, wie sie sind: Die Editorschrift legt der Skin fest, die
 Vorschau passt sich ihrer Breite an. Die Wahl gilt je Rechner.
+
+**Editorschrift:** Cmd/Strg++ und Cmd/Strg+− machen die Schrift im Editor in Stufen größer oder
+kleiner (60 bis 250 %), Cmd/Strg+0 stellt die Größe des Skins wieder her. Das gilt nur für den Editor
+und je Rechner; die Vorschau zoomt man mit Cmd/Strg + Mausrad.
 
 ## 11. Netz, Updates, Datenschutz
 

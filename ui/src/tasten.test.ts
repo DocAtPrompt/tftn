@@ -271,6 +271,28 @@ describe("Schreibansicht", () => {
   });
 });
 
+describe("Editorschrift und F1", () => {
+  const taste = (key: string, keyCode: number, mehr: Partial<{ metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }> = {}) => ({
+    key, code: "", keyCode, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, ...mehr,
+  });
+  it("Cmd/Strg + − 0 auf deutscher und US-Tastatur, F1 überall", () => {
+    const mac = belegen(alle().a, {}, "mac");
+    const win = belegen(alle().a, {}, "win");
+    expect(aktionDerTaste(mac, taste("+", 187, { metaKey: true }), "mac")).toBe("ansicht/schrift-groesser");
+    expect(aktionDerTaste(mac, taste("=", 187, { metaKey: true }), "mac")).toBe("ansicht/schrift-groesser");
+    expect(aktionDerTaste(win, taste("+", 187, { ctrlKey: true }), "win")).toBe("ansicht/schrift-groesser");
+    expect(aktionDerTaste(win, taste("-", 189, { ctrlKey: true }), "win")).toBe("ansicht/schrift-kleiner");
+    expect(aktionDerTaste(mac, taste("0", 48, { metaKey: true }), "mac")).toBe("ansicht/schrift-normal");
+    expect(aktionDerTaste(mac, taste("F1", 112), "mac")).toBe("helfer/ueber");
+    expect(aktionDerTaste(win, taste("F1", 112), "win")).toBe("helfer/ueber");
+  });
+
+  it("keine Konflikte mit den Zoom-Gewohnheiten und F1 unter Windows", () => {
+    const k = konflikte(alle().a, {}).filter((x) => x.aktion.startsWith("ansicht/") || x.aktion === "helfer/ueber");
+    expect(k).toEqual([]);
+  });
+});
+
 describe("leistenSchritt", () => {
   it("kuerzel_oeffnet_springt_schliesst", () => {
     expect(leistenSchritt(false, false)).toBe("oeffnen");

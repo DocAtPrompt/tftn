@@ -56,6 +56,7 @@ import { KnopfMenue } from "./knopfmenue";
 import { ReiterLeiste, nachSchliessen } from "./reiter";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
 import { UeberDialog, type UeberJs } from "./ueber";
+import { schriftGemerkt, schriftSetzen, schriftStufe } from "./editorschrift";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { dezimalzeichen, t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
@@ -670,6 +671,9 @@ let einstellungen: EinstellungenJs | null = null;
 let belegung: Belegung | null = null;
 let einstellDialog: EinstellDialog;
 let ueberDialog: UeberDialog;
+/** Schriftgröße des Editors in Prozent der Größe des Skins. */
+let editorSchrift = schriftGemerkt();
+schriftSetzen(document.documentElement, editorSchrift);
 let netzDialog: NetzprotokollDialog;
 /** Statusleiste `#netz`: Text, solange der Holer läuft, sonst die Zahl der Netzzugriffe. */
 let netzLaeuft = "";
@@ -699,6 +703,15 @@ async function netzNeu() {
   netzZeigen();
   void netzDialog?.neu();
 }
+
+/** Kürzel, die auch außerhalb des Editors wirken (im Editor über die Keymap). */
+const UEBERALL = new Set([
+  "helfer/schreibansicht",
+  "helfer/ueber",
+  "ansicht/schrift-groesser",
+  "ansicht/schrift-kleiner",
+  "ansicht/schrift-normal",
+]);
 
 /** Rechnet die Belegung neu und tauscht das Keymap aus; wirkt sofort, ohne Neustart. */
 function tastenNeu() {
@@ -750,6 +763,16 @@ function ausfuehren(id: string): boolean {
     case "helfer/ueber":
       void ueberDialog.zeigen();
       return true;
+    case "ansicht/schrift-groesser":
+    case "ansicht/schrift-kleiner":
+    case "ansicht/schrift-normal": {
+      const p = id === "ansicht/schrift-normal" ? 100 : schriftStufe(editorSchrift, id === "ansicht/schrift-groesser" ? 1 : -1);
+      editorSchrift = p;
+      schriftSetzen(document.documentElement, p);
+      view?.requestMeasure();
+      meldung(t("Editorschrift {prozent} %", { prozent: p }));
+      return true;
+    }
     case "app/speichern":
       void (entwurf ? entwurfBenennen(true) : speichern());
       return true;
@@ -2120,10 +2143,8 @@ async function start() {
       return;
     }
     if (e.defaultPrevented || einDialogOffen() || view.dom.contains(e.target as Node)) return;
-    if (belegung && aktionDerTaste(belegung, e, PLATTFORM) === "helfer/schreibansicht") {
-      e.preventDefault();
-      schreibansichtSchalten(!schreibansicht.istAn());
-    }
+    const id = belegung ? aktionDerTaste(belegung, e, PLATTFORM) : null;
+    if (id && UEBERALL.has(id) && ausfuehren(id)) e.preventDefault();
   });
   // Im Editor gilt das Kürzel über die Keymap; aus der Leiste heraus hier.
   document.getElementById("links")!.addEventListener("keydown", (e) => {

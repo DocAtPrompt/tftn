@@ -220,7 +220,7 @@ body.trenner-zieht {
 
 #editor .cm-scroller {
   font-family: var(--editor-schrift);
-  font-size: var(--editor-groesse);
+  font-size: calc(var(--editor-groesse) * var(--editor-faktor, 1));
   line-height: var(--editor-zeilenabstand);
 }
 

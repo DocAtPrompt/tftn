@@ -400,6 +400,7 @@ shortcuts are shown for Mac **and** Windows.
 | Complete | Ctrl+Space, on the Mac also ⌥` |
 | Settings | Mod+, |
 | About TFTN and keyboard shortcuts | F1 |
+| Editor font larger / smaller / as in the skin | Mod++ (also Mod+=) / Mod+− / Mod+0 |
 | Values at this position (markers) | Mod+Shift+M or hold ⌥/Alt |
 | Sidebar | Mod+Shift+P |
 | Sidebar: Document / Packages / Equation | Mod+Shift+O / +Y / +X |
@@ -429,6 +430,10 @@ computer.
 **Interface size:** Small, Normal, Large or Extra large scales bars, buttons and dialogs right away.
 The editor and preview stay as they are: the skin sets the editor font, and the preview fits its
 width. The choice applies per computer.
+
+**Editor font:** Cmd/Ctrl++ and Cmd/Ctrl+− make the font in the editor larger or smaller in steps
+(60 to 250 %), Cmd/Ctrl+0 restores the size of the skin. This applies to the editor only and per
+computer; zoom the preview with Cmd/Ctrl + mouse wheel.
 
 ## 11. Network, updates, privacy
 
