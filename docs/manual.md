@@ -2,10 +2,10 @@
 
 *Deutsche Fassung: [handbuch.md](handbuch.md)*
 
-TFTN (“Typst for the Noobs”) is a writing app for [Typst](https://typst.app) on macOS and Windows.
-You write on the left; the finished page appears on the right as you type. TFTN works fully
-offline; only when you explicitly fetch something (a package, a bibliography entry, the update
-check) does a request go out, and only to a fixed address.
+TFTN (“Typst for the Noobs”) is a writing app for [Typst](https://typst.app) on macOS and Windows;
+on Linux you build it yourself (chapter 1). You write on the left; the finished page appears on the
+right as you type. TFTN works fully offline; only when you explicitly fetch something (a package, a
+bibliography entry, the update check) does a request go out, and only to a fixed address.
 
 Your text stays plain Typst. Every document can be compiled without TFTN using the typst CLI and
 yields the same PDF.

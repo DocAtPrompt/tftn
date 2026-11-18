@@ -3,9 +3,9 @@
 *English version: [manual.md](manual.md)*
 
 TFTN („Typst for the Noobs“) ist ein Schreibprogramm für [Typst](https://typst.app) auf macOS und
-Windows. Links schreiben Sie, rechts steht sofort die fertige Seite. TFTN arbeitet ganz ohne Netz;
-nur wenn Sie ausdrücklich etwas holen (ein Paket, einen Literatureintrag, die Update-Abfrage), geht
-eine Anfrage an eine feste Adresse hinaus.
+Windows; unter Linux baut man es selbst (Kapitel 1). Links schreiben Sie, rechts steht sofort die
+fertige Seite. TFTN arbeitet ganz ohne Netz; nur wenn Sie ausdrücklich etwas holen (ein Paket, einen
+Literatureintrag, die Update-Abfrage), geht eine Anfrage an eine feste Adresse hinaus.
 
 Ihr Text bleibt gewöhnliches Typst. Jedes Dokument lässt sich auch ohne TFTN mit der typst-CLI
 übersetzen und ergibt dasselbe PDF.
