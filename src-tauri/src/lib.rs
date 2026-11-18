@@ -343,57 +343,47 @@ enum Wahl {
     Ordner,
 }
 
-/// Argumente für `osascript`: JavaScript statt AppleScript, weil `activate` dort sofort wirkt
-/// (AppleScripts „tell me to activate“ kostete rund zwei Sekunden, bevor der Dialog erschien).
-/// Die Aufforderung kommt als Argument, nicht in den Skripttext.
-/// `start`: Ordner (oder Datei darin), wo der Dialog öffnet; sonst dort, wo er zuletzt war.
-fn wahl_argumente(wahl: Wahl, aufforderung: &str, start: Option<&Path>) -> Vec<String> {
-    let funktion = match wahl {
-        Wahl::Datei => "chooseFile",
-        Wahl::Ordner => "chooseFolder",
-    };
-    let skript = format!(
-        "function run(argv) {{ var a = Application.currentApplication(); \
-         a.includeStandardAdditions = true; a.activate(); \
-         var o = {{ withPrompt: argv[0] }}; if (argv[1]) o.defaultLocation = Path(argv[1]); \
-         return a.{funktion}(o).toString(); }}"
-    );
-    let mut a: Vec<String> = ["-l", "JavaScript", "-e", &skript, aufforderung]
-        .map(String::from)
-        .to_vec();
-    // Eine Datei als Start: ihr Ordner.
+/// Systemdialog zur Datei- oder Ordnerwahl auf allen Systemen (`tauri-plugin-dialog`: Finder,
+/// Windows-Dialog, GTK bzw. Portal unter Linux); `None` bei Abbruch. `start`: Ordner (oder Datei
+/// darin), wo der Dialog öffnet; sonst dort, wo er zuletzt war. Nicht auf dem Hauptfaden aufrufen
+/// (der Dialog wartet auf den Benutzer); alle Befehle, die ihn nutzen, laufen `async`.
+fn waehlen_ab(
+    app: &tauri::AppHandle,
+    wahl: Wahl,
+    aufforderung: &str,
+    start: Option<&Path>,
+) -> Option<PathBuf> {
+    use tauri_plugin_dialog::DialogExt;
+    let mut dialog = app.dialog().file().set_title(aufforderung);
+    if let Some(ordner) = startordner_fuer_dialog(start) {
+        dialog = dialog.set_directory(ordner);
+    }
+    let gewaehlt = match wahl {
+        Wahl::Datei => dialog.blocking_pick_file(),
+        Wahl::Ordner => dialog.blocking_pick_folder(),
+    }?;
+    gewaehlt.into_path().ok()
+}
+
+/// Wo der Dialog öffnet: eine Datei als Start heißt ihr Ordner; was es nicht gibt, zählt nicht.
+fn startordner_fuer_dialog(start: Option<&Path>) -> Option<&Path> {
     let start = start.and_then(|s| if s.is_file() { s.parent() } else { Some(s) });
-    if let Some(s) = start.filter(|s| s.is_dir()) {
-        a.push(s.display().to_string());
-    }
-    a
-}
-
-/// Systemdialog zur Datei- oder Ordnerwahl (macOS); `None` bei Abbruch und auf anderen Systemen.
-fn waehlen(wahl: Wahl, aufforderung: &str) -> Option<PathBuf> {
-    waehlen_ab(wahl, aufforderung, None)
-}
-
-fn waehlen_ab(wahl: Wahl, aufforderung: &str, start: Option<&Path>) -> Option<PathBuf> {
-    if !cfg!(target_os = "macos") {
-        return None;
-    }
-    let aus = std::process::Command::new("osascript")
-        .args(wahl_argumente(wahl, aufforderung, start))
-        .output()
-        .ok()?;
-    if !aus.status.success() {
-        return None;
-    }
-    let pfad = String::from_utf8(aus.stdout).ok()?;
-    let pfad = pfad.trim_end_matches('\n');
-    (!pfad.is_empty()).then(|| PathBuf::from(pfad))
+    start.filter(|s| s.is_dir())
 }
 
 #[tauri::command(async)]
-fn datei_waehlen_dialog(aufforderung: String, start: Option<String>) -> Option<String> {
-    waehlen_ab(Wahl::Datei, &aufforderung, start.as_deref().map(Path::new))
-        .map(|p| p.display().to_string())
+fn datei_waehlen_dialog(
+    app: tauri::AppHandle,
+    aufforderung: String,
+    start: Option<String>,
+) -> Option<String> {
+    waehlen_ab(
+        &app,
+        Wahl::Datei,
+        &aufforderung,
+        start.as_deref().map(Path::new),
+    )
+    .map(|p| p.display().to_string())
 }
 
 /// Import über Pandoc in ein neues Dokument ohne Namen; liefert Hinweise (etwa fehlende Bilder).
@@ -497,7 +487,7 @@ fn startordner(app: &tauri::AppHandle, waehlen: bool) -> Result<PathBuf, String>
             Some(&tftn_sprachen::kennung()),
         );
     }
-    match ordner_waehlen(&tr!("TFTN-Projektordner wählen (mit tftn.toml)")) {
+    match ordner_waehlen(app, &tr!("TFTN-Projektordner wählen (mit tftn.toml)")) {
         Some(p) if p.join("tftn.toml").is_file() => Ok(p),
         Some(p) => Err(tr!(
             "{ordner} ist kein TFTN-Projekt (keine tftn.toml).",
@@ -509,10 +499,9 @@ fn startordner(app: &tauri::AppHandle, waehlen: bool) -> Result<PathBuf, String>
     }
 }
 
-/// Systemdialog zur Ordnerwahl; `None` bei Abbruch. Unter macOS über `osascript` (keine
-/// zusätzliche Abhängigkeit), sonst noch keiner.
-fn ordner_waehlen(aufforderung: &str) -> Option<PathBuf> {
-    waehlen(Wahl::Ordner, aufforderung)
+/// Systemdialog zur Ordnerwahl; `None` bei Abbruch.
+fn ordner_waehlen(app: &tauri::AppHandle, aufforderung: &str) -> Option<PathBuf> {
+    waehlen_ab(app, Wahl::Ordner, aufforderung, None)
 }
 
 /// Hängt eine Zeile an `<projekt>/_lokal/tftn-sync.log` an (nicht synchronisiert, nicht in Git).
@@ -1161,11 +1150,20 @@ fn typ_vorschaubild(
     Ok(url)
 }
 
-/// Systemdialog zur Ordnerwahl (nur macOS; sonst `None`).
+/// Systemdialog zur Ordnerwahl; `None` bei Abbruch.
 #[tauri::command(async)]
-fn ordner_waehlen_dialog(aufforderung: String, start: Option<String>) -> Option<String> {
-    waehlen_ab(Wahl::Ordner, &aufforderung, start.as_deref().map(Path::new))
-        .map(|p| p.display().to_string())
+fn ordner_waehlen_dialog(
+    app: tauri::AppHandle,
+    aufforderung: String,
+    start: Option<String>,
+) -> Option<String> {
+    waehlen_ab(
+        &app,
+        Wahl::Ordner,
+        &aufforderung,
+        start.as_deref().map(Path::new),
+    )
+    .map(|p| p.display().to_string())
 }
 
 /// Legt `<eltern>/<name>` an und merkt es für den Wechsel (die Oberfläche lädt danach neu).
@@ -1271,10 +1269,14 @@ fn zuletzt_leeren(app: tauri::AppHandle, zustand: State<'_, Zustand>) -> Result<
 
 /// Merkt ein anderes Projekt für den Wechsel; ohne `ordner` über die Ordnerwahl.
 #[tauri::command(async)]
-fn projekt_wechseln(zustand: State<'_, Zustand>, ordner: Option<String>) -> Result<(), String> {
+fn projekt_wechseln(
+    app: tauri::AppHandle,
+    zustand: State<'_, Zustand>,
+    ordner: Option<String>,
+) -> Result<(), String> {
     let ordner = match ordner {
         Some(o) => typen::pfad_aus_eingabe(&o).ok_or_else(|| tr!("Kein Projekt gewählt."))?,
-        None => ordner_waehlen(&tr!("TFTN-Projektordner wählen (mit tftn.toml)"))
+        None => ordner_waehlen(&app, &tr!("TFTN-Projektordner wählen (mit tftn.toml)"))
             .ok_or_else(|| tr!("Kein Projekt gewählt."))?,
     };
     *zustand.naechstes.lock().unwrap() = Some(typen::wechsel_pruefen(&ordner)?);
@@ -3445,14 +3447,9 @@ fn einstellungsordner_setzen(
     let konfig = app_konfig(&app)?;
     let mut rechner = tftn_einstellungen::Rechner::laden(&konfig);
     let neu = if waehlen {
-        match ordner_waehlen(&tr!("Ordner für eigene Anpassungen wählen")) {
+        match ordner_waehlen(&app, &tr!("Ordner für eigene Anpassungen wählen")) {
             Some(p) => Some(p),
-            None if cfg!(target_os = "macos") => return Ok(einstellungen_js(&konfig)),
-            None => {
-                return Err(tr!(
-                    "Ordnerwahl gibt es hier noch nicht – bitte den Pfad eintragen."
-                ));
-            }
+            None => return Ok(einstellungen_js(&konfig)),
         }
     } else {
         ordner.as_deref().and_then(typen::pfad_aus_eingabe)
@@ -3821,6 +3818,7 @@ pub fn run() {
     let anzeige = zustand.anzeige.clone();
     tauri::Builder::default()
         .manage(zustand)
+        .plugin(tauri_plugin_dialog::init())
         .register_asynchronous_uri_scheme_protocol("tftn", move |_ctx, anfrage, antwort| {
             let anzeige = anzeige.clone();
             std::thread::spawn(move || {
@@ -4056,26 +4054,20 @@ mod tests {
         let _ = std::fs::remove_dir_all(&o);
     }
 
-    /// Die Aufforderung geht unverändert als eigenes Argument an das Skript, nie in den Skripttext.
+    /// Der Dialog öffnet im Ordner einer Datei; was es nicht gibt, zählt nicht.
     #[test]
-    fn wahldialog_reicht_die_aufforderung_als_argument() {
-        let a = wahl_argumente(Wahl::Ordner, r#"Wählen "x" \ ');"#, None);
-        assert_eq!(a[0], "-l");
-        assert_eq!(a[1], "JavaScript");
-        assert!(a[3].contains("chooseFolder"));
-        assert!(!a[3].contains("Wählen"));
-        assert_eq!(a[4], r#"Wählen "x" \ ');"#);
-        assert_eq!(a.len(), 5);
-        let start = std::env::temp_dir();
-        let b = wahl_argumente(Wahl::Datei, "y", Some(&start));
-        assert!(b[3].contains("chooseFile"));
+    fn dialog_startet_im_ordner() {
+        let tmp = std::env::temp_dir();
+        let datei = tmp.join(format!("tftn-dialog-start-{}.txt", std::process::id()));
+        std::fs::write(&datei, b"").unwrap();
+        assert_eq!(startordner_fuer_dialog(Some(&datei)), Some(tmp.as_path()));
+        assert_eq!(startordner_fuer_dialog(Some(&tmp)), Some(tmp.as_path()));
         assert_eq!(
-            b[5],
-            start.display().to_string(),
-            "Startordner als eigenes Argument"
+            startordner_fuer_dialog(Some(&tmp.join("gibt-es-nicht-tftn"))),
+            None
         );
-        let fehlt = start.join("gibt-es-nicht-tftn");
-        assert_eq!(wahl_argumente(Wahl::Datei, "y", Some(&fehlt)).len(), 5);
+        assert_eq!(startordner_fuer_dialog(None), None);
+        let _ = std::fs::remove_file(&datei);
     }
 
     /// Fachartikel regelt die Literatur selbst; ein leeres Dokument braucht `#bibliography(…)`.

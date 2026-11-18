@@ -31,8 +31,6 @@ export interface SchriftwahlAktionen {
   /** Nach dem Einbinden: Schrift im Dokument setzen. */
   gewaehlt(name: string, eingebunden: EingebundenJs): Promise<void>;
   geschlossen(): void;
-  /** "dialog": Systemdialog für Dateien; "pfad": Pfadfeld (Windows). */
-  dateiArt: "dialog" | "pfad";
 }
 
 /** Höchstens so viele Zeilen; der Rest über die Suche. */
@@ -105,23 +103,12 @@ export class SchriftwahlDialog {
     this.vollstaendig.onchange = () => this.zeigenListe();
     voll.append(this.vollstaendig, document.createTextNode(t("Nur Schriften mit allen Zeichen der Dokumentsprache")));
     const dateiZeile = el("div", "schriftwahl-zeile");
-    if (a.dateiArt === "dialog") {
-      const datei = el("button", "", t("Schriftdatei …"));
-      datei.onclick = () =>
-        void a.dateiWaehlen().then((p) => {
-          if (p) void this.dateiLaden(p);
-        });
-      dateiZeile.append(datei);
-    } else {
-      const pfad = el("input", "schriftwahl-suche");
-      pfad.placeholder = t("Pfad zu einer Schriftdatei (.otf, .ttf)");
-      pfad.spellcheck = false;
-      const lesen = el("button", "", t("Lesen"));
-      lesen.onclick = () => {
-        if (pfad.value.trim()) void this.dateiLaden(pfad.value.trim());
-      };
-      dateiZeile.append(pfad, lesen);
-    }
+    const datei = el("button", "", t("Schriftdatei …"));
+    datei.onclick = () =>
+      void a.dateiWaehlen().then((p) => {
+        if (p) void this.dateiLaden(p);
+      });
+    dateiZeile.append(datei);
     this.nehmen.disabled = true;
     this.nehmen.onclick = () => void this.uebernehmen();
     const knoepfe = el("div", "schriftwahl-knoepfe");

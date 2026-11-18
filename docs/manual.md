@@ -45,9 +45,8 @@ then run `npm ci`, `cargo xtask typst-holen --nur-host` and
 `npx tauri build --bundles deb --config src-tauri/tauri.buendel.json` in the source folder. The
 result is a `.deb` with the typst CLI and the download helper, installed with
 `sudo apt install ./target/release/bundle/deb/TFTN_*.deb` (or an AppImage with `--bundles appimage`).
-The first build takes 15 to 30 minutes. As on Windows, the Ctrl shortcuts apply, and opening asks
-for a path instead of showing a folder dialog. The Linux build is new and has hardly been tried by
-hand yet.
+The first build takes 15 to 30 minutes. As on Windows, the Ctrl shortcuts apply. The Linux build is
+new and has hardly been tried by hand yet.
 
 **Try it:** use “Open” → “Open project …” and choose the `demo/` folder from the source. The sample article shows
 equations, a figure, a table, footnotes, cross-references and citations. Feel free to change
@@ -190,7 +189,7 @@ Templates such as the journal article set this themselves. “Embed fonts” cop
 the project.
 
 **More fonts:** “More fonts …” below the font choice lists the fonts installed on the computer, each
-with a sample line, the number of styles and the size. “Font file …” (Mac) or a path (Windows) adds an
+with a sample line, the number of styles and the size. “Font file …” adds an
 `.otf` or `.ttf` file; bold and italic from the same folder come along. If the font lacks characters of
 the document language, such as “ ” or € (or ß and umlauts in German), this is shown right away
 (“Missing: €”); such fonts are hidden at first. “Use font” copies the whole family into `fonts/` and

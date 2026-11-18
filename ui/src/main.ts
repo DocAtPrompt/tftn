@@ -76,7 +76,7 @@ import { type RechtschreibungJs, falschSetzen, ohneIgnorierte, rechtschreibMenue
 import { abbildungText, blockEinfuegen, eingefuegterName, istBild } from "./bildeinfuegen";
 import { SeiteFach, type SeitenFeld, type SeitenJs } from "./seitefach";
 import { type EingebundenJs, type FamilieJs, SchriftwahlDialog } from "./schriftwahl";
-import { type TypenJs, oeffnenArt, wechselNachSpeichern, entwurfHatText, sperre } from "./neuprojekt";
+import { type TypenJs, wechselNachSpeichern, entwurfHatText, sperre } from "./neuprojekt";
 import type { Wert } from "./werte";
 import { HALTEN_MS, type MarkenEreignis, MarkenSchalter } from "./marken";
 import { type MarkeJs, Popover, markenErweiterung, setzeMarken } from "./markenansicht";
@@ -1336,14 +1336,8 @@ const NACH_IMPORT = "tftn-nach-import";
 /** Eine Datei über Pandoc in ein neues Dokument ohne Namen holen. */
 async function importieren() {
   const was = t("Datei zum Importieren (.docx, .odt, .rtf, .md, .html, .epub, .tex)");
-  let datei: string | null;
   try {
-    if (oeffnenArt(PLATTFORM) === "pfad") {
-      pfadDialog ??= new PfadDialog();
-      datei = await pfadDialog.fragen(was, "", { platzhalter: t("z. B. C:\\Users\\…\\Artikel.docx"), knopf: t("Importieren") });
-    } else {
-      datei = await invoke<string | null>("datei_waehlen_dialog", { aufforderung: was });
-    }
+    const datei = await invoke<string | null>("datei_waehlen_dialog", { aufforderung: was });
     if (datei === null) return;
     hinweis(t("Importiere …"));
     const ziel = datei;
@@ -1370,17 +1364,12 @@ const einzeln = sperre(() =>
 let pfadDialog: PfadDialog | undefined;
 
 /**
- * Speichern, ein anderes Projekt wählen (Systemdialog am Mac, Pfad unter Windows), dann neu laden.
+ * Speichern, ein anderes Projekt wählen (Systemdialog, in Rust), dann neu laden.
  * `vorgegeben`: ein Projekt aus „zuletzt geöffnet“, ohne Auswahl.
  */
 async function projektWechseln(vorgegeben: string | null = null) {
   try {
-    let ordner: string | null = vorgegeben;
-    if (ordner === null && oeffnenArt(PLATTFORM) === "pfad") {
-      pfadDialog ??= new PfadDialog();
-      ordner = await pfadDialog.fragen(t("Projekt öffnen (Ordner mit tftn.toml)"));
-      if (ordner === null) return;
-    }
+    const ordner: string | null = vorgegeben;
     const ok = await wechselNachSpeichern(vorWechsel, async () => {
       await invoke("projekt_wechseln", { ordner });
       location.reload();
@@ -1734,7 +1723,6 @@ async function start() {
       });
       return ordner;
     },
-    ordnerdialog: PLATTFORM === "mac",
     // Erst speichern, dann anlegen (Rust merkt sich dabei das neue Projekt), dann neu laden: So bleibt
     // bei einem Speicherfehler alles, wie es war (Abschlussprüfung AP8).
     anlegen: async (typ, eltern, name, schriften) => {
@@ -1855,7 +1843,6 @@ async function start() {
       );
     },
     geschlossen: () => view.focus(),
-    dateiArt: oeffnenArt(PLATTFORM),
   });
   const seiteFach = new SeiteFach({
     stand: () => abfragen(() => invoke<SeitenJs>("seite_stand")),

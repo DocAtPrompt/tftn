@@ -33,6 +33,7 @@ tftn-pakete.workspace = true
 tftn-sprachen.workspace = true
 typst.workspace = true
 typst-layout.workspace = true
+tauri-plugin-dialog = "2"
 
 [dev-dependencies]
 flate2.workspace = true

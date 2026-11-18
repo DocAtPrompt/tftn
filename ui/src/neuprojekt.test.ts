@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type TypJs, namePruefen, oeffnenArt, typenOrdnen, wechselNachSpeichern, zielPfad, entwurfHatText, brauchtListe, sperre } from "./neuprojekt";
+import { type TypJs, namePruefen, typenOrdnen, wechselNachSpeichern, zielPfad, entwurfHatText, brauchtListe, sperre } from "./neuprojekt";
 
 describe("name_pruefen", () => {
   it("gleiche Fälle wie Rust name_pruefen", () => {
@@ -61,13 +61,6 @@ describe("wechsel_speichert_zuerst", () => {
     );
     expect(ok).toBe(true);
     expect(reihe).toEqual(["speichern", "wechseln"]);
-  });
-});
-
-describe("oeffnen_art", () => {
-  it("systemdialog am mac, pfadfeld unter windows", () => {
-    expect(oeffnenArt("mac")).toBe("dialog");
-    expect(oeffnenArt("win")).toBe("pfad");
   });
 });
 

@@ -34,11 +34,6 @@ export function namePruefen(name: string): string | null {
   return null;
 }
 
-/** „Öffnen …“: Systemdialog am Mac, Pfadfeld unter Windows (dort gibt es keinen Dialog). */
-export function oeffnenArt(plattform: "mac" | "win"): "dialog" | "pfad" {
-  return plattform === "mac" ? "dialog" : "pfad";
-}
-
 /** Elternordner + Name mit dem Trenner des Elternpfads (\ unter Windows, sonst /), ohne doppelten Trenner. */
 export function zielPfad(eltern: string, name: string): string {
   const trenner = eltern.includes("\\") && !eltern.includes("/") ? "\\" : "/";

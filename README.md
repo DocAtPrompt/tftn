@@ -182,8 +182,7 @@ takes 15–30 minutes.
    Instead of a `.deb`, `--bundles appimage` builds a self-contained AppImage under
    `target/release/bundle/appimage/`; `--bundles rpm` builds an `.rpm` for Fedora.
 
-On Linux, TFTN uses the Ctrl shortcuts like on Windows, and opening a project asks for its path
-instead of showing a folder dialog.
+On Linux, TFTN uses the Ctrl shortcuts like on Windows.
 
 ## Repository layout
 

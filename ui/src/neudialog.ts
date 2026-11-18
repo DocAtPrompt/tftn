@@ -9,10 +9,8 @@ import { t } from "./sprache";
 export interface NeuAktionen {
   typen(): Promise<TypenJs>;
   vorschaubild(name: string): Promise<string>;
-  /** Systemdialog (nur am Mac); null bei Abbruch oder ohne Dialog. */
+  /** Systemdialog zur Ordnerwahl; null bei Abbruch. */
   ordnerWaehlen(): Promise<string | null>;
-  /** Gibt es einen Systemdialog zur Ordnerwahl? */
-  ordnerdialog: boolean;
   /** Speichert das offene Projekt, legt dann an; scheitert das Speichern, wird nichts angelegt. */
   anlegen(typ: string, eltern: string, name: string, schriften: boolean): Promise<string>;
   /** Lädt das Fenster neu; das Ziel hat Rust beim Anlegen gemerkt (gespeichert wurde vorher). */
@@ -100,17 +98,15 @@ export class NeuDialog {
     const rechts = el("div", "neu-rechts");
     const ordnerZeile = el("div", "neu-ordnerzeile");
     ordnerZeile.append(this.eltern);
-    if (this.a.ordnerdialog) {
-      const w = el("button", "", t("Wählen …"));
-      w.addEventListener("click", async () => {
-        const o = await this.a.ordnerWaehlen();
-        if (o) {
-          this.eltern.value = o;
-          this.pruefen();
-        }
-      });
-      ordnerZeile.append(w);
-    }
+    const w = el("button", "", t("Wählen …"));
+    w.addEventListener("click", async () => {
+      const o = await this.a.ordnerWaehlen();
+      if (o) {
+        this.eltern.value = o;
+        this.pruefen();
+      }
+    });
+    ordnerZeile.append(w);
     rechts.append(
       el("label", "leiste-titel", t("Ordner")),
       ordnerZeile,
@@ -219,8 +215,8 @@ export class NeuDialog {
 }
 
 /**
- * Pfad eintippen, wo es keinen Systemdialog gibt (Windows): „Öffnen …“ fragt so nach dem
- * Projektordner (Abschlussprüfung AP8). Liefert den Pfad oder null bei Abbruch.
+ * Kleiner Dialog mit einem Eingabefeld: fragt etwa nach dem Namen beim ersten Speichern. Liefert
+ * die Eingabe oder null bei Abbruch.
  */
 export class PfadDialog {
   private huelle: HTMLDivElement;

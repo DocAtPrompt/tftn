@@ -41,8 +41,7 @@ installieren, dann im Quellordner `npm ci`, `cargo xtask typst-holen --nur-host`
 `npx tauri build --bundles deb --config src-tauri/tauri.buendel.json`. Heraus kommt ein `.deb` mit
 typst-CLI und Hilfsprogramm, das man mit `sudo apt install ./target/release/bundle/deb/TFTN_*.deb`
 installiert (oder mit `--bundles appimage` ein AppImage). Der erste Bau dauert 15 bis 30 Minuten. Wie
-unter Windows gelten die Strg-Kürzel, und statt eines Ordnerdialogs gibt man beim Öffnen den Pfad ein.
-Die Linux-Fassung ist neu und erst wenig von Hand ausprobiert.
+unter Windows gelten die Strg-Kürzel. Die Linux-Fassung ist neu und erst wenig von Hand ausprobiert.
 
 **Ausprobieren:** Mit „Öffnen“ → „Projekt öffnen …“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
 zeigt Formeln, eine Abbildung, eine Tabelle, Fußnoten, Querverweise und Zitate. Ändern ist
@@ -189,7 +188,7 @@ Fachartikel legen das selbst fest. Mit „Schriften einbinden“ kommen die benu
 
 **Weitere Schriften:** „Weitere Schrift …“ unter der Schriftwahl zeigt die auf dem Rechner
 installierten Schriften, jede mit einer Probezeile, der Zahl der Schnitte und der Größe. Mit
-„Schriftdatei …“ (Mac) bzw. einem Pfad (Windows) kommt eine `.otf`- oder `.ttf`-Datei dazu; Fett und
+„Schriftdatei …“ kommt eine `.otf`- oder `.ttf`-Datei dazu; Fett und
 Kursiv aus demselben Ordner gehen mit. Fehlen der Schrift Zeichen der Dokumentsprache, etwa ß, Umlaute,
 „ “ oder €, steht das gleich dabei („Es fehlen: ß €“); solche Schriften sind zunächst ausgeblendet.
 „Schrift übernehmen“ kopiert die ganze Familie nach `fonts/` und setzt sie als Schrift des Dokuments.
