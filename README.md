@@ -17,6 +17,9 @@ with Typst without handing them to a third party.
 - **Your own text blocks:** standard phrases and paragraphs with gaps to fill in, kept in one file in
   your settings folder (synced to every computer if you like); select text and save it as a block
   with a right-click.
+- **Long documents in chapters:** each `#include`d chapter file opens as a tab next to the main file,
+  with its own undo; clicking text in the preview opens the right chapter, and writing
+  `#include "chapters/new.typ"` creates the file for you.
 - **Find and replace across the whole document:** search all chapter files at once (match case, whole word,
   regular expressions), jump to a match, replace in the editor with undo per file.
 - **Change values without code:** markers, a context sidebar, a table grid and an equation palette.
