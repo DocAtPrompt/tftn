@@ -46,14 +46,14 @@ with Typst without handing them to a third party.
   same PDF, byte for byte.
 - **Autosave with versions**, outline with drag-and-drop sections, spell checking, word count,
   distraction-free focus view.
-- **AI assistants via MCP** (opt-in): Claude Code or a local model can read and edit the open
-  document in the running app; every change shows up at once and can be undone. Off by default;
-  once you switch it on, the assistant you connect sees the document – with a cloud assistant it
-  leaves your machine. **Incognito** keeps personal data out of it: names, dates of birth and
-  insurance numbers from the form reach the assistant only as stand-in texts such as
-  “[Female patient]” or “[born 1970]” (the page image too), and TFTN puts the real values back when
-  the assistant writes. What TFTN does not know as a form field – a name only in the running text, a
-  scan – is not replaced.
+- **AI assistants via MCP** (opt-in): Claude Code or the agent of your choice – a local model
+  included – can read and edit the open document in the running app; every change shows up at once
+  and can be undone. Off by default; once you switch it on, the assistant you connect sees the
+  document – with a cloud assistant it leaves your machine. **Incognito** keeps personal data out of
+  it: names, dates of birth and insurance numbers from the form reach the assistant only as stand-in
+  texts such as “[Female patient]” or “[born 1970]” (the page image too), and TFTN puts the real
+  values back when the assistant writes. What TFTN does not know as a form field – a name only in
+  the running text, a scan – is not replaced.
 - **Skins and interface size:** light, dark, paper and high contrast, or your own; bars and dialogs
   scale from small to extra large.
 - **Offline by design:** no network access except on explicit request, through one small helper
