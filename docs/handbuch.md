@@ -10,6 +10,12 @@ Literatureintrag, die Update-Abfrage), geht eine Anfrage an eine feste Adresse h
 Ihr Text bleibt gewöhnliches Typst. Jedes Dokument lässt sich auch ohne TFTN mit der typst-CLI
 übersetzen und ergibt dasselbe PDF.
 
+<!-- Ko-fi: einschalten, sobald es den Namen gibt (<name> ersetzen, Kommentarzeichen entfernen;
+     auch den Abschnitt „TFTN unterstützen“ am Ende).
+TFTN ist frei und bleibt es. Wenn es Ihnen die Arbeit erleichtert, können Sie die Entwicklung auf
+[Ko-fi](https://ko-fi.com/<name>) unterstützen – mehr dazu am Ende.
+-->
+
 ## Inhalt
 
 1. [Erste Schritte](#1-erste-schritte)
@@ -734,3 +740,14 @@ der ohne Zwischenraum an einem anderen Wort klebt, wird nicht erkannt. Eingebund
 (Scans, Unterschrift) kann TFTN nicht prüfen; die Antwort zum Seitenbild nennt sie. Lesen Sie deshalb
 bei heiklen Dokumenten unter „Was die KI sieht …“ und im Quelltext nach, bevor Sie einen Cloud-Dienst
 arbeiten lassen.
+
+<!-- Ko-fi: einschalten, sobald es den Namen gibt.
+## TFTN unterstützen
+
+TFTN kostet nichts: kein Abo, keine Werbung, keine Daten. Wer es regelmäßig nutzt und etwas zurückgeben möchte, kann das auf
+[Ko-fi](https://ko-fi.com/<name>) tun. Genauso willkommen sind Fehlermeldungen und Wünsche auf der
+[Projektseite](https://github.com/DocAtPrompt/tftn/issues).
+
+Der Link steht auch in „Über TFTN“ (F1); er öffnet die Seite nur auf Klick im Browser, und die
+Einstellungen blenden ihn aus.
+-->

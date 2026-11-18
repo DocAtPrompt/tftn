@@ -10,6 +10,12 @@ bibliography entry, the update check) does a request go out, and only to a fixed
 Your text stays plain Typst. Every document can be compiled without TFTN using the typst CLI and
 yields the same PDF.
 
+<!-- Ko-fi: switch on once the name exists (replace <name>, remove the comment markers; also the
+     section “Supporting TFTN” at the end).
+TFTN is free and will stay free. If it makes your work easier, you can support its development on
+[Ko-fi](https://ko-fi.com/<name>) – more at the end.
+-->
+
 The interface is available in English and German. The document types that ship with TFTN come in
 both languages too: blank document, letter, invoice, medical report (doctor's letter), report,
 journal article, book, poster and CV.
@@ -729,3 +735,14 @@ appears in the running text, an inflection other than the genitive s, a nickname
 glued to another word without a space is not recognised. TFTN cannot check embedded images and PDFs
 (scans, signature); the answer to the page image names them. For sensitive documents, check “What the
 AI sees …” and the source before letting a cloud service work on them.
+
+<!-- Ko-fi: switch on once the name exists.
+## Supporting TFTN
+
+TFTN costs nothing: no subscription, no ads, no data. If you use it regularly and want to give something back, you can do so on
+[Ko-fi](https://ko-fi.com/<name>). Bug reports and wishes on the
+[project page](https://github.com/DocAtPrompt/tftn/issues) are just as welcome.
+
+The link is also in “About TFTN” (F1); it opens the page in the browser only when clicked, and the
+settings can hide it.
+-->
