@@ -5028,6 +5028,7 @@ dependencies = [
  "flate2",
  "sha2",
  "tftn-core",
+ "tftn-formular",
  "tftn-manifest",
  "tftn-sprachen",
  "tiny-skia",

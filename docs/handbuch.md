@@ -409,7 +409,47 @@ Sammel-PDF entsteht mit der typst-CLI: `_lokal/serie/alle.typ` bindet die fertig
 ein, der Text bleibt dabei Text. Bei „nur gesamt“ liegen die Einzelnen in `_lokal/serie/pdf/`.
 Fehlerhafte Datensätze fehlen im Sammel-PDF und werden gemeldet.
 
-Auf der Kommandozeile: `tftn serie <projekt> --daten <ordner oder datei> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
+**Aus einer CSV** (Adresslisten aus Excel oder der Ordinationssoftware): Statt einer `.toml` lässt
+sich eine `.csv` wählen; jede Zeile wird ein Dokument, die erste Zeile nennt die Spalten. TFTN erkennt
+das Trennzeichen (Semikolon wie im deutschen Excel, Komma, Tabulator) und die Kodierung: UTF-8 (auch
+„CSV UTF-8“ aus Excel), sonst Windows-1252 wie bei „CSV (Trennzeichen-getrennt)“ aus älterem Excel –
+die Umlaute kommen so richtig an. Zellen mit Semikolon oder Zeilenumbruch in Anführungszeichen sind in
+Ordnung, leere Zeilen am Ende auch.
+
+```
+Datei;Rechnungsnummer;Empfänger 1;Empfänger 2;Empfänger 3;Empfänger 4;Anrede;Rechnungsdatum
+2026-014 Müller;2026-014;Herrn;Dr. Hans Müller;Hauptstraße 5;8010 Graz;Sehr geehrter Herr Dr. Müller,;31.01.2026
+```
+
+- **Spalten und Felder:** Eine Spalte gehört zu einem Feld, wenn sie heißt wie das Feld im Fach
+  „Dokument“ („Rechnungsnummer“, „Anrede“) oder wie sein Name in `dokument.toml` (`nummer`); Groß- und
+  Kleinschreibung, Leerzeichen, Bindestriche und „ae“ statt „ä“ spielen keine Rolle. Felder in Gruppen
+  gehen mit Punkt oder mit dem Titel der Gruppe davor: `absender.telefon` oder „Absender Telefon“. Eine
+  Anschrift (eine Liste von Zeilen wie „Empfänger“) kommt aus mehreren Spalten `Empfänger 1`,
+  `Empfänger 2` … oder aus einer Zelle mit Zeilenumbrüchen. Die Spalte „Datei“ (oder „Dateiname“) gibt
+  dem PDF seinen Namen. Posten einer Rechnung kommen nicht aus der CSV, sondern aus dem Fach „Dokument“.
+- **Werte:** Zahlen deutsch oder englisch (`1.234,50`, `1234.50`; ein einzelner Punkt gilt als
+  Dezimalpunkt), Datumsangaben als `31.01.2026` oder `2026-01-31` (Jahr vierstellig), Ja/Nein-Felder
+  als ja/nein, x oder 1/0; bei einer Auswahl zählt der Wert oder seine Beschriftung („Englisch“). Eine
+  leere Zelle lässt das Feld weg, dann gilt der Wert aus dem Fach „Dokument“.
+- **Im Dialog** stehen nach dem Wählen die Zahl der Datensätze, die Zuordnung jeder Spalte (nicht
+  zugeordnete sind hervorgehoben, darüber steht eine Warnung), die Werte des ersten Datensatzes, wie sie
+  ins Dokument gehen, und die Fehler mit Zeile und Spalte (Zeilennummer wie in Excel, die Kopfzeile ist
+  Zeile 1). Eine Zeile mit Fehler ergibt kein PDF; die anderen entstehen, und sie wird am Ende gemeldet.
+- **Eigene Zuordnung:** In der Auswahl neben jeder Spalte lässt sich ein anderes Feld oder „nicht
+  verwenden“ wählen. TFTN merkt sich das im Projekt, in `tftn.toml` unter `[serie-csv."<Dateiname>.csv"]`
+  – nur Spaltennamen und Feldnamen, keine Werte. Eine neue Ausfuhr mit demselben Dateinamen findet die
+  Zuordnung wieder, auch an anderem Ort. Im Projekt reist die Zuordnung mit dem Dokumenttyp, dessen
+  Felder sie nennt, und wird mit ihm gesichert; neben einer frisch exportierten CSV (oft im
+  Download-Ordner) ginge sie leicht verloren.
+
+Intern wird jede Zeile derselbe Datensatz wie ein Abschnitt `[[serie]]`; Sammel-PDF, beidseitiger
+Druck, Gegenprobe (`_lokal/serie/<name>.toml`) und Inkognito gelten also genauso. Liegt die CSV im
+Projektordner, kennt Inkognito ihre Werte, auch aus Spalten mit mehrdeutigem Namen wie „Name“; eine
+Spalte, die zu keinem Feld passt (etwa „Telefon“ bei einem Brief), kennt es nicht. Adresslisten liegen
+deshalb am besten außerhalb des Projekts; dort sieht sie ein Assistent gar nicht.
+
+Auf der Kommandozeile: `tftn serie <projekt> --daten <ordner, .toml oder .csv> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
 
 ## 8. Sichern und Fassungen
 
@@ -653,7 +693,7 @@ er zurückschreibt.
   Vorlage). Gibt es mehrere Personen (eine Serie im Projekt), heißen sie „[Patientin]“, „[Patientin 2]“
   usw.
 - **Was ersetzt wird:** die Werte aus der Datendatei (`dokument.toml`) und aus Datensätzen einer Serie,
-  die im Projektordner liegen – überall, wo der Assistent sie zu sehen bekäme: im Quelltext, in
+  die im Projektordner liegen (TOML oder CSV) – überall, wo der Assistent sie zu sehen bekäme: im Quelltext, in
   Kapiteln und anderen Dateien, im Formular, in Dateinamen und im Pfad des Projekts, in Meldungen.
   Erkannt werden der ganze Wert, die Teile eines Namens („Frau Musterfrau“ allein, auch
   „Musterfraus“), Datumswerte in den üblichen Schreibweisen (1970-02-01, 01.02.1970, 1. Februar 1970 …)

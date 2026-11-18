@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { dateiname, ergebnisInhalt, hauptdateiAnpassung, namenListe, type StueckJs, wahlLesen } from "./serie";
+import {
+  bereit,
+  type CsvJs,
+  csvKopf,
+  dateiname,
+  ergebnisInhalt,
+  feldOptionen,
+  fehlerListe,
+  fehlerText,
+  freieSpalten,
+  hauptdateiAnpassung,
+  namenListe,
+  OFFEN,
+  type SerieJs,
+  type StueckJs,
+  wahlLesen,
+} from "./serie";
 
 describe("dateiname", () => {
   it("nimmt den letzten Teil, auch mit Backslash", () => {
@@ -78,5 +94,60 @@ describe("ergebnisInhalt", () => {
     const i = ergebnisInhalt({ stuecke: [stueck("a", "/d/a.pdf")], gesamt: g }, { ausgabe: "beides", beidseitig: false }, "/d");
     expect(i.gesamtFehler).toBe("kaputt");
     expect(i.zeigen).toBe("/d/a.pdf");
+  });
+});
+
+describe("CSV im Dialog", () => {
+  const csv: CsvJs = {
+    trennzeichen: ";",
+    kodierung: "Windows-1252",
+    spalten: [
+      { name: "Empfänger 1", feld: "empfaenger", eigen: false, beispiel: "Frau" },
+      { name: "Telefon", feld: null, eigen: false, beispiel: "0664" },
+      { name: "Notiz", feld: null, eigen: true, beispiel: "privat" },
+      { name: "Nr", feld: "nummer", eigen: true, beispiel: "1" },
+    ],
+    felder: [
+      { pfad: "nummer", titel: "Rechnungsnummer", liste: false },
+      { pfad: "empfaenger", titel: "Empfänger", liste: true },
+    ],
+    vorschau: [["Empfänger", "Frau\nAnna Muster"]],
+    fehler: [],
+    zuordnungsfehler: [],
+  };
+
+  it("Kopfzeile mit Trennzeichen und Kodierung", () => {
+    expect(csvKopf(csv, 3)).toBe("3 Datensätze aus der CSV (Trennzeichen „;“, Windows-1252)");
+  });
+
+  it("frei sind nur Spalten ohne Feld, die nicht bewusst abgewählt sind", () => {
+    expect(freieSpalten(csv)).toEqual(["Telefon"]);
+  });
+
+  it("Auswahl: nicht verwenden zuerst, Listen gekennzeichnet; offene Spalte mit „bitte wählen“", () => {
+    expect(feldOptionen(csv.felder)).toEqual([
+      { wert: "", text: "– nicht verwenden –" },
+      { wert: "nummer", text: "Rechnungsnummer" },
+      { wert: "empfaenger", text: "Empfänger (Liste)" },
+    ]);
+    expect(feldOptionen(csv.felder, true).slice(0, 2)).toEqual([
+      { wert: OFFEN, text: "– bitte wählen –" },
+      { wert: "", text: "– nicht verwenden –" },
+    ]);
+  });
+
+  it("Fehler mit Zeile und Spalte, lange Listen gekürzt", () => {
+    expect(fehlerText({ zeile: 3, spalte: "Datum", text: "kein Datum" })).toBe("Zeile 3, Spalte „Datum“: kein Datum");
+    expect(fehlerText({ zeile: 4, spalte: null, text: "zu viele Zellen" })).toBe("Zeile 4: zu viele Zellen");
+    const viele = Array.from({ length: 5 }, (_, i) => ({ zeile: i + 2, spalte: null, text: "x" }));
+    expect(fehlerListe(viele, 2)).toEqual(["Zeile 2: x", "Zeile 3: x", "… und 3 weitere"]);
+  });
+
+  it("bereit: nicht bei widersprüchlicher Zuordnung", () => {
+    const s: SerieJs = { namen: ["a"], zielordner: "/d", hauptdatei: "bereit", daten: "dokument.toml", gesamt_name: "a-alle", csv };
+    expect(bereit(s)).toBe(true);
+    expect(bereit({ ...s, csv: { ...csv, zuordnungsfehler: ["doppelt"] } })).toBe(false);
+    expect(bereit({ ...s, csv: null, hauptdatei: "anpassbar" })).toBe(false);
+    expect(bereit({ ...s, namen: [] })).toBe(false);
   });
 });

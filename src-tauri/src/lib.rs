@@ -1005,6 +1005,41 @@ struct SerieJs {
     daten: String,
     /// Dateiname des Sammel-PDFs (ohne Endung)
     gesamt_name: String,
+    /// Nur bei einer CSV: Zuordnung, Vorschau, Fehler
+    csv: Option<CsvJs>,
+}
+
+/// Was der Dialog zu einer CSV zeigt.
+#[derive(Serialize)]
+struct CsvJs {
+    /// `;`, `,` oder `Tab`
+    trennzeichen: String,
+    kodierung: tftn_formular::csv::Kodierung,
+    spalten: Vec<tftn_formular::csv::Spalte>,
+    /// Felder, denen eine Spalte zugeordnet werden kann
+    felder: Vec<tftn_formular::csv::Ziel>,
+    /// Feldtitel und Wert des ersten Datensatzes, wie er ins Dokument geht
+    vorschau: Vec<(String, String)>,
+    fehler: Vec<tftn_formular::csv::Fehler>,
+    /// verhindern die Serie
+    zuordnungsfehler: Vec<String>,
+}
+
+impl From<tftn_formular::csv::Bericht> for CsvJs {
+    fn from(b: tftn_formular::csv::Bericht) -> Self {
+        CsvJs {
+            trennzeichen: match b.trennzeichen {
+                '\t' => "Tab".into(),
+                c => c.to_string(),
+            },
+            kodierung: b.kodierung,
+            vorschau: b.vorschau(),
+            fehler: b.fehler().into_iter().cloned().collect(),
+            spalten: b.spalten,
+            felder: b.felder,
+            zuordnungsfehler: b.zuordnungsfehler,
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -1042,12 +1077,12 @@ fn serie_projekt(zustand: &Zustand) -> Result<Projekt, String> {
     Ok(s.projekt.clone())
 }
 
-/// Liest die Datensätze (Datei oder Ordner) und sagt, ob die Hauptdatei bereit ist.
+/// Liest die Datensätze (Datei, Ordner oder CSV) und sagt, ob die Hauptdatei bereit ist.
 #[tauri::command(async)]
 fn serie_pruefen(quelle: String, zustand: State<'_, Zustand>) -> Result<SerieJs, String> {
     use tftn_export::serie::{self, Hauptdatei};
     let projekt = serie_projekt(&zustand)?;
-    let q = serie::lesen(Path::new(quelle.trim()))?;
+    let (q, csv) = serie::quelle_lesen(&projekt, Path::new(quelle.trim()))?;
     let daten = serie::datendatei(&projekt);
     let text = {
         let sitzung = zustand.sitzung.lock().unwrap();
@@ -1066,7 +1101,34 @@ fn serie_pruefen(quelle: String, zustand: State<'_, Zustand>) -> Result<SerieJs,
             Hauptdatei::Nein => "nein",
         },
         daten,
+        csv: csv.map(CsvJs::from),
     })
+}
+
+/// Ordnet eine Spalte einer CSV einem Feld zu (`feld` leer: nicht verwenden); gemerkt in
+/// `tftn.toml` unter `[serie-csv."<datei>"]`, nur Spalten- und Feldnamen.
+#[tauri::command(async)]
+fn serie_zuordnen(
+    quelle: String,
+    spalte: String,
+    feld: String,
+    zustand: State<'_, Zustand>,
+) -> Result<(), String> {
+    let projekt = serie_projekt(&zustand)?;
+    let formular = tftn_export::serie::formular(&projekt)?;
+    let datei = projekt.wurzel.join("tftn.toml");
+    let alt = std::fs::read_to_string(&datei).map_err(|e| e.to_string())?;
+    let neu = tftn_formular::csv::zuordnung_schreiben(
+        &alt,
+        &tftn_formular::csv::dateischluessel(Path::new(quelle.trim())),
+        &spalte,
+        &feld,
+        &formular,
+    )?;
+    if neu != alt {
+        tftn_formular::atomar_schreiben(&datei, &neu).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 /// Erzeugt die Serie über die typst-CLI; meldet `serie-fortschritt` (fertig, gesamt, name).
@@ -1096,7 +1158,12 @@ fn serie_erzeugen(
         }
     }
     let projekt = serie_projekt(&zustand)?;
-    let q = tftn_export::serie::lesen(Path::new(quelle.trim()))?;
+    let (q, csv) = tftn_export::serie::quelle_lesen(&projekt, Path::new(quelle.trim()))?;
+    if let Some(b) = csv
+        && !b.zuordnungsfehler.is_empty()
+    {
+        return Err(b.zuordnungsfehler.join("\n"));
+    }
     let cli = tftn_export::TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
     let optionen = Optionen {
         ausgabe,
@@ -4220,6 +4287,7 @@ pub fn run() {
             mcp_antwort,
             mcp_auswahl,
             serie_pruefen,
+            serie_zuordnen,
             serie_erzeugen,
             mcp_wechsel_vormerken,
             oberflaeche_lesen,

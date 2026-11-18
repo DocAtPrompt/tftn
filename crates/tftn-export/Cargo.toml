@@ -9,6 +9,8 @@ license.workspace = true
 [dependencies]
 tftn-sprachen.workspace = true
 tftn-core.workspace = true
+# Serie aus CSV: Spalten den Feldern des Formulars zuordnen
+tftn-formular.workspace = true
 tftn-manifest.workspace = true
 # Archivpaket: Zip mit Deflate (schon für die Pakete im Einsatz)
 flate2.workspace = true

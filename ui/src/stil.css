@@ -2212,6 +2212,55 @@ button:hover .ikone {
   overflow-wrap: anywhere;
   font-size: 11px;
 }
+/* Serie aus CSV: Zuordnung Spalte → Feld, erster Datensatz */
+.serie-warnung {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border-left: 3px solid var(--warn);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+}
+.serie-csv summary {
+  cursor: pointer;
+  font-size: 12px;
+}
+.serie-csv table {
+  width: 100%;
+  margin-top: 4px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.serie-csv th,
+.serie-csv td {
+  padding: 2px 6px 2px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--linie);
+}
+.serie-csv th {
+  font-weight: 600;
+  color: var(--leise);
+}
+.serie-zuordnung select {
+  max-width: 100%;
+  font: inherit;
+}
+.serie-zuordnung tr.serie-frei td:first-child {
+  color: var(--warn);
+  font-weight: 600;
+}
+.serie-eigen {
+  margin-left: 6px;
+  color: var(--leise);
+  font-size: 11px;
+}
+.serie-beispiel {
+  color: var(--leise);
+  overflow-wrap: anywhere;
+}
+.serie-vorschau td {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 
 /* Weitere Schrift: installierte Schrift oder Schriftdatei ins Dokument */
 .seite-weitere {

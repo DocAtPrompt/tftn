@@ -2432,6 +2432,7 @@ async function start() {
   );
   const serieDialog = new SerieDialog({
     pruefen: (quelle) => invoke<SerieJs>("serie_pruefen", { quelle }),
+    zuordnen: (quelle, spalte, feld) => invoke("serie_zuordnen", { quelle, spalte, feld }),
     erzeugen: async (quelle, wahl) => {
       if (entwurf) throw new Error(t("Das Dokument braucht zuerst einen Namen: Cmd/Strg+S."));
       if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht exportiert."));
@@ -2449,7 +2450,7 @@ async function start() {
     },
     // Start: die bisherige Quelle, sonst der Projektordner (nicht dort, wo der Dialog zuletzt war).
     dateiWaehlen: (start) =>
-      invoke<string | null>("datei_waehlen_dialog", { aufforderung: t("Seriendatei (.toml) wählen"), start: start || projektOrdner }),
+      invoke<string | null>("datei_waehlen_dialog", { aufforderung: t("Seriendatei (.csv oder .toml) wählen"), start: start || projektOrdner }),
     ordnerWaehlen: (start) =>
       invoke<string | null>("ordner_waehlen_dialog", { aufforderung: t("Ordner mit den Datensätzen wählen"), start: start || projektOrdner }),
     zeigen: (pfad) => invoke("im_ordner_zeigen", { pfad }),

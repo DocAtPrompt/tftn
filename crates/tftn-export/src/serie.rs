@@ -1,7 +1,9 @@
 //! Serien (Serienbrief, Serienrechnung): ein Dokument je Datensatz, über die typst-CLI.
 //!
-//! Die Datensätze kommen aus einem Ordner mit `.toml`-Dateien (je Datei ein Dokument) oder aus
-//! einer `.toml` mit `[[serie]]`-Einträgen. Jeder Datensatz legt sich über die Formulardaten des
+//! Die Datensätze kommen aus einem Ordner mit `.toml`-Dateien (je Datei ein Dokument), aus
+//! einer `.toml` mit `[[serie]]`-Einträgen oder aus einer CSV-Datei (je Zeile ein Dokument; die
+//! Spalten gehören zu Feldern des Formulars, siehe `tftn_formular::csv`). Eine CSV wird dabei zu
+//! denselben Datensätzen wie `[[serie]]`. Jeder Datensatz legt sich über die Formulardaten des
 //! Projekts (`dokument.toml`): Gruppen werden zusammengeführt, alles andere ersetzt. So stehen
 //! Absender, Bank usw. einmal im Projekt und in der Serie nur, was sich ändert.
 //!
@@ -19,6 +21,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use tftn_core::{Projekt, ProjektWorld, kompilieren};
+use tftn_formular::{Formular, csv};
 use tftn_sprachen::tr;
 use toml::{Table, Value};
 use typst::syntax::{RootedPath, Source, VirtualPath, VirtualRoot};
@@ -66,6 +69,8 @@ pub struct Optionen {
 pub struct Datensatz {
     pub name: String,
     pub werte: Table,
+    /// Fehler beim Lesen (eine CSV-Zeile, deren Werte nicht passen): kein PDF, nur die Meldung
+    pub fehler: Option<String>,
 }
 
 /// Was beim Lesen der Quelle herauskommt.
@@ -131,7 +136,11 @@ pub fn lesen(quelle: &Path) -> Result<Quelle, String> {
                 .unwrap_or_default();
             let mut werte = toml_lesen(&d)?;
             let name = name_nehmen(&mut werte, &stamm, &d)?;
-            datensaetze.push(Datensatz { name, werte });
+            datensaetze.push(Datensatz {
+                name,
+                werte,
+                fehler: None,
+            });
         }
     } else {
         zielordner = quelle
@@ -140,32 +149,18 @@ pub fn lesen(quelle: &Path) -> Result<Quelle, String> {
             .unwrap_or(Path::new("."))
             .to_path_buf();
         let tabelle = toml_lesen(quelle)?;
-        let Some(Value::Array(eintraege)) = tabelle.get(EINTRAEGE) else {
-            return Err(tr!(
-                "{datei} hat keine Einträge [[serie]]. Je Dokument ein Abschnitt [[serie]] mit den Feldern, die sich ändern.",
-                datei = quelle.display()
-            ));
-        };
-        let stamm = &quell_stamm;
-        for (i, e) in eintraege.iter().enumerate() {
-            let Value::Table(t) = e else {
-                return Err(tr!(
-                    "{datei}: Eintrag {nr} ist kein Abschnitt [[serie]].",
-                    datei = quelle.display(),
-                    nr = i + 1
-                ));
-            };
-            let mut werte = t.clone();
-            let name = name_nehmen(&mut werte, &format!("{stamm}-{:03}", i + 1), quelle)?;
-            datensaetze.push(Datensatz { name, werte });
-        }
-        if datensaetze.is_empty() {
-            return Err(tr!(
-                "{datei} hat keine Einträge [[serie]].",
-                datei = quelle.display()
-            ));
-        }
+        datensaetze = eintraege(&tabelle, &quell_stamm, quelle)?;
     }
+    fertig(datensaetze, zielordner, &quell_stamm, quelle)
+}
+
+/// Prüft die Namen auf Doppelte und macht die Quelle fertig.
+fn fertig(
+    datensaetze: Vec<Datensatz>,
+    zielordner: PathBuf,
+    quell_stamm: &str,
+    quelle: &Path,
+) -> Result<Quelle, String> {
     let mut namen = std::collections::BTreeSet::new();
     for d in &datensaetze {
         if !namen.insert(d.name.to_lowercase()) {
@@ -176,12 +171,136 @@ pub fn lesen(quelle: &Path) -> Result<Quelle, String> {
         }
     }
     // Sauberer Name auch für einen Ordner wie „Serie: Nov“.
-    let stamm = name_nehmen(&mut Table::new(), &quell_stamm, quelle)?;
+    let stamm = name_nehmen(&mut Table::new(), quell_stamm, quelle)?;
     Ok(Quelle {
         datensaetze,
         zielordner,
         stamm,
     })
+}
+
+/// Die Einträge `[[serie]]` einer Tabelle als Datensätze (Namen `<stamm>-001` …, sonst `datei`).
+fn eintraege(tabelle: &Table, stamm: &str, quelle: &Path) -> Result<Vec<Datensatz>, String> {
+    let Some(Value::Array(eintraege)) = tabelle.get(EINTRAEGE) else {
+        return Err(tr!(
+            "{datei} hat keine Einträge [[serie]]. Je Dokument ein Abschnitt [[serie]] mit den Feldern, die sich ändern.",
+            datei = quelle.display()
+        ));
+    };
+    let mut datensaetze = Vec::new();
+    for (i, e) in eintraege.iter().enumerate() {
+        let Value::Table(t) = e else {
+            return Err(tr!(
+                "{datei}: Eintrag {nr} ist kein Abschnitt [[serie]].",
+                datei = quelle.display(),
+                nr = i + 1
+            ));
+        };
+        let mut werte = t.clone();
+        let name = name_nehmen(&mut werte, &format!("{stamm}-{:03}", i + 1), quelle)?;
+        datensaetze.push(Datensatz {
+            name,
+            werte,
+            fehler: None,
+        });
+    }
+    if datensaetze.is_empty() {
+        return Err(tr!(
+            "{datei} hat keine Einträge [[serie]].",
+            datei = quelle.display()
+        ));
+    }
+    Ok(datensaetze)
+}
+
+/// Ist die Quelle eine CSV-Datei (`.csv`, `.tsv`)?
+pub fn ist_csv(quelle: &Path) -> bool {
+    quelle
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("csv") || e.eq_ignore_ascii_case("tsv"))
+}
+
+/// Das Formular des Dokumenttyps im Projekt: Ziel der Spalten einer CSV.
+pub fn formular(projekt: &Projekt) -> Result<Formular, String> {
+    let paket = tftn_manifest::Typpaket::vom_projekt(projekt).map_err(|e| e.to_string())?;
+    let m = paket.manifest().map_err(|e| e.to_string())?;
+    let pfad = m.formular.as_ref().ok_or_else(|| {
+        tr!("Der Dokumenttyp hat kein Formular; die Spalten einer CSV lassen sich keinen Feldern zuordnen.")
+    })?;
+    let datei = paket.ordner.join(pfad);
+    let json = std::fs::read_to_string(&datei).map_err(|e| format!("{}: {e}", datei.display()))?;
+    tftn_formular::formular_lesen(&json).map_err(|f| {
+        f.iter()
+            .map(|f| format!("{} {}", f.ort, f.text))
+            .collect::<Vec<_>>()
+            .join("; ")
+    })
+}
+
+/// Die eigene Zuordnung einer CSV aus `tftn.toml` des Projekts.
+pub fn zuordnung(projekt: &Projekt, quelle: &Path) -> csv::Zuordnung {
+    let text = std::fs::read_to_string(projekt.wurzel.join("tftn.toml")).unwrap_or_default();
+    csv::zuordnung_lesen(&text, &csv::dateischluessel(quelle))
+}
+
+/// Liest eine CSV: je Zeile ein Datensatz wie ein Eintrag `[[serie]]`, dazu der Bericht für den
+/// Dialog (Zuordnung, Vorschau, Fehler). Eine Zeile mit Fehlern wird ein Datensatz mit `fehler`.
+pub fn csv_lesen(
+    quelle: &Path,
+    formular: &Formular,
+    eigene: &csv::Zuordnung,
+) -> Result<(Quelle, csv::Bericht), String> {
+    let bytes = std::fs::read(quelle).map_err(|e| format!("{}: {e}", quelle.display()))?;
+    let tabelle = csv::lesen(&bytes).map_err(|e| format!("{}: {e}", quelle.display()))?;
+    let bericht = csv::auswerten(&tabelle, formular, eigene, false);
+    if bericht.saetze.is_empty() {
+        return Err(tr!(
+            "{datei} hat unter der Kopfzeile keine Zeilen.",
+            datei = quelle.display()
+        ));
+    }
+    let toml_text = csv::serie_toml(&bericht.saetze);
+    let werte: Table = toml_text
+        .parse()
+        .map_err(|e: toml::de::Error| format!("{}: {}", quelle.display(), e.message()))?;
+    let stamm = quelle
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "serie".into());
+    let mut datensaetze = eintraege(&werte, &stamm, quelle)?;
+    for (d, s) in datensaetze.iter_mut().zip(&bericht.saetze) {
+        if !s.fehler.is_empty() {
+            d.fehler = Some(
+                s.fehler
+                    .iter()
+                    .map(|f| f.to_string())
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+            );
+        }
+    }
+    let zielordner = quelle
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."))
+        .to_path_buf();
+    Ok((fertig(datensaetze, zielordner, &stamm, quelle)?, bericht))
+}
+
+/// Liest die Quelle einer Serie im Projekt: Ordner oder Datei mit TOML, oder eine CSV (dann mit
+/// Formular und eigener Zuordnung des Projekts, und dem Bericht).
+pub fn quelle_lesen(
+    projekt: &Projekt,
+    quelle: &Path,
+) -> Result<(Quelle, Option<csv::Bericht>), String> {
+    if ist_csv(quelle) && !quelle.is_dir() {
+        let f = formular(projekt)?;
+        let (q, b) = csv_lesen(quelle, &f, &zuordnung(projekt, quelle))?;
+        Ok((q, Some(b)))
+    } else {
+        Ok((lesen(quelle)?, None))
+    }
 }
 
 fn toml_lesen(pfad: &Path) -> Result<Table, String> {
@@ -395,6 +514,9 @@ pub fn erzeugen(
             seiten: 0,
         };
         let ergebnis = (|| -> Result<usize, String> {
+            if let Some(f) = &d.fehler {
+                return Err(f.clone());
+            }
             std::fs::write(projekt.wurzel.join(&rel), &text).map_err(|e| e.to_string())?;
             // Vorab mit der Vorschau-World: genaue Fehlermeldungen, ohne die CLI zu bemühen.
             world.zuruecksetzen();

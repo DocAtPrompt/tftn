@@ -1,5 +1,7 @@
-// Serie: ein PDF je Datensatz (Ordner mit .toml-Dateien oder eine .toml mit [[serie]]). Erzeugt wird
-// in Rust über die typst-CLI (tftn_export::serie); hier nur Dialog und Rechnung.
+// Serie: ein PDF je Datensatz (Ordner mit .toml-Dateien, eine .toml mit [[serie]] oder eine CSV).
+// Erzeugt wird in Rust über die typst-CLI (tftn_export::serie); hier nur Dialog und Rechnung. Bei
+// einer CSV zeigt der Dialog die Zuordnung Spalte → Feld (änderbar, gemerkt in tftn.toml), die Werte
+// des ersten Datensatzes und die Fehler je Zeile.
 
 import { dialogAnmelden, dialogKopf } from "./dialoge";
 import { t } from "./sprache";
@@ -11,6 +13,40 @@ export interface SerieJs {
   daten: string;
   /** Dateiname des Sammel-PDFs (ohne Endung) */
   gesamt_name: string;
+  /** nur bei einer CSV */
+  csv: CsvJs | null;
+}
+
+export interface CsvSpalte {
+  name: string;
+  /** Feldpfad; null: nicht verwendet */
+  feld: string | null;
+  /** eigene Zuordnung (aus tftn.toml) */
+  eigen: boolean;
+  beispiel: string;
+}
+
+export interface CsvFeld {
+  pfad: string;
+  titel: string;
+  liste: boolean;
+}
+
+export interface CsvFehler {
+  zeile: number;
+  spalte: string | null;
+  text: string;
+}
+
+export interface CsvJs {
+  trennzeichen: string;
+  kodierung: string;
+  spalten: CsvSpalte[];
+  felder: CsvFeld[];
+  /** Feldtitel und Wert des ersten Datensatzes */
+  vorschau: [string, string][];
+  fehler: CsvFehler[];
+  zuordnungsfehler: string[];
 }
 
 export interface StueckJs {
@@ -63,6 +99,55 @@ export function namenListe(namen: readonly string[], hoechstens = 6): string {
   return rest > 0 ? t("{liste} und {anzahl} weitere", { liste: gezeigt, anzahl: rest }) : gezeigt;
 }
 
+/** „3 Datensätze aus der CSV (Trennzeichen „;“, Windows-1252)“ */
+export function csvKopf(c: CsvJs, anzahl: number): string {
+  return t("{anzahl} Datensätze aus der CSV (Trennzeichen „{trennzeichen}“, {kodierung})", {
+    anzahl,
+    trennzeichen: c.trennzeichen,
+    kodierung: c.kodierung,
+  });
+}
+
+/** Spalten, die weder einem Feld zugeordnet noch bewusst abgewählt sind. */
+export function freieSpalten(c: CsvJs): string[] {
+  return c.spalten.filter((s) => s.feld === null && !s.eigen).map((s) => s.name);
+}
+
+/** Wert der Auswahl einer Spalte, die noch offen ist (weder Feld noch „nicht verwenden“). */
+export const OFFEN = "?";
+
+/**
+ * Auswahl je Spalte: „nicht verwenden“ und alle Felder (Listen mit Hinweis); für eine offene
+ * Spalte zuerst „bitte wählen“, damit auch „nicht verwenden“ eine Wahl ist.
+ */
+export function feldOptionen(felder: readonly CsvFeld[], offen = false): { wert: string; text: string }[] {
+  return [
+    ...(offen ? [{ wert: OFFEN, text: t("– bitte wählen –") }] : []),
+    { wert: "", text: t("– nicht verwenden –") },
+    ...felder.map((f) => ({ wert: f.pfad, text: f.liste ? t("{titel} (Liste)", { titel: f.titel }) : f.titel })),
+  ];
+}
+
+/** „Zeile 3, Spalte „Datum“: …“ */
+export function fehlerText(f: CsvFehler): string {
+  return f.spalte === null
+    ? t("Zeile {zeile}: {text}", { zeile: f.zeile, text: f.text })
+    : t("Zeile {zeile}, Spalte „{spalte}“: {text}", { zeile: f.zeile, spalte: f.spalte, text: f.text });
+}
+
+/** Fehlerzeilen für die Anzeige, bei vielen gekürzt. */
+export function fehlerListe(fehler: readonly CsvFehler[], hoechstens = 12): string[] {
+  const zeilen = fehler.slice(0, hoechstens).map(fehlerText);
+  const rest = fehler.length - hoechstens;
+  if (rest > 0) zeilen.push(t("… und {anzahl} weitere", { anzahl: rest }));
+  return zeilen;
+}
+
+/** Darf die Serie laufen? Hauptdatei bereit, Datensätze da, Zuordnung ohne Widerspruch. */
+export function bereit(s: SerieJs): boolean {
+  return s.hauptdatei === "bereit" && s.namen.length > 0 && !(s.csv?.zuordnungsfehler.length ?? 0);
+}
+
 /** Letzter Teil eines Pfads (mit / oder \). */
 export function dateiname(pfad: string): string {
   return pfad.split(/[\\/]/).pop() ?? pfad;
@@ -70,6 +155,8 @@ export function dateiname(pfad: string): string {
 
 export interface SerieAktionen {
   pruefen(quelle: string): Promise<SerieJs>;
+  /** Spalte einer CSV einem Feld zuordnen (`feld` leer: nicht verwenden); gemerkt im Projekt. */
+  zuordnen(quelle: string, spalte: string, feld: string): Promise<void>;
   erzeugen(quelle: string, wahl: SerieWahl): Promise<SerieErgebnisJs>;
   /** Hauptdatei im Editor anpassen und speichern; `false`, wenn es nicht ging. */
   anpassen(daten: string): Promise<boolean>;
@@ -99,6 +186,8 @@ export class SerieDialog {
   private beidseitigZeile = el("label", "serie-beidseitig");
   private ergebnis = el("div", "serie-ergebnis");
   private stand: SerieJs | null = null;
+  /** Auf- oder zugeklappt (bleibt beim Neuprüfen nach einer Zuordnung); null: nach Lage */
+  private klappen: { zuordnung: boolean | null; vorschau: boolean | null } = { zuordnung: null, vorschau: null };
   private laeuft = false;
   private uhr: ReturnType<typeof setTimeout> | undefined;
 
@@ -110,13 +199,14 @@ export class SerieDialog {
       "p",
       "serie-hilfe",
       t(
-        "Ein PDF je Datensatz, etwa für Serienbriefe und Rechnungen. Datensätze: ein Ordner mit .toml-Dateien (je Datei ein Dokument) oder eine .toml mit Abschnitten [[serie]]. Jeder Datensatz enthält nur, was sich ändert; der Rest kommt aus dem Fach „Dokument“. Die PDFs landen bei den Daten.",
+        "Ein PDF je Datensatz, etwa für Serienbriefe und Rechnungen. Datensätze: eine CSV aus Excel oder der Praxissoftware (je Zeile ein Dokument, die Kopfzeile nennt die Felder), ein Ordner mit .toml-Dateien (je Datei ein Dokument) oder eine .toml mit Abschnitten [[serie]]. Jeder Datensatz enthält nur, was sich ändert; der Rest kommt aus dem Fach „Dokument“. Die PDFs landen bei den Daten.",
       ),
     );
     const zeile = el("div", "serie-zeile");
-    this.quelle.placeholder = t("Pfad zu Ordner oder .toml-Datei");
+    this.quelle.placeholder = t("Pfad zu .csv, .toml oder Ordner");
     this.quelle.spellcheck = false;
     this.quelle.addEventListener("input", () => {
+      this.klappen = { zuordnung: null, vorschau: null };
       clearTimeout(this.uhr);
       this.uhr = setTimeout(() => void this.pruefen(), 300);
     });
@@ -213,6 +303,7 @@ export class SerieDialog {
 
   private setzen(pfad: string) {
     this.quelle.value = pfad;
+    this.klappen = { zuordnung: null, vorschau: null };
     void this.pruefen();
   }
 
@@ -253,7 +344,7 @@ export class SerieDialog {
       el(
         "div",
         "",
-        t("{anzahl} Dokumente: {namen}", { anzahl: s.namen.length, namen: namenListe(s.namen) }),
+        s.csv ? csvKopf(s.csv, s.namen.length) : t("{anzahl} Dokumente: {namen}", { anzahl: s.namen.length, namen: namenListe(s.namen) }),
       ),
       el(
         "div",
@@ -291,8 +382,86 @@ export class SerieDialog {
         ),
       );
     }
+    if (s.csv) teile.push(...this.csvTeile(s.csv));
     this.uebersicht.replaceChildren(...teile);
-    this.los.disabled = s.hauptdatei !== "bereit" || s.namen.length === 0;
+    this.los.disabled = !bereit(s);
+  }
+
+  /** Zuordnung Spalte → Feld (mit Auswahl), Vorschau des ersten Datensatzes, Fehler je Zeile. */
+  private csvTeile(c: CsvJs): HTMLElement[] {
+    const teile: HTMLElement[] = [];
+    for (const f of c.zuordnungsfehler) teile.push(el("div", "serie-fehler", f));
+    const frei = freieSpalten(c);
+    if (frei.length) {
+      teile.push(
+        el(
+          "div",
+          "serie-warnung",
+          t("Nicht zugeordnet: {spalten}. Unten ein Feld wählen oder „nicht verwenden“.", { spalten: frei.join(", ") }),
+        ),
+      );
+    }
+    const tabelle = el("table", "serie-zuordnung");
+    const kopf = el("tr");
+    kopf.append(el("th", "", t("Spalte")), el("th", "", t("Feld")), el("th", "", t("erster Wert")));
+    tabelle.append(kopf);
+    for (const sp of c.spalten) {
+      const offen = sp.feld === null && !sp.eigen;
+      const zeile = el("tr", offen ? "serie-frei" : "");
+      const wahl = el("select");
+      wahl.setAttribute("aria-label", t("Feld für Spalte {spalte}", { spalte: sp.name }));
+      for (const o of feldOptionen(c.felder, offen)) {
+        const e = el("option", "", o.text);
+        e.value = o.wert;
+        wahl.append(e);
+      }
+      wahl.value = offen ? OFFEN : (sp.feld ?? "");
+      wahl.onchange = () => {
+        if (wahl.value !== OFFEN) void this.zuordnen(sp.name, wahl.value);
+      };
+      const feldZelle = el("td");
+      feldZelle.append(wahl);
+      if (sp.eigen) feldZelle.append(el("span", "serie-eigen", t("eigene Zuordnung")));
+      zeile.append(el("td", "", sp.name), feldZelle, el("td", "serie-beispiel", sp.beispiel));
+      tabelle.append(zeile);
+    }
+    const zuordnung = el("details", "serie-csv");
+    zuordnung.open = this.klappen.zuordnung ?? (frei.length > 0 || c.zuordnungsfehler.length > 0);
+    zuordnung.ontoggle = () => (this.klappen.zuordnung = zuordnung.open);
+    zuordnung.append(el("summary", "", t("Zuordnung der Spalten ({anzahl})", { anzahl: c.spalten.length })), tabelle);
+    teile.push(zuordnung);
+    if (c.vorschau.length) {
+      const v = el("details", "serie-csv");
+      v.open = this.klappen.vorschau ?? true;
+      v.ontoggle = () => (this.klappen.vorschau = v.open);
+      const vt = el("table", "serie-vorschau");
+      for (const [feld, wert] of c.vorschau) {
+        const z = el("tr");
+        z.append(el("th", "", feld), el("td", "", wert));
+        vt.append(z);
+      }
+      v.append(el("summary", "", t("Erster Datensatz, wie er ins Dokument geht")), vt);
+      teile.push(v);
+    }
+    if (c.fehler.length) {
+      const f = el("div", "serie-fehler");
+      f.append(
+        el("strong", "", t("{anzahl} Fehler (diese Zeilen ergeben kein PDF):", { anzahl: c.fehler.length })),
+        document.createTextNode(`\n${fehlerListe(c.fehler).join("\n")}`),
+      );
+      teile.push(f);
+    }
+    return teile;
+  }
+
+  private async zuordnen(spalte: string, feld: string) {
+    const quelle = this.quelle.value.trim();
+    try {
+      await this.a.zuordnen(quelle, spalte, feld);
+    } catch (fehler) {
+      this.ergebnis.replaceChildren(el("div", "serie-fehler", String(fehler)));
+    }
+    await this.pruefen();
   }
 
   /** Fortschritt (Ereignis `serie-fortschritt`). */
@@ -315,7 +484,7 @@ export class SerieDialog {
       this.ergebnis.replaceChildren(el("div", "serie-fehler", String(fehler)));
     } finally {
       this.laeuft = false;
-      this.los.disabled = this.stand?.hauptdatei !== "bereit";
+      this.los.disabled = !this.stand || !bereit(this.stand);
     }
   }
 }

@@ -216,7 +216,7 @@ export class ExportMenue {
       s.className = "export-zeile";
       const sName = document.createElement("span");
       sName.textContent = t("Serie: ein PDF je Datensatz");
-      sName.title = t("Serienbriefe, Rechnungen: Datensätze aus einem Ordner oder einer .toml, über die typst-CLI");
+      sName.title = t("Serienbriefe, Rechnungen: Datensätze aus einer CSV, einem Ordner oder einer .toml, über die typst-CLI");
       const sKnopf = document.createElement("button");
       sKnopf.textContent = t("Serie …");
       sKnopf.onclick = () => {

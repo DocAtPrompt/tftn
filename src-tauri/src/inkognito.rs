@@ -76,7 +76,13 @@ fn regeln(s: &crate::Sitzung) -> Vec<Regel> {
 /// TOML-Dateien im Projekt (ohne `tftn.toml`, versteckte, `_`-Ordner und `packages/`), in denen
 /// Datensätze einer Serie liegen können.
 fn toml_dateien(wurzel: &Path) -> Vec<PathBuf> {
-    fn sammeln(wurzel: &Path, ordner: &Path, tiefe: usize, aus: &mut Vec<PathBuf>) {
+    dateien(wurzel, "toml")
+}
+
+/// Dateien mit der Endung `endung` im Projekt (ohne `tftn.toml`, versteckte, `_`-Ordner und
+/// `packages/`), höchstens 8 Ebenen tief und 1000 Stück.
+fn dateien(wurzel: &Path, endung: &str) -> Vec<PathBuf> {
+    fn sammeln(wurzel: &Path, ordner: &Path, endung: &str, tiefe: usize, aus: &mut Vec<PathBuf>) {
         let Ok(eintraege) = std::fs::read_dir(ordner) else {
             return;
         };
@@ -87,11 +93,11 @@ fn toml_dateien(wurzel: &Path) -> Vec<PathBuf> {
             }
             let p = e.path();
             match e.file_type() {
-                Ok(a) if a.is_dir() && tiefe > 1 => sammeln(wurzel, &p, tiefe - 1, aus),
+                Ok(a) if a.is_dir() && tiefe > 1 => sammeln(wurzel, &p, endung, tiefe - 1, aus),
                 Ok(a)
                     if a.is_file()
                         && p.extension()
-                            .is_some_and(|x| x.eq_ignore_ascii_case("toml"))
+                            .is_some_and(|x| x.eq_ignore_ascii_case(endung))
                         && !(ordner == wurzel && name == "tftn.toml") =>
                 {
                     aus.push(p)
@@ -101,15 +107,21 @@ fn toml_dateien(wurzel: &Path) -> Vec<PathBuf> {
         }
     }
     let mut aus = Vec::new();
-    sammeln(wurzel, wurzel, 8, &mut aus);
+    sammeln(wurzel, wurzel, endung, 8, &mut aus);
     aus.sort();
     aus.truncate(1000);
     aus
 }
 
-/// Datensätze aus der Datendatei und allen TOML-Dateien im Projekt. Eine Datei, die sich nicht
-/// lesen lässt, ist ein Fehler (Name in `Err`): Dann sind die Werte nicht sicher bekannt.
-fn datensaetze(wurzel: &Path, datendatei: &Path) -> Result<Vec<Value>, PathBuf> {
+/// Datensätze aus der Datendatei, allen TOML-Dateien im Projekt und allen CSV-Dateien im Projekt
+/// (Serie aus CSV: Spalten den Feldern zugeordnet wie im Dialog, auch mit eigener Zuordnung aus
+/// `tftn.toml`). Eine Datei, die sich nicht lesen lässt, ist ein Fehler (Name in `Err`): Dann sind
+/// die Werte nicht sicher bekannt.
+fn datensaetze(
+    wurzel: &Path,
+    datendatei: &Path,
+    formular: Option<&tftn_formular::Formular>,
+) -> Result<Vec<Value>, PathBuf> {
     let mut dateien = vec![datendatei.to_path_buf()];
     for p in toml_dateien(wurzel) {
         if !dateien.contains(&p) {
@@ -125,7 +137,29 @@ fn datensaetze(wurzel: &Path, datendatei: &Path) -> Result<Vec<Value>, PathBuf> 
         };
         aus.extend(kern::datensaetze(&text).map_err(|_| p.clone())?);
     }
+    if let Some(f) = formular {
+        let tftn = std::fs::read_to_string(wurzel.join("tftn.toml")).unwrap_or_default();
+        for p in dateien_csv(wurzel) {
+            let bytes = std::fs::read(&p).map_err(|_| p.clone())?;
+            let eigene = tftn_formular::csv::zuordnung_lesen(
+                &tftn,
+                &tftn_formular::csv::dateischluessel(&p),
+            );
+            aus.extend(
+                tftn_formular::csv::inkognito_datensaetze(&bytes, f, &eigene)
+                    .map_err(|_| p.clone())?,
+            );
+        }
+    }
     Ok(aus)
+}
+
+/// CSV-Dateien im Projekt (wie `toml_dateien`): mögliche Quellen einer Serie, die ein Assistent
+/// über `datei_lesen` sehen könnte.
+fn dateien_csv(wurzel: &Path) -> Vec<PathBuf> {
+    let mut aus = dateien(wurzel, "csv");
+    aus.extend(dateien(wurzel, "tsv"));
+    aus
 }
 
 /// Liest Regeln und Werte des offenen Projekts neu und nimmt die Werte zu denen früherer Dokumente.
@@ -147,7 +181,8 @@ fn vorbereiten(app: &AppHandle) -> Result<bool, String> {
             let werte = if regeln.is_empty() {
                 Vec::new()
             } else {
-                let saetze = datensaetze(wurzel, s.formular.datei()).map_err(|p| {
+                let saetze = datensaetze(wurzel, s.formular.datei(), s.formular.schema())
+                    .map_err(|p| {
                     tr!(
                         "Inkognito: {datei} lässt sich nicht lesen. Bis das behoben ist, gibt TFTN über MCP nichts heraus.",
                         datei = p.strip_prefix(wurzel).unwrap_or(&p).display()
@@ -709,11 +744,14 @@ mod tests {
 
         // Kaputte Datei: Fehler mit ihrem Namen, damit nichts ungefiltert hinausgeht.
         std::fs::write(o.join("serie/kaputt.toml"), "x = \n").unwrap();
-        let e = datensaetze(&o, &o.join("dokument.toml")).unwrap_err();
+        let e = datensaetze(&o, &o.join("dokument.toml"), None).unwrap_err();
         assert!(e.ends_with("serie/kaputt.toml"), "{e:?}");
         std::fs::remove_file(o.join("serie/kaputt.toml")).unwrap();
         // Fehlende Datendatei ist kein Fehler.
-        assert_eq!(datensaetze(&o, &o.join("fehlt.toml")).unwrap().len(), 2);
+        assert_eq!(
+            datensaetze(&o, &o.join("fehlt.toml"), None).unwrap().len(),
+            2
+        );
         let _ = std::fs::remove_dir_all(&o);
     }
 
@@ -784,6 +822,46 @@ mod tests {
         aus
     }
 
+    /// Eine CSV im Projekt (Quelle einer Serie) kann ein Assistent über `datei_lesen` sehen:
+    /// Inkognito kennt ihre Werte, auch aus einer Spalte, deren Name mehrdeutig ist.
+    #[test]
+    fn csv_im_projekt_kennt_inkognito() {
+        let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../types");
+        let o = std::env::temp_dir().join(format!("tftn-inkognito-csv-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&o);
+        std::fs::create_dir_all(&o).unwrap();
+        let q = crate::typen::quellen(&typen, &o.join("einstellungen"));
+        let ziel =
+            crate::typen::anlegen(&q, "tftn-befund", &o, "Befunde", false, Some("de")).unwrap();
+        std::fs::create_dir_all(ziel.join("serie")).unwrap();
+        // Windows-1252 aus Excel, „Name“ passt auf Patient/in und Ordination.
+        std::fs::write(
+            ziel.join("serie/patienten.csv"),
+            b"Name;Geburtsdatum\r\nJ\xfcrgen Gr\xfcnwald;03.04.1965\r\n",
+        )
+        .unwrap();
+        let projekt = tftn_core::Projekt::oeffnen(&ziel).unwrap();
+        let schema = crate::formular::FormularSitzung::neu(&projekt);
+        let f = schema.schema().unwrap();
+        let r = kern::regeln(f, &kern::Markierungen::new());
+        let saetze = datensaetze(&ziel, &ziel.join("dokument.toml"), Some(f)).unwrap();
+        let werte = kern::werte(&r, &saetze);
+        let echt: Vec<&str> = werte.iter().map(|w| w.echt.as_str()).collect();
+        assert!(echt.contains(&"Jürgen Grünwald"), "{echt:?}");
+        assert!(echt.contains(&"1965-04-03"), "{echt:?}");
+        // Ohne Formular (Typ ohne Schema) keine CSV; eine kaputte CSV sperrt wie eine kaputte TOML.
+        assert!(
+            datensaetze(&ziel, &ziel.join("dokument.toml"), None)
+                .unwrap()
+                .iter()
+                .all(|s| !s.to_string().contains("Grünwald"))
+        );
+        std::fs::write(ziel.join("serie/kaputt.csv"), "a;b\n\"offen;1\n").unwrap();
+        let e = datensaetze(&ziel, &ziel.join("dokument.toml"), Some(f)).unwrap_err();
+        assert!(e.ends_with("serie/kaputt.csv"), "{e:?}");
+        let _ = std::fs::remove_dir_all(&o);
+    }
+
     #[test]
     fn seitenbild_eines_befunds_ohne_echte_werte() {
         let typen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../types");
@@ -818,7 +896,10 @@ mod tests {
         let r = kern::regeln(schema.schema().unwrap(), &kern::Markierungen::new());
         let mut tabelle = Tabelle::default();
         tabelle
-            .werte_setzen(&kern::werte(&r, &datensaetze(&ziel, &daten).unwrap()))
+            .werte_setzen(&kern::werte(
+                &r,
+                &datensaetze(&ziel, &daten, schema.schema()).unwrap(),
+            ))
             .unwrap();
 
         let satz = setzen(&projekt, &quelle, &mut tabelle, &r).unwrap();

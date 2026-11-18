@@ -14,4 +14,5 @@ pub mod historie;
 
 pub use daten::{Daten, EintragAktion, atomar_schreiben, literatur_dateien, stand};
 pub use historie::Historie;
+pub mod csv;
 pub mod inkognito;

@@ -232,3 +232,129 @@ fn rechnung_mit_logo_als_serie() {
     assert!(mit > ohne, "mit Logo {mit} B, ohne {ohne} B");
     let _ = std::fs::remove_dir_all(&wurzel);
 }
+
+/// Serie aus einer CSV wie aus deutschem Excel (Semikolon, Windows-1252, CRLF): Spalten finden
+/// ihre Felder über Titel und Nummern, eine Spalte über die eigene Zuordnung in `tftn.toml`; eine
+/// Zeile mit falschem Datum ergibt kein PDF, aber eine Meldung mit Zeile und Spalte.
+#[test]
+fn rechnungen_aus_csv() {
+    let wurzel = std::env::temp_dir().join(format!("tftn-serie-csv-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&wurzel);
+    let projekt = tftn_manifest::anlegen::projekt_anlegen(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types"),
+        "tftn-rechnung",
+        &wurzel.join("projekt"),
+        Some(1_793_404_800),
+    )
+    .unwrap()
+    .projekt;
+    let tftn = projekt.wurzel.join("tftn.toml");
+    let alt = std::fs::read_to_string(&tftn).unwrap();
+    std::fs::write(
+        &tftn,
+        format!(
+            "{alt}\n[serie-csv.\"adressen.csv\"]\nTelefon = \"absender.telefon\"\nNotiz = \"\"\n"
+        ),
+    )
+    .unwrap();
+    let daten = wurzel.join("daten");
+    std::fs::create_dir_all(&daten).unwrap();
+    let csv = daten.join("adressen.csv");
+    let mut bytes: Vec<u8> = Vec::new();
+    for zeile in [
+        "Dateiname;Rechnungsnummer;Empfänger 1;Empfänger 2;Anrede;Rechnungsdatum;Telefon;Notiz",
+        "2026-301 Müller;2026-301;Frau;Mag. Anna Müller;Sehr geehrte Frau Müller,;15.01.2026;+43 1 999;privat",
+        "2026-302 Groß;2026-302;\"Herr\r\nJörg Groß\r\nGasse 2\";;Sehr geehrter Herr Groß,;2026-01-16;;",
+        "kaputt;2026-303;Frau;X;;31.02.2026;;",
+        ";;;;;;;",
+    ] {
+        // Windows-1252: Die Umlaute sind hier Latin-1 (ein Byte).
+        bytes.extend(zeile.chars().map(|c| u8::try_from(u32::from(c)).unwrap()));
+        bytes.extend(b"\r\n");
+    }
+    std::fs::write(&csv, &bytes).unwrap();
+    let (quelle, bericht) = serie::quelle_lesen(&projekt, &csv).unwrap();
+    let bericht = bericht.expect("CSV hat einen Bericht");
+    assert_eq!(bericht.trennzeichen, ';');
+    assert!(
+        bericht.zuordnungsfehler.is_empty(),
+        "{:?}",
+        bericht.zuordnungsfehler
+    );
+    let zuordnung: Vec<(&str, Option<&str>)> = bericht
+        .spalten
+        .iter()
+        .map(|s| (s.name.as_str(), s.feld.as_deref()))
+        .collect();
+    assert_eq!(
+        zuordnung,
+        [
+            ("Dateiname", Some("datei")),
+            ("Rechnungsnummer", Some("nummer")),
+            ("Empfänger 1", Some("empfaenger")),
+            ("Empfänger 2", Some("empfaenger")),
+            ("Anrede", Some("anrede")),
+            ("Rechnungsdatum", Some("datum")),
+            ("Telefon", Some("absender.telefon")),
+            ("Notiz", None),
+        ]
+    );
+    let namen: Vec<&str> = quelle.datensaetze.iter().map(|d| d.name.as_str()).collect();
+    assert_eq!(namen, ["2026-301 Müller", "2026-302 Groß", "kaputt"]);
+    assert_eq!(quelle.zielordner, daten);
+    let fehler = quelle.datensaetze[2].fehler.as_deref().unwrap_or("");
+    assert!(
+        fehler.contains("Zeile 4") && fehler.contains("Rechnungsdatum"),
+        "{fehler}"
+    );
+
+    let cli =
+        TypstCli::finden(&projekt.konfig.typst).expect("typst-CLI in der Projektversion nötig");
+    let ergebnis = serie::erzeugen(
+        &projekt,
+        &cli,
+        &quelle,
+        serie::Optionen {
+            ausgabe: serie::Ausgabe::Beides,
+            beidseitig: false,
+        },
+        |_, _, _| {},
+    )
+    .unwrap();
+    let s = &ergebnis.stuecke;
+    for st in &s[..2] {
+        let pdf = st
+            .pdf
+            .as_ref()
+            .unwrap_or_else(|| panic!("{}: {:?}", st.name, st.fehler));
+        assert!(std::fs::read(pdf).unwrap().starts_with(b"%PDF"));
+    }
+    assert!(s[2].pdf.is_none() && s[2].fehler.as_deref() == Some(fehler));
+    assert!(daten.join("2026-301 Müller.pdf").exists());
+    let g = ergebnis.gesamt.expect("Sammel-PDF");
+    assert_eq!(seiten(g.pdf.as_ref().unwrap()), 2, "ohne die fehlerhafte");
+    // Derselbe Weg wie [[serie]]: Datensatz im Projekt, mit den Projektdaten zusammengeführt.
+    let satz =
+        std::fs::read_to_string(projekt.wurzel.join("_lokal/serie/2026-302 Groß.toml")).unwrap();
+    let t: toml::Table = satz.parse().unwrap();
+    assert_eq!(t["datum"].to_string(), "2026-01-16", "Datum als TOML-Datum");
+    assert_eq!(
+        t["empfaenger"].as_array().unwrap().len(),
+        3,
+        "Zeilen einer Zelle"
+    );
+    assert_eq!(t["anrede"].as_str(), Some("Sehr geehrter Herr Groß,"));
+    assert!(
+        t["bank"].is_table() && satz.contains("Fahrtkosten"),
+        "{satz}"
+    );
+    let m: toml::Table =
+        std::fs::read_to_string(projekt.wurzel.join("_lokal/serie/2026-301 Müller.toml"))
+            .unwrap()
+            .parse()
+            .unwrap();
+    assert_eq!(m["absender"]["telefon"].as_str(), Some("+43 1 999"));
+    assert_eq!(m["absender"]["name"].as_str(), Some("Vorname Nachname"));
+    assert!(!m.contains_key("datei") && !m.contains_key("Notiz"));
+    let _ = std::fs::remove_dir_all(&wurzel);
+}

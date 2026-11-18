@@ -407,7 +407,47 @@ the typst CLI too: `_lokal/serie/alle.typ` embeds the finished PDFs page by page
 text. With “all in one PDF” only, the single PDFs stay in `_lokal/serie/pdf/`. Faulty records are
 left out of the combined PDF and reported.
 
-On the command line: `tftn serie <project> --daten <folder or file> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
+**From a CSV** (address lists from Excel or practice software): instead of a `.toml` you can choose a
+`.csv`; every row becomes a document, the first row names the columns. TFTN detects the separator
+(semicolon as in German Excel, comma, tab) and the encoding: UTF-8 (including Excel's “CSV UTF-8”),
+otherwise Windows-1252 as written by older Excel's “CSV (delimited)” – so umlauts come out right. Cells
+in quotes may contain semicolons or line breaks; empty rows at the end are fine.
+
+```
+Datei;Rechnungsnummer;Empfänger 1;Empfänger 2;Empfänger 3;Empfänger 4;Anrede;Rechnungsdatum
+2026-014 Miller;2026-014;Mr;Dr Hans Miller;5 High Street;Graz 8010;Dear Dr Miller,;31.01.2026
+```
+
+- **Columns and fields:** a column belongs to a field if it is named like the field's title (the
+  German one from the template, e.g. “Rechnungsnummer”, or, with TFTN in English, its translation
+  “Invoice number”) or like its key in `dokument.toml` (`nummer`); case, spaces, hyphens and “ae” for
+  “ä” do not matter. Fields in groups take a dot or the group title in front: `absender.telefon` or
+  “Absender Telefon”. An address (a list of lines such as `empfaenger`) comes from several columns
+  `Empfänger 1`, `Empfänger 2` … or from one cell with line breaks. A column “Datei” (or “Dateiname”)
+  names the PDF. Invoice items do not come from the CSV but from the Document pane.
+- **Values:** numbers in German or English style (`1.234,50`, `1234.50`; a single dot counts as the
+  decimal point), dates as `31.01.2026` or `2026-01-31` (four-digit year), yes/no fields as ja/nein,
+  yes/no, x or 1/0; for a choice the value or its label counts. An empty cell leaves the field out, and
+  the value from the Document pane applies.
+- **In the dialog** you see the number of records, the assignment of every column (unassigned ones
+  are highlighted, with a warning above), the values of the first record as they go into the document,
+  and the errors with row and column (row numbers as in Excel, the header row is row 1). A row with an
+  error produces no PDF; the others are made, and it is reported at the end.
+- **Your own assignment:** the drop-down next to each column picks another field or “do not use”.
+  TFTN remembers this in the project, in `tftn.toml` under `[serie-csv."<file name>.csv"]` – only column
+  names and field names, no values. A fresh export with the same file name finds the assignment again,
+  even in another folder. In the project the assignment travels with the document type whose fields it
+  names and is backed up with it; next to a freshly exported CSV (often in Downloads) it would easily
+  get lost.
+
+Internally every row becomes the same record as a `[[serie]]` section, so the combined PDF,
+double-sided printing, the cross-check (`_lokal/serie/<name>.toml`) and incognito work the same way.
+If the CSV is inside the project folder, incognito knows its values, even from columns with an
+ambiguous name such as “Name”; a column that matches no field (e.g. “Telefon” for a letter) it does not
+know. Address lists are therefore best kept outside the project, where an assistant cannot see them at
+all.
+
+On the command line: `tftn serie <project> --daten <folder, .toml or .csv> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
 
 ## 8. Saving and versions
 
@@ -650,7 +690,7 @@ stand-in texts before anything reaches the assistant, and puts the real values b
   With several people (a series in the project) they become “[Female patient]”, “[Female patient 2]”
   and so on.
 - **What is replaced:** the values from the data file (`dokument.toml`) and from series records inside
-  the project folder – wherever the assistant would see them: in the source, in chapters and other
+  the project folder (TOML or CSV) – wherever the assistant would see them: in the source, in chapters and other
   files, in the form, in file names and the project path, in messages. TFTN recognises the whole value,
   the parts of a name (the surname alone, also with a genitive s), dates in the usual spellings
   (1970-02-01, 01.02.1970, 1 February 1970 …) and numbers with or without spaces, regardless of

@@ -36,10 +36,12 @@ Gegenprobe-Notiz unter export/ ab; sonst landet es unter _renders/.
 ORDNER ist der Projektordner mit tftn.toml (Standard: aktueller Ordner).
 ZIEL ist relativ zum Projektordner (Standard: _renders/<hauptdatei>.pdf, mit --png
 _renders/<hauptdatei>-{0p}.png; {0p} wird zur Seitennummer).
-QUELLE ist ein Ordner mit .toml-Dateien (je Datei ein Dokument) oder eine .toml mit
-Abschnitten [[serie]]; jeder Datensatz legt sich über dokument.toml, die PDFs landen bei
-den Daten. --ausgabe gesamt legt alle in ein PDF <quelle>-alle.pdf (einen Drucklauf),
-beides macht beides; --beidseitig fügt dort nach ungerader Seitenzahl eine Leerseite ein.
+QUELLE ist ein Ordner mit .toml-Dateien (je Datei ein Dokument), eine .toml mit
+Abschnitten [[serie]] oder eine .csv (je Zeile ein Dokument; Spalten nach Feldname oder
+-titel, eigene Zuordnung in tftn.toml unter [serie-csv.\"<datei>.csv\"]); jeder Datensatz
+legt sich über dokument.toml, die PDFs landen bei den Daten. --ausgabe gesamt legt alle
+in ein PDF <quelle>-alle.pdf (einen Drucklauf), beides macht beides; --beidseitig fügt
+dort nach ungerader Seitenzahl eine Leerseite ein.
 --anpassen stellt die Hauptdatei auf sys.inputs um, falls nötig.
 SCHALTER nach -- gehen unverändert an typst compile, z. B. -- --pdf-standard a-2b.
 Die typst-CLI kommt aus TFTN_TYPST, neben tftn oder vom PATH und muss die Version
@@ -309,7 +311,21 @@ fn ausfuehren(aufruf: Aufruf) -> Result<(), String> {
                     ));
                 }
             }
-            let q = serie::lesen(quelle)?;
+            let (q, csv) = serie::quelle_lesen(&projekt, quelle)?;
+            if let Some(b) = &csv {
+                if !b.zuordnungsfehler.is_empty() {
+                    return Err(b.zuordnungsfehler.join("\n"));
+                }
+                let frei: Vec<&str> = b
+                    .spalten
+                    .iter()
+                    .filter(|s| s.feld.is_none() && !s.eigen)
+                    .map(|s| s.name.as_str())
+                    .collect();
+                if !frei.is_empty() {
+                    eprintln!("Nicht zugeordnete Spalten: {}", frei.join(", "));
+                }
+            }
             let cli = TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
             let ergebnis = serie::erzeugen(&projekt, &cli, &q, aufruf.serie, |f, g, n| {
                 eprintln!("{f}/{g} {n}")
