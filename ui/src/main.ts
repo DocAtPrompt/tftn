@@ -69,12 +69,12 @@ import { DokumentFach } from "./dokumentfach";
 import { FormelFach, type FormelBildJs, type FormelStandJs, type PaletteJs } from "./formelfach";
 import { PaketFach, type PaketeStandJs } from "./paketfach";
 import { type Treffer, verbindungText } from "./pakete";
-import { NetzprotokollDialog, type NetzprotokollJs, statusAnzeige } from "./netzprotokoll";
-import type { FormularJs, ProjektJs, VergleichJs } from "./formular";
+import { NetzprotokollDialog, type NetzprotokollJs, anzahlNetz, statusAnzeige } from "./netzprotokoll";
+import { type FormularJs, type ProjektJs, type VergleichJs, eingabeZeigen } from "./formular";
 import { NeuDialog, PfadDialog } from "./neudialog";
 import { eigeneGruppen, textbausteinFragen, textbausteinHinweis } from "./textbausteine";
 import { alleSchliessen, einDialogOffen, escAktivieren } from "./dialoge";
-import { type Art, type Handgriffe, Lauf, type Rundgang, RundgangBuehne, zielImDokument } from "./rundgang";
+import { type Art, type Ergebnis, type Handgriffe, Lauf, type Rundgang, RundgangBuehne, type Wechsel, zielImDokument } from "./rundgang";
 import { rundgaenge } from "./rundgaenge";
 import { kontextmenueBegrenzen } from "./kontextmenue";
 import { dauerText, syncText } from "./statuszeile";
@@ -684,6 +684,9 @@ const WIDGET_EREIGNIS = "input.type.tftn-widget";
 
 let katalog: EintragJs[] = [];
 let paketFach: PaketFach;
+let dokumentFach: DokumentFach;
+let exportMenue: ExportMenue;
+let serieDialog: SerieDialog;
 let formelFach: FormelFach | undefined;
 let bausteinPalette: BausteinPalette;
 const VERALTET = t("Inzwischen getippt – bitte noch einmal wählen.");
@@ -1367,8 +1370,12 @@ const bildAblage = EditorView.domEventHandlers({
   },
 });
 
+/** Zählt die Läufe der Vorschau (Rundgänge warten damit auf einen neuen Stand). */
+let vorschauLaeufe = 0;
+
 /** Ein Typst-Lauf: Vorschau, Dauer, Fehlerband und Markierungen im Editor. */
 function vorschauVerarbeiten(lauf: VorschauEreignis) {
+  vorschauLaeufe += 1;
   vorschau.aktualisieren(lauf);
   letzteDauer = lauf.dauer_ms;
   dauerZeigen();
@@ -1819,6 +1826,12 @@ let mcpStand: McpJs | null = null;
 let inkognitoStand: InkognitoJs | null = null;
 let inkognitoDialog: InkognitoDialog | undefined;
 
+/** Tabelle „Was die KI sieht“ (Fach „Dokument“, Rundgang). */
+function inkognitoTabelleZeigen() {
+  inkognitoDialog ??= new InkognitoDialog({ tabelle: () => invoke<[string, string][]>("inkognito_tabelle") });
+  void inkognitoDialog.zeigen();
+}
+
 /** Liest den Inkognito-Stand neu (Projekt geöffnet, Kreuz gesetzt, Daten geändert). */
 function inkognitoNeu() {
   invoke<InkognitoJs>("inkognito_stand")
@@ -2025,6 +2038,8 @@ interface RundgangMerker {
   kopie: string;
   /** Es geht schon zurück: Nach dem Neuladen bleibt nur die Meldung. */
   fertig?: boolean;
+  /** Nach einem Wechsel der Kopie (Schritt mit `kopie`): hier geht es weiter. */
+  ab?: number;
 }
 
 let buehne: RundgangBuehne | undefined;
@@ -2037,6 +2052,10 @@ interface RundgangZuvor {
   schrift: number;
   /** `undefined`: Der Skin blieb unberührt. */
   skin: string | null | undefined;
+  /** Größe der Oberfläche in Prozent; `undefined`: unberührt. */
+  oberflaeche?: number;
+  /** War die Gliederung zu sehen? `undefined`: unberührt. */
+  gliederung?: boolean;
 }
 
 /** Aktionen, die nichts in den Text schreiben; sie darf auch ein Rundgang im eigenen Dokument zeigen. */
@@ -2080,7 +2099,7 @@ async function rundgangStarten(id: string, art: Art) {
   if (r.kopie === undefined) return rundgangLaufen(r, art, null);
   const schonDa = inKopie ? merkerLesen() : null;
   if (schonDa) {
-    const m = { ...schonDa, id, art, fertig: undefined };
+    const m = { ...schonDa, id, art, fertig: undefined, ab: undefined };
     merkerSetzen(m);
     return rundgangLaufen(r, art, m);
   }
@@ -2122,30 +2141,63 @@ function rundgangFortsetzen(): boolean {
   return true;
 }
 
-/** Spielt `r` ab. Mit `m` (in der Kopie) geht es danach ins eigene Dokument zurück. */
+/** Spielt `r` ab (nach einem Wechsel der Kopie ab `m.ab`). Mit `m` (in der Kopie) geht es danach ins
+ *  eigene Dokument zurück, bei einem Wechsel in die nächste Kopie. */
 async function rundgangLaufen(r: Rundgang, art: Art, m: RundgangMerker | null) {
   buehne ??= new RundgangBuehne();
   const zuvor: RundgangZuvor = { schrift: editorSchrift, skin: undefined };
   const lauf = new Lauf(r, art, buehne, (warten) => handgriffe(warten, zuvor), zielImDokument, oberflaecheSchliessen);
   rundgangLauf = lauf;
   buehne.verbinden(lauf);
+  let ergebnis: Ergebnis = "abgebrochen";
   try {
-    await lauf.starten();
+    ergebnis = await lauf.starten(m?.ab ?? 0);
   } catch (fehler) {
     console.error("Rundgang", fehler);
   } finally {
     buehne.trennen();
     rundgangLauf = undefined;
   }
+  await zuvorHerstellen(zuvor);
+  if (m && typeof ergebnis === "object") await rundgangWechseln(m, ergebnis);
+  else if (m) await rundgangZurueck(m);
+  else view.focus();
+}
+
+/** Stellt zurück, was der Rundgang vorübergehend geändert hat (auch vor einem Wechsel der Kopie). */
+async function zuvorHerstellen(zuvor: RundgangZuvor) {
   oberflaecheSchliessen();
   editorSchrift = zuvor.schrift;
   schriftSetzen(document.documentElement, editorSchrift);
+  if (zuvor.oberflaeche !== undefined) oberflaecheAnwenden(zuvor.oberflaeche);
+  if (zuvor.gliederung !== undefined && gliederungOrt().hidden === zuvor.gliederung) gliederungSchalten(zuvor.gliederung);
   view.requestMeasure();
   if (zuvor.skin !== undefined) {
     await invoke<SkinsJs>("skin_setzen", { kennung: zuvor.skin }).then(skinsSetzen, (fehler) => hinweis(String(fehler)));
   }
-  if (m) await rundgangZurueck(m);
-  else view.focus();
+}
+
+/** Ein Schritt mit `kopie`: neue Kopie anlegen und dorthin wechseln (Neuladen); der Rundgang läuft
+ *  dort ab `w.ab` weiter. Geht das nicht, zurück ins eigene Dokument. */
+async function rundgangWechseln(m: RundgangMerker, w: Wechsel) {
+  let gescheitert: unknown = null;
+  await einzeln(async () => {
+    meldung(t("Lege eine Kopie mit erfundenen Daten an …"));
+    try {
+      if (!(await fachVorWechsel()) || !(await speichern())) throw new Error(t("Das offene Dokument ließ sich nicht speichern."));
+      const kopie = await invoke<string>("vorfuehrung_anlegen", { typ: w.kopie });
+      if (!merkerSetzen({ ...m, kopie, ab: w.ab, fertig: undefined })) {
+        throw new Error(t("Ohne Sitzungsspeicher fände TFTN nicht zum eigenen Dokument zurück."));
+      }
+      await invoke("projekt_wechseln", { ordner: kopie });
+      location.reload();
+    } catch (fehler) {
+      gescheitert = fehler;
+    }
+  });
+  if (gescheitert === null) return;
+  await rundgangZurueck(m);
+  hinweis(meldungMit(t("Rundgang nicht fortgesetzt"), String(gescheitert)));
 }
 
 /** Ins eigene Dokument zurück (wie „Öffnen“); die Kopie bleibt bis zur nächsten Vorführung liegen. */
@@ -2194,7 +2246,7 @@ function tastenEreignis(k: string): KeyboardEvent {
  * auch Knöpfe und Tasten rufen. `warten` kommt vom Lauf (hält bei einer Pause an, wirft bei Esc).
  * Was schreibt, läuft nur in der Kopie einer Vorführung (`inKopie`).
  */
-function handgriffe(warten: (ms: number) => Promise<void>, zuvor: RundgangZuvor): Omit<Handgriffe, "warten"> {
+function handgriffe(warten: (ms: number) => Promise<void>, zuvor: RundgangZuvor): Omit<Handgriffe, "warten" | "sagen"> {
   const nurInKopie = (was: string) => {
     if (!inKopie) throw new Error(`Handgriff „${was}“ läuft nur in der Kopie einer Vorführung.`);
   };
@@ -2204,8 +2256,41 @@ function handgriffe(warten: (ms: number) => Promise<void>, zuvor: RundgangZuvor)
     return i;
   };
   const mac = PLATTFORM === "mac";
-  return {
-    async tippen(text, msJeZeichen = 55) {
+  /** Wartet, bis `bedingung` gilt, höchstens `ms`; `false`, wenn nicht. */
+  const bis = async (bedingung: () => boolean, ms = 3000) => {
+    for (let i = 0; i < ms / 100 && !bedingung(); i++) await warten(100);
+    return bedingung();
+  };
+  /** Kreis an der Mitte eines Elements, wie ein Klick. */
+  const klickBei = async (e: Element | null) => {
+    if (!e) return;
+    e.scrollIntoView({ block: "nearest" });
+    const r = e.getBoundingClientRect();
+    if (r.width > 0) buehne?.klickZeigen(r.left + r.width / 2, r.top + r.height / 2);
+    await warten(500);
+  };
+  /** Ein Fach öffnen, nur wenn es nicht schon offen ist (sonst zeichnete es neu). */
+  const fach = (name: Fach) => {
+    if (seitenleiste?.fachJetzt !== name) seitenleisteOeffnen(name);
+  };
+  /** Zeichen für Zeichen in ein Eingabefeld, mit `input` wie beim Tippen. */
+  const eintippen = async (e: HTMLInputElement | HTMLTextAreaElement, text: string, ms: number) => {
+    e.focus();
+    e.value = "";
+    e.dispatchEvent(new Event("input", { bubbles: true }));
+    for (const z of text) {
+      e.value += z;
+      e.dispatchEvent(new Event("input", { bubbles: true }));
+      await warten(ms);
+    }
+  };
+  /** Bis ein neuer Lauf der Vorschau kam (nach einer Änderung in dokument.toml), höchstens 5 s. */
+  const neuerLauf = async (vorher: number) => {
+    await bis(() => vorschauLaeufe > vorher, 5000);
+    await warten(300);
+  };
+  const api: Omit<Handgriffe, "warten" | "sagen"> = {
+    async tippen(text, msJeZeichen = 70) {
       nurInKopie("tippen");
       view.focus();
       for (const z of text) {
@@ -2230,6 +2315,13 @@ function handgriffe(warten: (ms: number) => Promise<void>, zuvor: RundgangZuvor)
         return;
       }
       if (k !== "Escape") nurInKopie("taste");
+      // Steht der Fokus in einem Feld außerhalb des Editors (Zitat-Dialog …), geht die Taste dorthin.
+      const fokus = document.activeElement as HTMLElement | null;
+      if (fokus && !view.dom.contains(fokus) && fokus.matches("input, textarea, select")) {
+        fokus.dispatchEvent(tastenEreignis(k));
+        await warten(150);
+        return;
+      }
       view.focus();
       runScopeHandlers(view, tastenEreignis(k), "editor");
       await warten(150);
@@ -2280,6 +2372,9 @@ function handgriffe(warten: (ms: number) => Promise<void>, zuvor: RundgangZuvor)
       if (name === "ueber") await ueberDialog.zeigen();
       else if (name === "einstellungen") einstellDialog.oeffnen();
       else if (name === "netzprotokoll") await netzDialog.zeigen();
+      else if (name === "inkognito") inkognitoTabelleZeigen();
+      else if (name === "serie") serieDialog.zeigen();
+      else if (name === "literatur") await literaturDialog.zeigen();
       else projektSuche?.oeffnen();
       await warten(300);
     },
@@ -2304,11 +2399,23 @@ function handgriffe(warten: (ms: number) => Promise<void>, zuvor: RundgangZuvor)
       await klick(seite, px, py);
     },
     async reiterOeffnen(datei) {
+      // Eben mit `#include` angelegt: Die Datei entsteht kurz nach dem letzten Tastendruck.
+      if (datei !== hauptDatei) {
+        let da = false;
+        for (let i = 0; i < 30 && !da; i++) {
+          da = (await invoke<string[]>("kapiteldateien").catch(() => [] as string[])).includes(datei);
+          if (!da) await warten(200);
+        }
+        if (!da) throw new Error(`Kapiteldatei ${datei} gibt es nicht.`);
+      }
       await reiterWaehlen(datei);
     },
     async skinSetzen(kennung) {
       if (zuvor.skin === undefined) zuvor.skin = (await invoke<SkinsJs>("skins_lesen")).gewaehlt;
       skinsSetzen(await invoke<SkinsJs>("skin_setzen", { kennung }));
+      // Stehen die Einstellungen offen, zeigt ihre Auswahl den Skin.
+      const wahl = document.querySelector<HTMLSelectElement>("#einstellungen .einst-skin-wahl");
+      if (wahl) wahl.value = kennung ?? "";
     },
     async editorSchrift(prozent) {
       // Nur für die Dauer des Rundgangs (nicht gemerkt); danach gilt wieder `editorSchrift`.
@@ -2321,7 +2428,95 @@ function handgriffe(warten: (ms: number) => Promise<void>, zuvor: RundgangZuvor)
       oberflaecheSchliessen();
       await warten(200);
     },
+    async eingeben(auswahl, text, msJeZeichen = 80) {
+      const e = document.querySelector(auswahl);
+      if (!(e instanceof HTMLInputElement || e instanceof HTMLTextAreaElement)) throw new Error(`Kein Eingabefeld: ${auswahl}`);
+      if (e.closest(".dokument-fach")) throw new Error("Felder im Fach „Dokument“ setzt feldSetzen.");
+      await eintippen(e, text, msJeZeichen);
+    },
+    async feldZeigen(pfad) {
+      fach("dokument");
+      if (!(await bis(() => dokumentFach.eingabeFuer(pfad) !== null))) throw new Error(`Kein Feld ${pfad} im Fach „Dokument“.`);
+      await dokumentFach.feldZeigen(pfad);
+      await warten(300);
+    },
+    async feldSetzen(pfad, wert) {
+      nurInKopie("feldSetzen");
+      await api.feldZeigen(pfad);
+      const f = dokumentFach.eingabeFuer(pfad);
+      if (!f) throw new Error(`Kein Feld ${pfad} im Fach „Dokument“.`);
+      const { eingabe, art } = f;
+      const vorher = vorschauLaeufe;
+      if (eingabe instanceof HTMLSelectElement) {
+        const option = eingabeZeigen(art, wert);
+        if (option === "") throw new Error(`${pfad}: keine Option ${String(wert)}.`);
+        eingabe.focus();
+        await klickBei(eingabe);
+        eingabe.value = String(option);
+      } else if (eingabe instanceof HTMLInputElement && eingabe.type === "checkbox") {
+        await klickBei(eingabe);
+        eingabe.checked = wert === true;
+      } else {
+        await eintippen(eingabe, String(wert), 110);
+        await warten(300);
+      }
+      eingabe.dispatchEvent(new Event("change", { bubbles: true }));
+      await neuerLauf(vorher);
+    },
+    async paketSuchen(name) {
+      nurInKopie("paketSuchen");
+      fach("pakete");
+      if (!(await bis(() => paketFach.standJetzt !== null))) return { index: "fehlt", gefunden: false };
+      const s = paketFach.standJetzt!;
+      let index: "da" | "geholt" | "fehlt" = s.index ? "da" : "fehlt";
+      if (index === "fehlt" && !s.offline) {
+        await warten(400);
+        await klickBei(document.querySelector("#seitenleiste .paket-kopf button"));
+        index = (await paketFach.indexVorgefuehrt()) ? "geholt" : "fehlt";
+      }
+      if (index === "fehlt") return { index, gefunden: false };
+      const feld = document.getElementById("paket-suche");
+      if (!(feld instanceof HTMLInputElement)) return { index, gefunden: false };
+      await eintippen(feld, name, 110);
+      const gefunden = await bis(() => paketFach.trefferJetzt.some((x) => x.name === name), 4000);
+      if (gefunden) document.querySelector(`#seitenleiste [data-paket="${CSS.escape(name)}"]`)?.scrollIntoView({ block: "nearest" });
+      await warten(300);
+      return { index, gefunden };
+    },
+    async paketHinzufuegen(name) {
+      nurInKopie("paketHinzufuegen");
+      await klickBei(document.querySelector(`#seitenleiste [data-paket="${CSS.escape(name)}"] button`));
+      return paketFach.hinzufuegenVorgefuehrt(name);
+    },
+    async exportProbe() {
+      nurInKopie("exportProbe");
+      const menue = document.getElementById("export-menue");
+      if (!menue || menue.hidden) await api.exportMenue(true);
+      await klickBei(document.querySelector("#export-menue .export-zeile[data-profil] button"));
+      await exportMenue.probe();
+    },
+    async netzZugriffe() {
+      return anzahlNetz(await invoke<NetzprotokollJs>("netzprotokoll_lesen"));
+    },
+    async oberflaeche(prozent) {
+      if (zuvor.oberflaeche === undefined) zuvor.oberflaeche = await invoke<number>("oberflaeche_lesen").catch(() => 100);
+      oberflaecheAnwenden(prozent);
+      const wahl = document.querySelector<HTMLSelectElement>("#einstellungen .einst-groesse-wahl");
+      if (wahl) wahl.value = String(prozent);
+      await warten(300);
+    },
+    async gliederung(an) {
+      if (zuvor.gliederung === undefined) zuvor.gliederung = !gliederungOrt().hidden;
+      if (gliederungOrt().hidden === an) gliederungSchalten(an);
+      await warten(300);
+    },
+    async vorschauAbwarten() {
+      const passt = () => !!letzterLauf && letzterLauf.rev >= rev && (letzterLauf.datei ?? aktiveDatei) === aktiveDatei;
+      await bis(passt, 6000);
+      await warten(300);
+    },
   };
+  return api;
 }
 
 /** Beim allerersten Start (je Rechner gemerkt): ein ruhiger Hinweis auf den Überblick-Rundgang. */
@@ -2397,7 +2592,7 @@ async function start() {
     () => view.focus(),
   );
   document.getElementById("baustein-knopf")!.addEventListener("click", () => void bausteinPaletteOeffnen());
-  const dokumentFach = new DokumentFach({
+  dokumentFach = new DokumentFach({
     laden: () => invoke<FormularJs>("formular").then(texteUebersetzen),
     setzen: (stand, pfad, wert) => invoke<FormularJs>("formular_setzen", { stand, pfad, wert }).then(texteUebersetzen),
     eintrag: (stand, pfad, aktion) => invoke<FormularJs>("formular_eintrag", { stand, pfad, aktion }).then(texteUebersetzen),
@@ -2421,10 +2616,7 @@ async function start() {
     },
     uebernehmen: typUebernehmen,
     inkognito: (feld, an, ersatz) => invoke<void>("inkognito_setzen", { pfad: feld, an, ersatz }),
-    inkognitoTabelle: () => {
-      inkognitoDialog ??= new InkognitoDialog({ tabelle: () => invoke<[string, string][]>("inkognito_tabelle") });
-      void inkognitoDialog.zeigen();
-    },
+    inkognitoTabelle: inkognitoTabelleZeigen,
     bildWaehlen: async () => {
       let pfad: string | null = null;
       await einzeln(async () => {
@@ -2743,7 +2935,7 @@ async function start() {
   await listen("katalog-geaendert", () => {
     void katalogNeu().then(() => seitenleiste?.nachladen());
   });
-  new ExportMenue(
+  exportMenue = new ExportMenue(
     document.getElementById("export-knopf")!,
     () => invoke<ProfilJs[]>("export_profile"),
     async (profil, abnehmen) => {
@@ -2780,7 +2972,7 @@ async function start() {
       return invoke<WordJs>("epub_exportieren");
     },
   );
-  const serieDialog = new SerieDialog({
+  serieDialog = new SerieDialog({
     pruefen: (quelle) => invoke<SerieJs>("serie_pruefen", { quelle }),
     zuordnen: (quelle, spalte, feld) => invoke("serie_zuordnen", { quelle, spalte, feld }),
     erzeugen: async (quelle, wahl) => {

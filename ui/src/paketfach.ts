@@ -6,6 +6,7 @@
 import type { VergleichJs } from "./formular";
 import {
   type IndexStand,
+  type PaketErgebnis,
   type Treffer,
   entfernenKnopf,
   helferText,
@@ -13,6 +14,7 @@ import {
   holbarKnopf,
   indexKnopf,
   indexText,
+  paketWahl,
   wechselKnopf,
 } from "./pakete";
 import { vergleichTeil } from "./vergleichansicht";
@@ -95,6 +97,7 @@ export class PaketFach {
 
   constructor(private a: PaketAktionen) {
     this.suche.type = "search";
+    this.suche.id = "paket-suche";
     this.suche.placeholder = t("Paket suchen (Name, Beschreibung, Schlagwort) …");
     this.suche.addEventListener("input", () => {
       this.anfrage = this.suche.value;
@@ -108,6 +111,48 @@ export class PaketFach {
   /** Zeigt ein Paket aus „Mit Helfern“ (Klick im Menü; geholt wird erst mit dem Knopf). */
   zeigen(spec: string) {
     this.gesucht = spec;
+  }
+
+  /** Rundgang: zuletzt gelesener Stand (`null` vor dem ersten Zeichnen). */
+  get standJetzt(): PaketeStandJs | null {
+    return this.stand;
+  }
+
+  /** Rundgang: Treffer der laufenden Suche. */
+  get trefferJetzt(): readonly Treffer[] {
+    return this.treffer;
+  }
+
+  /** Rundgang: „Index holen“ wie der Knopf; `true`, wenn danach ein Index da ist. */
+  async indexVorgefuehrt(): Promise<boolean> {
+    await this.indexLos();
+    return !!this.stand?.index;
+  }
+
+  /** Rundgang: „Hinzufügen“ beim Treffer `name` der laufenden Suche, mit Importzeile; wartet, bis es
+   *  fertig ist (der Hinweis steht wie sonst im Band). */
+  async hinzufuegenVorgefuehrt(name: string): Promise<PaketErgebnis> {
+    const s = this.stand;
+    if (!s || this.laeuft) return "fehler";
+    const w = paketWahl(this.treffer, name, s.offline);
+    if (typeof w === "string") return w;
+    let gelungen = false;
+    await this.mitLauf(w.netz, async () => {
+      const text = await this.a.hinzufuegen(w.spec, true);
+      gelungen = true;
+      return text;
+    });
+    return gelungen ? (w.netz ? "geholt" : "zwischenspeicher") : "fehler";
+  }
+
+  /** „Index holen“ bzw. „Index aktualisieren“. */
+  private indexLos(): Promise<void> {
+    return this.mitLauf(true, async () => {
+      const z = await this.a.indexHolen();
+      return z.uebersprungen
+        ? t("Index geholt: {pakete} Pakete, {uebersprungen} unlesbare übersprungen.", { pakete: z.pakete, uebersprungen: z.uebersprungen })
+        : t("Index geholt: {pakete} Pakete.", { pakete: z.pakete });
+    });
   }
 
   /** Lädt den Stand neu und zeichnet; die Suche bleibt stehen. */
@@ -168,14 +213,7 @@ export class PaketFach {
     const ik = indexKnopf(s.index, s.offline, this.laeuft);
     kopf.append(
       this.suche,
-      this.knopf(ik.text, ik, () =>
-        void this.mitLauf(true, async () => {
-          const z = await this.a.indexHolen();
-          return z.uebersprungen
-            ? t("Index geholt: {pakete} Pakete, {uebersprungen} unlesbare übersprungen.", { pakete: z.pakete, uebersprungen: z.uebersprungen })
-            : t("Index geholt: {pakete} Pakete.", { pakete: z.pakete });
-        }),
-      ),
+      this.knopf(ik.text, ik, () => void this.indexLos()),
       el("span", "paket-index", indexText(s.index)),
     );
     const imp = el("label", "paket-import");
@@ -320,6 +358,7 @@ export class PaketFach {
 
   private trefferZeile(tr: Treffer, s: PaketeStandJs): HTMLLIElement {
     const li = el("li");
+    li.dataset.paket = tr.name;
     const kopf = el("div", "paket-zeile");
     kopf.append(el("span", "paket-name", `${tr.name} ${tr.version}`));
     if (tr.lizenz) kopf.append(el("span", "paket-marke", tr.lizenz));

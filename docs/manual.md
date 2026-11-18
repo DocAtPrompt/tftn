@@ -179,12 +179,46 @@ element being explained highlighted (the rest of the window is slightly dimmed).
 A tour that writes (such as “Writing and preview”) never runs in your own document: TFTN saves the
 open document, creates a fresh copy of a sample document with made-up data in the temporary folder,
 opens it and afterwards reopens your previous document. The copy does not appear under recently
-opened documents; the next tour removes it.
+opened documents; the next tour removes it. If a tour needs another document type halfway through
+(say, a blank page first and an invoice later), it moves on to a further copy; the window reloads
+briefly.
+
+The tours:
+
+| Tour | What it shows | Copy | about |
+|---|---|---|---|
+| TFTN in a few minutes | The demo: blank page, typing, preview in both directions, a table via “/”, the Here pane; downloading and using a package from Typst Universe; a chapter with `#include`; an invoice from a template (quantity, total, tax exemption, logo); export with a test PDF; network log, “Fully offline”, “Incognito for AI” on a medical report; plain Typst, fonts, F1 | Blank, Invoice, Medical report | 5 min |
+| Overview | Where everything is | – | 1 min |
+| Writing and preview | Typing, bold, a footnote via “/”, a click in the preview | Article | 1 min |
+| Blocks and text blocks | Table and equation via “/”, Here and Equation panes, marks, the block list, your own text blocks (explained only) | Article | 1½ min |
+| Templates and forms | Letter: subject in the Document pane; invoice: quantity, total, tax exemption, logo field | Letter, Invoice | 1½ min |
+| References and citations | Citation dialog with a page, bibliography, DOI (shown, not looked up), bibliography manager, citation style | Article | 1 min |
+| Packages from Typst Universe | Find, add (one network access) and use `showybox`; network log; “In the document” with checksum | Article | 1½ min |
+| Long documents | Chapters as tabs, outline, a new chapter with `#include`, searching the whole document | Book | 1 min |
+| Export and series | Export menu, test build as PDF with the plain-typst command, finalize, print, archive package, Word/web page/e-book, the Series dialog (without choosing a file), versions | Invoice | 1½ min |
+| Privacy | Network log, data protection sheet (shown only), “Fully offline”, MCP, “Incognito for AI”, “What the AI sees” | Medical report | 1 min |
+| Appearance and settings | Skins, interface size, editor font, writing view, shortcuts, F1; afterwards as before | Article | 1 min |
+
+Tours change settings only while they run (skin, size, editor font, outline) or merely show them
+(“Fully offline”, MCP). The package tour and the big demo really download a package on their click;
+if “Fully offline” is on or the download fails, the subtitle says so and the tour carries on without
+the package. If the package is already in the cache, it comes from there, without the network.
 
 **Recording a video:** on a Mac press Cmd+Shift+5, choose “Record Entire Screen” or “Record Selected
 Portion” and start, then click “Demo” next to a tour in “About TFTN”. Stop the recording in the menu
-bar at the end. On Windows the Snipping Tool (“Record” mode) records the screen. With
-the English interface (Settings → Language), subtitles and typed text are in English.
+bar at the end. On Windows the Snipping Tool (“Record” mode) records the screen. Beforehand:
+
+- **Trial run:** let the tour run once without recording; the first time, the preview typesets more
+  slowly, and you see whether everything is in place.
+- **Language:** with the English interface (Settings → Language), subtitles, typed text and the
+  sample documents are in English.
+- **“Fully offline” off** if the video is to show a package being downloaded. To have the access
+  really on screen, take the package out of the cache after the trial run (on a Mac delete
+  `~/Library/Caches/org.tftn.editor/universe/preview/showybox`); otherwise it comes from there,
+  without the network.
+- **Fixed window size:** drag the window to the size you want before recording (or fit the selected
+  portion exactly around it) and leave it unchanged while recording.
+- Switch on **Do Not Disturb** (Control Centre → Focus) so that no notifications appear.
 
 On the very first start TFTN offers the overview once in the message band (“New here?”); this applies
 per computer.

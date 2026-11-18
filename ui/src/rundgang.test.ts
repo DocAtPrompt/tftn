@@ -3,6 +3,7 @@ import {
   type Anzeige,
   type Befehl,
   type Buehne,
+  type Ergebnis,
   FRIST,
   HANDGRIFFE,
   type Handgriffe,
@@ -14,6 +15,8 @@ import {
   dauerVon,
   laeuftIn,
   naechsterSchritt,
+  startSchritt,
+  VOM_LAUF,
 } from "./rundgang";
 
 /** Bühne zum Mitschreiben; beim Ansehen antwortet sie der Reihe nach mit `befehle`. */
@@ -29,12 +32,18 @@ class Probe implements Buehne {
   }
 }
 
-/** Handgriffe, die nur mitschreiben. */
-function mitschreiben(log: string[]) {
+/** Handgriffe, die nur mitschreiben; `antworten` gibt Ergebnisse einzelner Handgriffe vor. */
+function mitschreiben(log: string[], antworten: Record<string, unknown> = {}) {
   return () => {
-    const api: Record<string, (...a: unknown[]) => Promise<void>> = {};
-    for (const n of HANDGRIFFE) if (n !== "warten") api[n] = async (...a) => void log.push(`${n}(${a.join(",")})`);
-    return api as unknown as Omit<Handgriffe, "warten">;
+    const api: Record<string, (...a: unknown[]) => Promise<unknown>> = {};
+    for (const n of HANDGRIFFE) {
+      if (VOM_LAUF.includes(n)) continue;
+      api[n] = async (...a) => {
+        log.push(`${n}(${a.join(",")})`);
+        return antworten[n];
+      };
+    }
+    return api as unknown as Omit<Handgriffe, "warten" | "sagen">;
   };
 }
 
@@ -66,6 +75,17 @@ describe("Rundgang: reine Regeln", () => {
     expect(naechsterSchritt(0, "zurueck", 3)).toBe(0);
     expect(naechsterSchritt(2, "zurueck", 3)).toBe(1);
     expect(naechsterSchritt(1, "ende", 3)).toBeNull();
+    // Nach einem Wechsel der Kopie führt Zurück nicht vor den ersten Schritt dieses Fensters.
+    expect(naechsterSchritt(3, "zurueck", 6, 3)).toBe(3);
+    expect(naechsterSchritt(4, "zurueck", 6, 3)).toBe(3);
+  });
+
+  it("Start nach einem Wechsel nur mitten im Rundgang", () => {
+    expect(startSchritt(0, 5)).toBe(0);
+    expect(startSchritt(3, 5)).toBe(3);
+    expect(startSchritt(5, 5)).toBe(0);
+    expect(startSchritt(-1, 5)).toBe(0);
+    expect(startSchritt(1.5, 5)).toBe(0);
   });
 
   it("Band über einem Ziel im unteren Teil des Fensters", () => {
@@ -90,6 +110,64 @@ describe("Rundgang: Ansehen", () => {
     const b = new Probe(["weiter", "zurueck", "weiter", "weiter", "weiter"]);
     await new Lauf(rundgang("a", "b", "c"), "ansehen", b, mitschreiben([]), suchen, () => geraeumt++).starten();
     expect(geraeumt).toBe(1);
+  });
+
+  it("Zurück geht nicht am ersten Schritt", async () => {
+    const b = new Probe(["weiter", "weiter"]);
+    await new Lauf(rundgang("a", "b"), "ansehen", b, mitschreiben([]), suchen).starten();
+    expect(b.gezeigt.map((a) => [a.text, a.zurueckGeht])).toEqual([
+      ["a", false],
+      ["a", false],
+      ["b", true],
+      ["b", true],
+    ]);
+  });
+
+  it("Wechsel der Kopie: endet vor dem Schritt mit `kopie`, geht danach dort weiter", async () => {
+    const r: Rundgang = {
+      id: "x",
+      titel: "",
+      beschreibung: "",
+      kopie: "tftn-brief",
+      schritte: [{ text: "a" }, { text: "b", kopie: "tftn-rechnung" }, { text: "c" }],
+    };
+    const erst = new Probe(["weiter", "weiter"]);
+    expect(await new Lauf(r, "ansehen", erst, mitschreiben([]), suchen).starten()).toEqual({ kopie: "tftn-rechnung", ab: 1 });
+    expect(erst.gezeigt.map((a) => a.text)).toEqual(["a", "a"]);
+    // Nach dem Neuladen: ab Schritt 1, ohne erneuten Wechsel; Zurück bleibt bei b.
+    const dann = new Probe(["zurueck", "weiter", "weiter"]);
+    expect(await new Lauf(r, "ansehen", dann, mitschreiben([]), suchen).starten(1)).toBe("fertig");
+    expect(dann.gezeigt.map((a) => [a.text, a.zurueckGeht])).toEqual([
+      ["b", false],
+      ["b", false],
+      ["b", false],
+      ["b", false],
+      ["c", true],
+      ["c", true],
+    ]);
+  });
+
+  it("Handgriffe liefern ihr Ergebnis; `sagen` ersetzt den Untertitel", async () => {
+    const r: Rundgang = {
+      id: "x",
+      titel: "",
+      beschreibung: "",
+      kopie: "tftn-fachartikel",
+      schritte: [
+        {
+          text: "holt",
+          vorherIn: "beide",
+          vorher: async (api) => {
+            if ((await api.paketHinzufuegen("showybox")) === "offline") await api.sagen("ganz offline");
+          },
+        },
+      ],
+    };
+    const b = new Probe(["weiter"]);
+    const log: string[] = [];
+    await new Lauf(r, "ansehen", b, mitschreiben(log, { paketHinzufuegen: "offline" }), suchen).starten();
+    expect(log).toEqual(["paketHinzufuegen(showybox)"]);
+    expect(b.gezeigt.map((a) => a.text)).toEqual(["holt", "ganz offline", "ganz offline"]);
   });
 
   it("Beenden gilt als Abbruch", async () => {
@@ -156,7 +234,7 @@ describe("Rundgang: Vorführen", () => {
       ],
     };
     const b = new Probe();
-    let ergebnis = "";
+    let ergebnis: Ergebnis | "" = "";
     void new Lauf(r, "vorfuehren", b, mitschreiben(log), suchen).starten().then((e) => (ergebnis = e));
     await vi.advanceTimersByTimeAsync(VORLAUF - 1);
     expect(b.gezeigt).toEqual([]);
@@ -247,12 +325,56 @@ describe("Rundgang: Vorführen", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const log: string[] = [];
     const b = new Probe();
-    let ergebnis = "";
+    let ergebnis: Ergebnis | "" = "";
     void new Lauf(r, "vorfuehren", b, mitschreiben(log), suchen).starten().then((e) => (ergebnis = e));
     await vi.advanceTimersByTimeAsync(VORLAUF + MIN_DAUER + FRIST + MIN_DAUER + FRIST + 10_000 + MIN_DAUER + 100);
     expect(ergebnis).toBe("fertig");
     expect(b.gezeigt.filter((a, i, l) => l.findIndex((x) => x.text === a.text) === i).map((a) => a.text)).toEqual(["scheitert", "hängt", "trödelt", "weiter"]);
     expect(log).toEqual([]);
     expect(spaet).toEqual(["abgewiesen"]);
+  });
+
+  it("eine eigene Frist (Netzzugriff) und die Standzeit nach einem ersetzten Untertitel", async () => {
+    const r: Rundgang = {
+      id: "x",
+      titel: "",
+      beschreibung: "",
+      schritte: [
+        {
+          text: "kurz",
+          frist: FRIST * 3,
+          vorher: async (api) => {
+            await new Promise((w) => setTimeout(w, FRIST * 2));
+            await api.sagen("x".repeat(100));
+          },
+        },
+        { text: "danach" },
+      ],
+    };
+    const b = new Probe();
+    const lauf = new Lauf(r, "vorfuehren", b, mitschreiben([]), suchen);
+    void lauf.starten();
+    await vi.advanceTimersByTimeAsync(VORLAUF + FRIST * 2 + 10);
+    expect(b.gezeigt.at(-1)!.text).toBe("x".repeat(100));
+    // Standzeit nach dem neuen, langen Untertitel: 6 s statt 3 s.
+    await vi.advanceTimersByTimeAsync(5800);
+    expect(b.gezeigt.at(-1)!.text).toBe("x".repeat(100));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(b.gezeigt.at(-1)!.text).toBe("danach");
+    lauf.abbrechen();
+  });
+
+  it("Vorführen endet beim Wechsel der Kopie", async () => {
+    const r: Rundgang = {
+      id: "x",
+      titel: "",
+      beschreibung: "",
+      kopie: "tftn-leer",
+      schritte: [{ text: "a" }, { text: "b", kopie: "tftn-befund" }],
+    };
+    let ergebnis: Ergebnis | "" = "";
+    void new Lauf(r, "vorfuehren", new Probe(), mitschreiben([]), suchen).starten().then((e) => (ergebnis = e));
+    await vi.advanceTimersByTimeAsync(VORLAUF + MIN_DAUER + 100);
+    expect(ergebnis).toEqual({ kopie: "tftn-befund", ab: 1 });
   });
 });

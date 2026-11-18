@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Treffer, hinzufuegenKnopf, indexKnopf, indexText, verbindungText, entfernenKnopf, helferText, holbarKnopf, wechselKnopf } from "./pakete";
+import { type Treffer, hinzufuegenKnopf, indexKnopf, indexText, verbindungText, entfernenKnopf, helferText, holbarKnopf, paketWahl, wechselKnopf } from "./pakete";
 
 const treffer = (t: Partial<Treffer> = {}): Treffer => ({
   name: "cetz",
@@ -71,5 +71,16 @@ describe("Knöpfe AP10", () => {
     expect(helferText({ helfer: true }, true)).toBeNull();
     expect(helferText({ helfer: false }, false)).toBeNull();
     expect(helferText({ helfer: false }, true)).toBe("Für diese Version keine Helfer");
+  });
+
+  it("rundgang_paket_wahl_wie_der_knopf", () => {
+    const liste = [treffer({ name: "cetz-plot" }), treffer({ name: "showybox", version: "2.0.4" })];
+    // Nur der Treffer mit genau diesem Namen, nicht einer, der ihn enthält.
+    expect(paketWahl(liste, "showybox", false)).toEqual({ spec: "@preview/showybox:2.0.4", netz: true });
+    expect(paketWahl(liste, "cetz", false)).toBe("nicht-gefunden");
+    expect(paketWahl(liste, "showybox", true)).toBe("offline");
+    expect(paketWahl([treffer({ name: "showybox", im_zwischenspeicher: true })], "showybox", true)).toEqual({ spec: "@preview/showybox:0.4.2", netz: false });
+    expect(paketWahl([treffer({ name: "showybox", im_projekt: true, im_zwischenspeicher: true })], "showybox", false)).toBe("schon-da");
+    expect(paketWahl([], "showybox", false)).toBe("nicht-gefunden");
   });
 });

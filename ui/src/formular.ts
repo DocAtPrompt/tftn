@@ -224,6 +224,22 @@ export function wertAn(werte: unknown, p: Pfad): unknown {
   return w;
 }
 
+/** Pfad aus seinem Text (`posten.0.menge` → `["posten", 0, "menge"]`); Gegenstück zu `pfadText`. */
+export function pfadLesen(text: string): Pfad {
+  return text.split(".").map((s) => (/^\d+$/.test(s) ? Number(s) : s));
+}
+
+/** Das Feld des Formulars an `pfad` (durch Gruppen und Einträge hindurch); `null`, wenn es keins gibt. */
+export function feldAn(felder: readonly Feld[], pfad: Pfad): Feld | null {
+  const [kopf, ...rest] = pfad;
+  const f = felder.find((x) => x.name === kopf);
+  if (!f) return null;
+  if (rest.length === 0) return f;
+  if (f.art.art === "gruppe") return feldAn(f.art.felder, rest);
+  if (f.art.art === "eintraege" && typeof rest[0] === "number") return rest.length === 1 ? f : feldAn(f.art.felder, rest.slice(1));
+  return null;
+}
+
 /** Bekommt das Feld den Knopf „Bild wählen …“? Einzeilige Textfelder mit `format: "bild"`. */
 export function hatBildwahl(art: Art): boolean {
   return art.art === "text" && art.widget === "einzeilig" && art.format === "bild";

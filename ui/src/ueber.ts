@@ -119,6 +119,7 @@ export class UeberDialog {
     private a: UeberAktionen,
     ausloeser: (Element | null)[] = [],
   ) {
+    this.huelle.id = "ueber";
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
     this.huelle.setAttribute("aria-label", t("Über TFTN"));

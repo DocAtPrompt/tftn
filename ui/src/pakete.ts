@@ -78,3 +78,31 @@ export function wechselKnopf(offline: boolean, laeuft: boolean): Knopf {
 export function helferText(p: { helfer: boolean }, hatBeschreibung: boolean): string | null {
   return !p.helfer && hatBeschreibung ? t("Für diese Version keine Helfer") : null;
 }
+
+/** Rundgang: wie „Hinzufügen“ ausging (`Handgriffe.paketHinzufuegen`). */
+export type PaketErgebnis = "geholt" | "zwischenspeicher" | "schon-da" | "offline" | "nicht-gefunden" | "fehler";
+
+/** Rundgang: Stand nach der Suche (`Handgriffe.paketSuchen`). `index`: war schon da, eben geholt
+ *  oder fehlt (ganz offline oder das Holen schlug fehl). */
+export interface PaketSuche {
+  index: "da" | "geholt" | "fehlt";
+  gefunden: boolean;
+}
+
+/**
+ * Rundgang: Was „Hinzufügen“ beim Treffer `name` täte, wie der Knopf (`hinzufuegenKnopf`): die Spec
+ * und ob dafür das Netz nötig ist, sonst der Grund, warum nichts geschieht.
+ */
+export function paketWahl(
+  treffer: readonly Treffer[],
+  name: string,
+  offline: boolean,
+): { spec: string; netz: boolean } | "schon-da" | "offline" | "nicht-gefunden" {
+  const tr = treffer.find((x) => x.name === name);
+  if (!tr) return "nicht-gefunden";
+  if (tr.im_projekt) return "schon-da";
+  const spec = `@preview/${tr.name}:${tr.version}`;
+  if (tr.im_zwischenspeicher) return { spec, netz: false };
+  if (offline) return "offline";
+  return { spec, netz: true };
+}

@@ -140,6 +140,7 @@ export class ExportMenue {
     for (const p of liste) {
       const zeile = document.createElement("div");
       zeile.className = "export-zeile";
+      zeile.dataset.profil = p.id;
       const name = document.createElement("span");
       name.textContent = profilName(p);
       const erklaerung = profilErklaerung(p);
@@ -243,6 +244,15 @@ export class ExportMenue {
       this.menue.append(s);
     }
     this.platzieren();
+  }
+
+  /** Rundgang: „Probe“ des ersten Profils wie der Knopf (öffnet das Menü, falls zu); wartet, bis sie
+   *  fertig ist. Das Ergebnis steht wie sonst unter der Zeile. */
+  async probe(): Promise<void> {
+    if (this.menue.hidden) await this.oeffnen();
+    const zeile = this.menue.querySelector<HTMLElement>(".export-zeile[data-profil]");
+    if (!zeile) throw new Error(t("Keine Export-Profile."));
+    await this.los(zeile.dataset.profil!, false, zeile);
   }
 
   /** Das Ergebnis steht direkt unter der Zeile, die es ausgelöst hat (ein früheres verschwindet). */

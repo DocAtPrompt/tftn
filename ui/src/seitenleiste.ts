@@ -184,6 +184,11 @@ export class Seitenleiste {
     return !this.huelle.hidden;
   }
 
+  /** Das offene Fach; `null`, wenn die Leiste zu ist. */
+  get fachJetzt(): Fach | null {
+    return this.offen ? this.fach : null;
+  }
+
   oeffnen(fach: Fach) {
     this.fach = fach;
     this.huelle.hidden = false;

@@ -14,6 +14,8 @@ import {
   zustandUebertragen,
   pfadText,
   wertAn,
+  feldAn,
+  pfadLesen,
 } from "./formular";
 
 const text: Art = { art: "text", widget: "einzeilig", format: null, "min-laenge": null, "max-laenge": null, muster: null, standard: null };
@@ -108,6 +110,27 @@ describe("falscher_typ_in_der_datei", () => {
 });
 
 describe("pfade", () => {
+  it("pfadLesen und feldAn (Rundgang: Feld nach Pfad)", () => {
+    expect(pfadLesen("posten.0.menge")).toEqual(["posten", 0, "menge"]);
+    expect(pfadText(pfadLesen("absender.name"))).toBe("absender.name");
+    const f = (name: string, art: Art): Feld => ({ name, titel: name, hilfe: null, pflicht: false, gruppe: null, sensibel: false, pandoc: null, art });
+    const felder = [
+      f("betreff", text),
+      f("absender", { art: "gruppe", felder: [f("name", text)] }),
+      f("posten", { art: "eintraege", felder: [f("menge", zahl()), f("text", text)], min: null, max: null }),
+      f("befreiung", wahl),
+    ];
+    expect(feldAn(felder, ["betreff"])?.name).toBe("betreff");
+    expect(feldAn(felder, ["absender", "name"])?.name).toBe("name");
+    expect(feldAn(felder, ["posten", 0, "menge"])?.art).toEqual(zahl());
+    expect(feldAn(felder, ["posten", 2])?.name).toBe("posten");
+    expect(feldAn(felder, ["posten", "menge"])).toBeNull();
+    expect(feldAn(felder, ["gibt-es-nicht"])).toBeNull();
+    expect(feldAn(felder, ["betreff", "x"])).toBeNull();
+    // Die Option einer Auswahl zeigt eingabeZeigen (Index als Text).
+    expect(eingabeZeigen(feldAn(felder, ["befreiung"])!.art, "b")).toBe("1");
+  });
+
   it("pfadText und wertAn", () => {
     expect(pfadText(["autoren", 0, "name"])).toBe("autoren.0.name");
     const w = { autoren: [{ name: "A" }], literatur: { stil: "ieee" } };

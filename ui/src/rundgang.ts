@@ -14,17 +14,19 @@
 // Daten in rundgaenge.ts.
 
 import { type Dialog, dialogAnmelden } from "./dialoge";
+import type { PaketErgebnis, PaketSuche } from "./pakete";
 import { t } from "./sprache";
 
 export type Art = "ansehen" | "vorfuehren";
 
-export type FensterName = "ueber" | "einstellungen" | "netzprotokoll" | "projektsuche";
+export type FensterName = "ueber" | "einstellungen" | "netzprotokoll" | "projektsuche" | "inkognito" | "serie" | "literatur";
 export type FachName = "hier" | "einfuegen" | "formel" | "seite" | "dokument" | "pakete";
 
 /**
  * Was eine Vorführung tun kann. Jeder Handgriff ist eine dünne Hülle um das, was ein Knopf oder eine
  * Taste ohnehin tut (main.ts, `handgriffe`). Alles ist abbrechbar: Nach Esc wirft der nächste Aufruf.
  * Handgriffe, die in den Text schreiben (`SCHREIBEND`), wirken nur in der Kopie einer Vorführung.
+ * Manche liefern ein Ergebnis, nach dem sich die folgenden Handgriffe und `sagen` richten können.
  */
 export interface Handgriffe {
   /** Tippt `text` an der Schreibmarke, sichtbar Zeichen für Zeichen, wie echte Eingabe (Felder, „/“-Menü). */
@@ -52,6 +54,32 @@ export interface Handgriffe {
   warten(ms: number): Promise<void>;
   /** Schließt offene Dialoge, Menüs, die Seitenleiste und das „/“-Menü. */
   schliessen(): Promise<void>;
+  /** Tippt in ein Eingabefeld außerhalb des Texts (Suche im Fach „Pakete“, in den Einstellungen, im
+   *  Zitat-Dialog), Zeichen für Zeichen. Nicht für das Fach „Dokument“: dafür `feldSetzen`. */
+  eingeben(auswahl: string, text: string, msJeZeichen?: number): Promise<void>;
+  /** Fach „Dokument“: zum Feld `pfad` (wie `posten.0.menge`) scrollen und es hervorheben. */
+  feldZeigen(pfad: string): Promise<void>;
+  /** Fach „Dokument“: Feld `pfad` setzen, sichtbar getippt; bei einer Auswahl ist `wert` der Wert aus
+   *  dem Schema, bei einem Kreuz `true`/`false`. Wartet, bis die Vorschau nachgezogen hat. */
+  feldSetzen(pfad: string, wert: string | boolean): Promise<void>;
+  /** Fach „Pakete“ öffnen, fehlt der Index (und ist nicht „Ganz offline“), ihn holen wie „Index
+   *  holen“; dann `name` ins Suchfeld tippen und auf die Treffer warten. */
+  paketSuchen(name: string): Promise<PaketSuche>;
+  /** Im Fach „Pakete“ den Treffer `name` hinzufügen wie „Hinzufügen“, mit Importzeile; wartet auf das
+   *  Ergebnis (Netzzugriff). */
+  paketHinzufuegen(name: string): Promise<PaketErgebnis>;
+  /** Export-Menü: „Probe“ des ersten Profils; wartet, bis das PDF fertig ist. */
+  exportProbe(): Promise<void>;
+  /** Wie viele Netzzugriffe das Netzprotokoll seit dem Start zählt. */
+  netzZugriffe(): Promise<number>;
+  /** Größe der Oberfläche in Prozent für die Dauer des Rundgangs. */
+  oberflaeche(prozent: number): Promise<void>;
+  /** Gliederung neben dem Text zeigen bzw. verbergen, für die Dauer des Rundgangs. */
+  gliederung(an: boolean): Promise<void>;
+  /** Wartet, bis die Vorschau den letzten Stand des Texts gesetzt hat (höchstens einige Sekunden). */
+  vorschauAbwarten(): Promise<void>;
+  /** Ersetzt den Untertitel des laufenden Schritts, etwa wenn ein Handgriff anders ausging. */
+  sagen(text: string): Promise<void>;
 }
 
 /** Alle Handgriffe (für den Test der Rundgänge). */
@@ -70,10 +98,33 @@ export const HANDGRIFFE: readonly (keyof Handgriffe)[] = [
   "editorSchrift",
   "warten",
   "schliessen",
+  "eingeben",
+  "feldZeigen",
+  "feldSetzen",
+  "paketSuchen",
+  "paketHinzufuegen",
+  "exportProbe",
+  "netzZugriffe",
+  "oberflaeche",
+  "gliederung",
+  "vorschauAbwarten",
+  "sagen",
 ];
 
-/** Handgriffe, die den Text ändern können: nur in einem Rundgang mit `kopie`. */
-export const SCHREIBEND: readonly (keyof Handgriffe)[] = ["tippen", "taste", "bausteinWaehlen"];
+/** Handgriffe, die der Lauf selbst gibt (nicht main.ts). */
+export const VOM_LAUF: readonly (keyof Handgriffe)[] = ["warten", "sagen"];
+
+/** Handgriffe, die das Dokument ändern (Text, dokument.toml, Pakete, Export-Dateien) oder auf Klick ins
+ *  Netz gehen: nur in einem Rundgang mit `kopie`. */
+export const SCHREIBEND: readonly (keyof Handgriffe)[] = [
+  "tippen",
+  "taste",
+  "bausteinWaehlen",
+  "feldSetzen",
+  "paketSuchen",
+  "paketHinzufuegen",
+  "exportProbe",
+];
 
 export interface Schritt {
   /** CSS-Auswahl (Elemente aus ui/index.html oder `DYNAMISCHE_ZIELE` in rundgaenge.ts) oder eine
@@ -87,6 +138,12 @@ export interface Schritt {
   vorherIn?: "vorfuehren" | "beide";
   /** Vorführen: Standzeit nach dem Handgriff in ms; Standard aus der Textlänge (`dauerVon`). */
   dauer?: number;
+  /** Längste Zeit für `vorher` in ms, Standard `FRIST`; länger etwa für einen Netzzugriff. */
+  frist?: number;
+  /** Vor diesem Schritt in eine frische Kopie dieses Dokumenttyps wechseln: Das Fenster lädt neu, der
+   *  Rundgang geht dort mit diesem Schritt weiter. Nur in einem Rundgang mit `kopie`, nicht beim ersten
+   *  Schritt; beim Ansehen führt „Zurück“ nicht über einen Wechsel zurück. */
+  kopie?: string;
 }
 
 export interface Rundgang {
@@ -118,10 +175,11 @@ export function laeuftIn(s: Pick<Schritt, "vorher" | "vorherIn">, art: Art): boo
 
 export type Befehl = "weiter" | "zurueck" | "ende";
 
-/** Nächster Schritt beim Ansehen; `null`: Ende. Zurück am Anfang bleibt am Anfang. */
-export function naechsterSchritt(nr: number, befehl: Befehl, anzahl: number): number | null {
+/** Nächster Schritt beim Ansehen; `null`: Ende. Zurück am Anfang (`anfang`: erster Schritt in diesem
+ *  Fenster, nach einem Wechsel der Kopie) bleibt am Anfang. */
+export function naechsterSchritt(nr: number, befehl: Befehl, anzahl: number, anfang = 0): number | null {
   if (befehl === "ende") return null;
-  if (befehl === "zurueck") return Math.max(0, nr - 1);
+  if (befehl === "zurueck") return Math.max(anfang, nr - 1);
   return nr + 1 < anzahl ? nr + 1 : null;
 }
 
@@ -133,6 +191,8 @@ export interface Anzeige {
   art: Art;
   ziel: Element | null;
   angehalten: boolean;
+  /** Ansehen: Geht „Zurück“? (Nicht am Anfang und nicht über einen Wechsel der Kopie.) */
+  zurueckGeht: boolean;
 }
 
 /** Was der Lauf vom Bildschirm braucht. */
@@ -151,10 +211,21 @@ export class Abbruch extends Error {
 
 const schlafen = (ms: number) => new Promise<void>((weiter) => setTimeout(weiter, ms));
 
-/** Handgriffe ohne `warten`; `warten` gibt der Lauf (abbrechbar, hält bei einer Pause an). */
-export type HandgriffeBauen = (warten: (ms: number) => Promise<void>) => Omit<Handgriffe, "warten">;
+/** Handgriffe ohne `warten` und `sagen`; die gibt der Lauf (`warten` abbrechbar, hält bei einer Pause an). */
+export type HandgriffeBauen = (warten: (ms: number) => Promise<void>) => Omit<Handgriffe, "warten" | "sagen">;
 
-export type Ergebnis = "fertig" | "abgebrochen";
+/** Ein Schritt mit `kopie`: Hier geht es nach dem Neuladen in der neuen Kopie weiter. */
+export interface Wechsel {
+  kopie: string;
+  ab: number;
+}
+
+export type Ergebnis = "fertig" | "abgebrochen" | Wechsel;
+
+/** Erster Schritt eines Laufs, der bei `ab` beginnt (nach einem Wechsel); sicher im Bereich. */
+export function startSchritt(ab: number, anzahl: number): number {
+  return Number.isInteger(ab) && ab > 0 && ab < anzahl ? ab : 0;
+}
 
 /** Ein Durchgang durch einen Rundgang. Bleibt nie hängen: Fehlt ein Ziel, wird es nicht hervorgehoben;
  *  scheitert ein Handgriff oder dauert er länger als `FRIST`, geht es mit dem Untertitel weiter. */
@@ -204,23 +275,36 @@ export class Lauf {
     if (this.anzeige) this.zeigen({ ...this.anzeige, angehalten: an });
   }
 
-  async starten(): Promise<Ergebnis> {
+  /** Spielt ab, beginnend bei Schritt `ab` (nach einem Wechsel der Kopie). Erreicht der Lauf einen
+   *  späteren Schritt mit `kopie`, endet er mit dem Wechsel; main.ts lädt dann die neue Kopie. */
+  async starten(ab = 0): Promise<Ergebnis> {
     const schritte = this.rundgang.schritte;
+    const anfang = startSchritt(ab, schritte.length);
     try {
       if (this.art === "vorfuehren") await this.warten(VORLAUF);
-      let nr = 0;
+      let nr = anfang;
       while (nr < schritte.length) {
         const s = schritte[nr];
-        this.zeigen({ text: s.text, nr, anzahl: schritte.length, art: this.art, ziel: null, angehalten: this.angehalten });
+        if (s.kopie !== undefined && nr > anfang) return { kopie: s.kopie, ab: nr };
+        this.zeigen({
+          text: s.text,
+          nr,
+          anzahl: schritte.length,
+          art: this.art,
+          ziel: null,
+          angehalten: this.angehalten,
+          zurueckGeht: nr > anfang,
+        });
         if (laeuftIn(s, this.art)) await this.handgriff(s);
         this.pruefen();
         this.zeigen({ ...this.anzeige!, ziel: this.ziel(s) });
         if (this.art === "vorfuehren") {
-          await this.warten(dauerVon(s));
+          // Standzeit nach dem Untertitel, der jetzt steht (`sagen` kann ihn ersetzt haben).
+          await this.warten(dauerVon({ text: this.anzeige!.text, dauer: s.dauer }));
           nr += 1;
         } else {
           const b = await this.mitAbbruch(this.buehne.befehl());
-          const weiter = naechsterSchritt(nr, b, schritte.length);
+          const weiter = naechsterSchritt(nr, b, schritte.length, anfang);
           if (weiter === null) return b === "ende" ? "abgebrochen" : "fertig";
           if (b === "zurueck") this.zurueckRaeumen();
           nr = weiter;
@@ -268,15 +352,20 @@ export class Lauf {
   /** Handgriffe für einen Schritt: Jeder Aufruf prüft vorher und nachher, ob es noch weitergeht. */
   private handgriffe(gen: number): Handgriffe {
     const warten = (ms: number) => this.warten(ms, gen);
+    const sagen = async (text: string) => {
+      this.pruefenFuer(gen);
+      if (this.anzeige) this.zeigen({ ...this.anzeige, text });
+    };
     const roh = this.bauen(warten);
-    const api = { warten } as Handgriffe;
+    const api = { warten, sagen } as Handgriffe;
     for (const name of HANDGRIFFE) {
-      if (name === "warten") continue;
-      const f = roh[name] as (...a: unknown[]) => Promise<void>;
+      if (VOM_LAUF.includes(name)) continue;
+      const f = roh[name as keyof typeof roh] as (...a: unknown[]) => Promise<unknown>;
       (api as unknown as Record<string, unknown>)[name] = async (...a: unknown[]) => {
         this.pruefenFuer(gen);
-        await this.mitAbbruch(f(...a));
+        const r = await this.mitAbbruch(f(...a));
         this.pruefenFuer(gen);
+        return r;
       };
     }
     return api;
@@ -284,8 +373,9 @@ export class Lauf {
 
   private async handgriff(s: Schritt) {
     const gen = ++this.generation;
-    const frist = this.warten(FRIST, gen).then(() => {
-      throw new Error(`Handgriff nach ${FRIST} ms verworfen`);
+    const ms = s.frist ?? FRIST;
+    const frist = this.warten(ms, gen).then(() => {
+      throw new Error(`Handgriff nach ${ms} ms verworfen`);
     });
     frist.catch(() => {});
     try {
@@ -419,7 +509,7 @@ export class RundgangBuehne implements Buehne, Dialog {
     this.fuss.hidden = !ansehen && !a.angehalten;
     this.zurueck.hidden = this.weiter.hidden = this.beenden.hidden = !ansehen;
     this.zaehler.hidden = !ansehen;
-    this.zurueck.disabled = a.nr === 0;
+    this.zurueck.disabled = !a.zurueckGeht;
     this.weiter.textContent = a.nr + 1 < a.anzahl ? t("Weiter") : t("Fertig");
     this.pause.textContent = a.angehalten ? t("Angehalten – Klick oder Leertaste setzt fort, Esc beendet.") : "";
     this.pause.hidden = !a.angehalten;

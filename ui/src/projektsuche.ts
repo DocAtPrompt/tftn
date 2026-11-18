@@ -274,6 +274,7 @@ export class ProjektSuche {
   private beschaeftigt = false;
 
   constructor(private a: ProjektSucheAktionen) {
+    this.huelle.id = "projektsuche";
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
     this.huelle.setAttribute("aria-label", t("Im ganzen Dokument suchen"));

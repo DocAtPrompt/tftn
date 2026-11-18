@@ -141,6 +141,7 @@ export class NetzprotokollDialog {
     private a: NetzprotokollAktionen,
     ausloeser: (Element | null)[] = [],
   ) {
+    this.huelle.id = "netzprotokoll";
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
     this.huelle.setAttribute("aria-label", t("Netzprotokoll"));

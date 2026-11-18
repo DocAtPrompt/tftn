@@ -180,13 +180,48 @@ meist das erklärte Element hervorgehoben (der Rest des Fensters ist leicht abge
 Ein Rundgang, der schreibt (etwa „Schreiben und Vorschau“), läuft nie im eigenen Dokument: TFTN
 speichert das offene Dokument, legt eine frische Kopie eines Beispieldokuments mit erfundenen Daten im
 Temp-Ordner an, öffnet sie und öffnet danach wieder das vorige Dokument. Die Kopie erscheint nicht unter
-„Zuletzt geöffnet“; beim nächsten Rundgang räumt TFTN sie weg.
+„Zuletzt geöffnet“; beim nächsten Rundgang räumt TFTN sie weg. Braucht ein Rundgang mittendrin einen
+anderen Dokumenttyp (etwa erst ein leeres Blatt, dann eine Rechnung), wechselt er in eine weitere Kopie;
+das Fenster lädt dabei kurz neu.
+
+Die Rundgänge:
+
+| Rundgang | Was er zeigt | Kopie | etwa |
+|---|---|---|---|
+| TFTN in wenigen Minuten | Die Vorführung: leeres Blatt, tippen, Vorschau in beide Richtungen, Tabelle über „/“, Fach „Hier“; ein Paket aus Typst Universe holen und verwenden; ein Kapitel mit `#include`; eine Rechnung aus der Vorlage (Menge, Summe, Steuerbefreiung, Logo); Export mit Probe-PDF; Netzprotokoll, „Ganz offline“, „Inkognito für KI“ an einem Befund; gewöhnliches Typst, Schriften, F1 | Leer, Rechnung, Befund | 5 min |
+| Überblick | Wo was ist | – | 1 min |
+| Schreiben und Vorschau | Tippen, fett, Fußnote über „/“, Klick in die Vorschau | Fachartikel | 1 min |
+| Bausteine und Textbausteine | Tabelle und Formel über „/“, Fach „Hier“ und „Formel“, Marken, Baustein-Liste, eigene Textbausteine (nur erklärt) | Fachartikel | 1½ min |
+| Vorlagen und Formulare | Brief: Betreff im Fach „Dokument“; Rechnung: Menge, Summe, Steuerbefreiung, Logo-Feld | Brief, Rechnung | 1½ min |
+| Literatur und Zitate | Zitat-Dialog mit Seite, Literaturverzeichnis, DOI (nur gezeigt, nicht nachgeschlagen), Literaturverwaltung, Zitierstil | Fachartikel | 1 min |
+| Pakete aus Typst Universe | `showybox` suchen, hinzufügen (ein Netzzugriff), verwenden; Netzprotokoll; „Im Dokument“ mit Prüfsumme | Fachartikel | 1½ min |
+| Lange Dokumente | Kapitel als Reiter, Gliederung, neues Kapitel mit `#include`, im ganzen Dokument suchen | Fachbuch | 1 min |
+| Export und Serie | Export-Menü, Probe als PDF mit Gegenprobe, Abnehmen, Drucken, Archivpaket, Word/Webseite/E-Book, Serie-Dialog (ohne Dateiwahl), Fassungen | Rechnung | 1½ min |
+| Datenschutz | Netzprotokoll, Blatt für den Datenschutz (nur gezeigt), „Ganz offline“, MCP, „Inkognito für KI“, „Was die KI sieht“ | Befund | 1 min |
+| Aussehen und Einstellungen | Skins, Größe der Oberfläche, Editorschrift, Schreibansicht, Tastenkürzel, F1; danach wie vorher | Fachartikel | 1 min |
+
+Einstellungen ändern die Rundgänge nur für ihre Dauer (Skin, Größe, Editorschrift, Gliederung) oder
+zeigen sie bloß („Ganz offline“, MCP). Der Paket-Rundgang und die große Vorführung holen auf ihren Klick
+wirklich ein Paket aus dem Netz; ist „Ganz offline“ an oder geht das Holen nicht, sagt der Untertitel
+es, und der Rundgang geht ohne Paket weiter. Liegt das Paket schon im Zwischenspeicher, kommt es von
+dort, ohne Netz.
 
 **Ein Video aufnehmen:** am Mac mit Cmd+Umschalt+5 „Gesamten Bildschirm aufnehmen“ oder „Ausgewählten
 Bereich aufnehmen“ wählen und starten, dann in „Über TFTN“ bei einem Rundgang „Vorführen“ klicken.
 Am Ende die Aufnahme in der Menüleiste beenden. Unter Windows nimmt das Snipping-Tool (Modus
-„Aufnehmen“) den Bildschirm auf. Mit englischer Oberfläche (Einstellungen → Sprache) sind
-Untertitel und getippter Text englisch.
+„Aufnehmen“) den Bildschirm auf. Vorher:
+
+- **Probelauf:** den Rundgang einmal ohne Aufnahme durchlaufen lassen; beim ersten Mal setzt die
+  Vorschau langsamer, und man sieht, ob alles da ist.
+- **Sprache:** Mit englischer Oberfläche (Einstellungen → Sprache) sind Untertitel, getippter Text
+  und die Beispieldokumente englisch.
+- **„Ganz offline“ aus**, wenn das Video zeigen soll, wie ein Paket geholt wird. Soll der Zugriff
+  wirklich im Bild sein, das Paket nach dem Probelauf aus dem Zwischenspeicher nehmen (am Mac
+  `~/Library/Caches/org.tftn.editor/universe/preview/showybox` löschen); sonst kommt es ohne Netz
+  von dort.
+- **Fenstergröße fest:** das Fenster vor der Aufnahme auf die gewünschte Größe ziehen (oder den
+  ausgewählten Bereich genau ums Fenster legen) und während der Aufnahme nicht ändern.
+- **Nicht stören** einschalten (Kontrollzentrum → Fokus), damit keine Mitteilungen ins Bild kommen.
 
 Beim allerersten Start bietet TFTN den Überblick einmal im Hinweisband an („Neu hier?“); das gilt je
 Rechner.

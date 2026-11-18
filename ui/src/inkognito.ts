@@ -71,6 +71,7 @@ export class InkognitoDialog {
     private a: InkognitoAktionen,
     ausloeser: (Element | null)[] = [],
   ) {
+    this.huelle.id = "inkognito-dialog";
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
     this.huelle.setAttribute("aria-label", t("Was die KI sieht"));

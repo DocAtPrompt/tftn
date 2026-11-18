@@ -17,10 +17,12 @@ import {
   Reihe,
   eingabeLesen,
   eingabeZeigen,
+  feldAn,
   gruppen,
   hatBildwahl,
   historieTaste,
   knopfNachEintrag,
+  pfadLesen,
   pfadText,
   textVorWechsel,
   wertAn,
@@ -145,6 +147,14 @@ export class DokumentFach {
     ziel.querySelector<HTMLElement>("input, textarea, select")?.focus();
     ziel.classList.add("dok-gezeigt");
     setTimeout(() => ziel.classList.remove("dok-gezeigt"), 1200);
+  }
+
+  /** Rundgang: Eingabe des Felds `pfad` (Text wie `posten.0.menge`) samt seiner Art; `null`, wenn es
+   *  das Feld nicht gibt oder es gerade nicht gezeichnet ist. */
+  eingabeFuer(pfad: string): { eingabe: Eingabe; art: Art } | null {
+    const f = this.js?.formular ? feldAn(this.js.formular.felder, pfadLesen(pfad)) : null;
+    const e = this.huelle.querySelector<Eingabe>(`[data-pfad="${CSS.escape(pfad)}"] .dok-eingabe`);
+    return f && e ? { eingabe: e, art: f.art } : null;
   }
 
   /** Hat das fokussierte Feld Eingaben, die noch nicht geschrieben sind? */

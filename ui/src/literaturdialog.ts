@@ -70,6 +70,7 @@ export class LiteraturDialog {
   private warnte = false;
 
   constructor(private a: LiteraturAktionen) {
+    this.huelle.id = "literatur-dialog";
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
     const kopf = dialogKopf(t("Literatur"), () => this.schliessen());

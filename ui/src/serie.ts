@@ -192,6 +192,7 @@ export class SerieDialog {
   private uhr: ReturnType<typeof setTimeout> | undefined;
 
   constructor(private a: SerieAktionen) {
+    this.huelle.id = "serie-dialog";
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
     const kopf = dialogKopf(t("Serie"), () => this.schliessen());
