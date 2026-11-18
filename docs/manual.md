@@ -275,6 +275,15 @@ is not changed.
 real footnotes, equations, citations and bibliography come along; the page layout does not. The file
 is saved as `<document name>.docx` in the document folder and overwritten by the next export.
 
+**Web page (HTML)** (“Export” → “Web page (HTML)” → “Export”, no Pandoc needed): typst sets the
+document as HTML; headings, lists, tables, figures, footnotes, equations (as MathML), citations and
+bibliography come along, the page layout (margins, headers, page numbers) does not. TFTN adds a plain
+stylesheet for reading. The result is a single file, `<document name>.html` in the document folder:
+images are inside it, fonts come from the browser, and it loads nothing from the internet – ready to
+pass on, upload or read on a phone. “Open in browser” shows it right away; whatever typst leaves out
+of the HTML is listed in the dialog (“Missing from the web page: …”). typst's HTML export is still
+new; templates with an elaborate layout look plainer on the web than on paper.
+
 **Series** (“Export” → “Series …”): one PDF per record, e.g. for mail merge and invoices. The records
 are either a folder of `.toml` files (one document per file, the PDF is named after the file) or one
 `.toml` with `[[serie]]` sections. A record holds only what changes; everything else – sender, bank,

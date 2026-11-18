@@ -2027,6 +2027,14 @@ async function start() {
       if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht exportiert."));
       return invoke<ArchivJs>("archivieren");
     },
+    {
+      exportieren: async () => {
+        if (entwurf) throw new Error(t("Das Dokument braucht zuerst einen Namen: Cmd/Strg+S."));
+        if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht exportiert."));
+        return invoke<WordJs>("html_exportieren");
+      },
+      oeffnen: (pfad) => invoke("html_oeffnen", { pfad }),
+    },
   );
   const serieDialog = new SerieDialog({
     pruefen: (quelle) => invoke<SerieJs>("serie_pruefen", { quelle }),

@@ -75,6 +75,12 @@ export interface WordAktionen {
   zeigen(pfad: string): Promise<void>;
 }
 
+/** Webseite (HTML): gleiche Antwort wie Word, dazu im Browser öffnen. */
+export interface HtmlAktionen {
+  exportieren(): Promise<WordJs>;
+  oeffnen(pfad: string): Promise<void>;
+}
+
 export class ExportMenue {
   private menue: HTMLDivElement;
 
@@ -85,6 +91,7 @@ export class ExportMenue {
     private word: WordAktionen,
     private serie?: () => void,
     private archiv?: () => Promise<ArchivJs>,
+    private html?: HtmlAktionen,
   ) {
     this.menue = document.createElement("div");
     this.menue.id = "export-menue";
@@ -176,6 +183,20 @@ export class ExportMenue {
     wKnopf.onclick = () => void this.wordLos(w);
     w.append(wName, wKnopf);
     this.menue.append(w);
+    if (this.html) {
+      const h = document.createElement("div");
+      h.className = "export-zeile";
+      const hName = document.createElement("span");
+      hName.textContent = t("Webseite (HTML)");
+      hName.title = t(
+        "Eine einzige .html-Datei mit Text, Überschriften, Fußnoten, Tabellen, Bildern, Formeln, Zitaten und Literatur; ohne Seitenlayout. Lädt nichts aus dem Netz.",
+      );
+      const hKnopf = document.createElement("button");
+      hKnopf.textContent = t("Exportieren");
+      hKnopf.onclick = () => void this.htmlLos(h);
+      h.append(hName, hKnopf);
+      this.menue.append(h);
+    }
     if (this.serie) {
       const s = document.createElement("div");
       s.className = "export-zeile";
@@ -242,6 +263,34 @@ export class ExportMenue {
         }
       } catch (fehler) {
         ergebnis.textContent = t("Export nach Word fehlgeschlagen: {fehler}", { fehler: String(fehler) });
+      }
+    });
+  }
+
+  private htmlLos(zeile: HTMLElement) {
+    const html = this.html!;
+    return this.lauf(zeile, t("Exportiere als Webseite …"), async (ergebnis) => {
+      try {
+        const e = await html.exportieren();
+        ergebnis.replaceChildren();
+        const kopf = document.createElement("div");
+        kopf.textContent = t("Fertig: „{datei}“ im Dokumentordner. Seitenlayout (Ränder, Kopfzeilen, Seitenzahlen) gibt es im Web nicht.", {
+          datei: e.datei,
+        });
+        const oeffnen = document.createElement("button");
+        oeffnen.textContent = t("Im Browser öffnen");
+        oeffnen.onclick = () => void html.oeffnen(e.pfad).catch((f) => (kopf.textContent = String(f)));
+        const zeigen = document.createElement("button");
+        zeigen.textContent = t("Im Ordner zeigen");
+        zeigen.onclick = () => void this.word.zeigen(e.pfad).catch((f) => (kopf.textContent = String(f)));
+        ergebnis.append(kopf, oeffnen, zeigen);
+        if (e.fehlt.length) {
+          const d = document.createElement("div");
+          d.textContent = t("Auf der Webseite fehlt: {liste}", { liste: e.fehlt.join(", ") });
+          ergebnis.append(d);
+        }
+      } catch (fehler) {
+        ergebnis.textContent = t("Export als Webseite fehlgeschlagen: {fehler}", { fehler: String(fehler) });
       }
     });
   }

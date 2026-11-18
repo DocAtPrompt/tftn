@@ -35,7 +35,7 @@ with Typst without handing them to a third party.
 - **Typst Universe packages** vendored into the project with checksums – documents build offline,
   on any machine.
 - **Import** from Word, OpenDocument, Markdown, HTML, EPUB and LaTeX, **export** to PDF (incl.
-  PDF/A) and to Word for proofreading – both via Pandoc.
+  PDF/A), to Word for proofreading (via Pandoc) and to a self-contained web page (HTML).
 - **Series for letters and invoices:** one `.toml` with many records, or a folder of `.toml` files,
   run over the document – one PDF per record, or all in one PDF for a single print run (optionally
   with blank pages for double-sided printing). Each record holds only what changes; sender, bank

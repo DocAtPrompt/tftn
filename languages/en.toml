@@ -598,9 +598,12 @@ name = "English"
 "{ordner} lässt sich nicht öffnen: {fehler}" = "{ordner} cannot be opened: {fehler}"
 "„{name}“ gibt es in {ordner} schon." = "“{name}” already exists in {ordner}."
 
+# src-tauri/src/webseite.rs
+"Diese Datei gehört nicht zum offenen Dokument." = "This file does not belong to the open document."
+"typst konnte das Dokument nicht als HTML setzen: {fehler}" = "typst could not typeset the document as HTML: {fehler}"
+
 # src-tauri/src/word.rs
 "Pandoc ließ sich nicht starten: {fehler}" = "Pandoc could not be started: {fehler}"
-"typst konnte das Dokument nicht als HTML setzen: {fehler}" = "typst could not typeset the document as HTML: {fehler}"
 "„{datei}“ ist in Word geöffnet. Bitte dort schließen und noch einmal exportieren." = "“{datei}” is open in Word. Please close it there and export again."
 
 # ui/index.html
@@ -798,15 +801,21 @@ name = "English"
 "Archivieren" = "Archive"
 "Archivieren fehlgeschlagen: {fehler}" = "Archiving failed: {fehler}"
 "Archivpaket (Zip)" = "Archive package (zip)"
+"Auf der Webseite fehlt: {liste}" = "Missing from the web page: {liste}"
 "Darin {pdf} als PDF/A ({standard}), SHA-256 {sha256}" = "Contains {pdf} as PDF/A ({standard}), SHA-256 {sha256}"
+"Eine einzige .html-Datei mit Text, Überschriften, Fußnoten, Tabellen, Bildern, Formeln, Zitaten und Literatur; ohne Seitenlayout. Lädt nichts aus dem Netz." = "A single .html file with text, headings, footnotes, tables, images, equations, citations and bibliography; without page layout. Loads nothing from the internet."
+"Export als Webseite fehlgeschlagen: {fehler}" = "Export as web page failed: {fehler}"
 "Export nach Word fehlgeschlagen: {fehler}" = "Export to Word failed: {fehler}"
+"Exportiere als Webseite …" = "Exporting as web page …"
 "Exportiere nach Word …" = "Exporting to Word …"
 "Exportieren" = "Export"
 "Fertig: {datei}" = "Done: {datei}"
 "Fertig: {datei} ({anzahl} Dateien, {groesse})" = "Done: {datei} ({anzahl} files, {groesse})"
 "Fertig: „{datei}“ im Dokumentordner. Seitenlayout (Ränder, Kopfzeilen, Schrift) kommt nicht mit." = "Done: “{datei}” in the document folder. Page layout (margins, headers, font) is not included."
+"Fertig: „{datei}“ im Dokumentordner. Seitenlayout (Ränder, Kopfzeilen, Seitenzahlen) gibt es im Web nicht." = "Done: “{datei}” in the document folder. Page layout (margins, headers, page numbers) does not exist on the web."
 "Für die Ablage: ein Zip nach export/ mit dem PDF/A und allem, um es neu zu setzen – Quelltext, Daten, Bilder, alle benutzten Schriften und Pakete und eine Anleitung. Damit entsteht dasselbe PDF auch in Jahren und ohne TFTN, Byte für Byte." = "For your records: a zip in export/ with the PDF/A and everything needed to typeset it again – source, data, images, all fonts and packages used, and instructions. With it the same PDF can be made years from now and without TFTN, byte for byte."
 "Gegenprobe: dieselbe Datei ohne TFTN" = "Cross-check: the same file without TFTN"
+"Im Browser öffnen" = "Open in browser"
 "In Word fehlt: {liste}" = "Missing in Word: {liste}"
 "LIESMICH.txt im Zip sagt, wie das PDF ohne TFTN neu entsteht." = "README.txt in the zip explains how to create the PDF again without TFTN."
 "Lade Export-Profile …" = "Loading export profiles …"
@@ -816,6 +825,7 @@ name = "English"
 "Serie: ein PDF je Datensatz" = "Series: one PDF per record"
 "Serienbriefe, Rechnungen: Datensätze aus einem Ordner oder einer .toml, über die typst-CLI" = "Mail merge, invoices: records from a folder or one .toml, via the typst CLI"
 "Text, Überschriften, Fußnoten, Tabellen, Bilder, Formeln, Zitate und Literatur; ohne Seitenlayout. Über Pandoc." = "Text, headings, footnotes, tables, figures, equations, citations and references; without page layout. Via Pandoc."
+"Webseite (HTML)" = "Web page (HTML)"
 "Word (.docx) zum Gegenlesen" = "Word (.docx) for review"
 
 # ui/src/fassungen.ts

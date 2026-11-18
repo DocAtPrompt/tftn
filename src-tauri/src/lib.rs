@@ -51,6 +51,7 @@ mod schriftwahl;
 mod skins;
 mod sprachen;
 mod typen;
+mod webseite;
 mod word;
 mod zuletzt;
 
@@ -3235,6 +3236,40 @@ fn im_ordner_zeigen(pfad: String, zustand: State<'_, Zustand>) -> Result<(), Str
     word::im_ordner_zeigen(&p)
 }
 
+/// Export als Webseite (eine .html im Dokumentordner); exportiert wird die gespeicherte Datei.
+#[tauri::command(async)]
+fn html_exportieren(zustand: State<'_, Zustand>) -> Result<webseite::WebseiteJs, String> {
+    let projekt = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        if s.spiegel.pruefsumme() != s.auf_platte {
+            return Err(tr!(
+                "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
+            ));
+        }
+        s.projekt.clone()
+    };
+    let cli = tftn_export::TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
+    webseite::exportieren(&projekt, &cli)
+}
+
+/// Die exportierte Webseite im Standardbrowser öffnen.
+#[tauri::command]
+fn html_oeffnen(pfad: String, zustand: State<'_, Zustand>) -> Result<(), String> {
+    let wurzel = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .projekt
+            .wurzel
+            .clone()
+    };
+    webseite::im_browser(&wurzel, Path::new(&pfad))
+}
+
 // --- Bilder ---------------------------------------------------------------------------------
 
 /// Ein hineingezogenes oder eingefügtes Bild unter `bilder/` ablegen. Rumpf: die Bytes,
@@ -3870,6 +3905,8 @@ pub fn run() {
             fassungen_liste,
             bild_ablegen,
             word_exportieren,
+            html_exportieren,
+            html_oeffnen,
             im_ordner_zeigen,
             gliederung_lesen,
             literatur_liste,

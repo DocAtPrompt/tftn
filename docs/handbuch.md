@@ -277,6 +277,15 @@ Abbildungen, echte Fußnoten, Formeln, Zitate und Literaturverzeichnis kommen mi
 nicht. Die Datei liegt als `<Dokumentname>.docx` im Dokumentordner und wird beim nächsten Export
 überschrieben.
 
+**Webseite (HTML)** („Export“ → „Webseite (HTML)“ → „Exportieren“, ohne Pandoc): typst setzt das
+Dokument als HTML; Überschriften, Listen, Tabellen, Abbildungen, Fußnoten, Formeln (als MathML), Zitate
+und Literaturverzeichnis kommen mit, das Seitenlayout (Ränder, Kopfzeilen, Seitenzahlen) nicht. TFTN
+legt ein schlichtes Stilblatt zum Lesen dazu. Es entsteht eine einzige Datei, `<Dokumentname>.html` im
+Dokumentordner: Bilder stecken darin, Schriften kommen vom Browser, und sie lädt nichts aus dem Netz – zum
+Weitergeben, Hochladen oder Lesen auf dem Telefon. „Im Browser öffnen“ zeigt sie gleich; was typst im
+HTML weglässt, nennt der Dialog („Auf der Webseite fehlt: …“). Der HTML-Export von typst ist noch neu;
+Vorlagen mit aufwendigem Layout sehen im Web schlichter aus als auf Papier.
+
 **Serie** („Export“ → „Serie …“): ein PDF je Datensatz, etwa für Serienbriefe und Rechnungen. Die
 Datensätze liegen entweder als Ordner mit `.toml`-Dateien vor (je Datei ein Dokument, das PDF heißt
 wie die Datei) oder als eine `.toml` mit Abschnitten `[[serie]]`. Ein Datensatz enthält nur, was sich
