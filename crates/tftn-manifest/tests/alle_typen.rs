@@ -196,3 +196,37 @@ fn rechnung_rundet_je_zeile_und_ohne_ust() {
         "ohne Zahlungsziel keine Frist:\n{t}"
     );
 }
+
+#[test]
+fn rechnung_mit_steuerbefreiung() {
+    // Heilbehandlung: ust = 20 bleibt stehen, gilt aber nicht; der Hinweis kommt von selbst.
+    let posten = "nummer = \"A-1\"\ndatum = 2026-03-01\nempfaenger = [\"A\"]\nust = 20\n\
+                  posten = [{ text = \"Untersuchung\", preis = 150 }]\n";
+    let t = rechnung(
+        "heilbehandlung",
+        Some(&format!("{posten}befreiung = \"heilbehandlung\"\n")),
+        None,
+    );
+    assert!(t.contains("150,00 €") && !t.contains("USt 20"), "{t}");
+    assert!(t.contains("§ 6 Abs. 1 Z 19 UStG"), "{t}");
+    let k = rechnung(
+        "kleinunternehmer",
+        Some(&format!(
+            "{posten}befreiung = \"kleinunternehmer\"\nsprache = \"en\"\n"
+        )),
+        None,
+    );
+    assert!(k.contains("small business") && !k.contains("VAT 20"), "{k}");
+    // Ein eigener Steuerhinweis geht vor.
+    let e = rechnung(
+        "eigener-hinweis",
+        Some(&format!(
+            "{posten}befreiung = \"heilbehandlung\"\nsteuerhinweis = \"Eigener Hinweis.\"\n"
+        )),
+        None,
+    );
+    assert!(e.contains("Eigener Hinweis.") && !e.contains("Z 19"), "{e}");
+    // Ohne Befreiung wie bisher.
+    let o = rechnung("ohne-befreiung", Some(posten), None);
+    assert!(o.contains("USt 20 %") && o.contains("180,00 €"), "{o}");
+}

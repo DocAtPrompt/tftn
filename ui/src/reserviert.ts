@@ -50,7 +50,7 @@ export const RESERVIERT: Reserviert[] = [
   b("Mod-n", t("Neu"), { entspricht: "app/neu" }),
   b("Mod-Shift-n", t("Neues Fenster")),
   b("Mod-o", t("Öffnen"), { entspricht: "app/oeffnen" }),
-  b("Mod-p", t("Drucken")),
+  b("Mod-p", t("Drucken"), { entspricht: "app/drucken" }),
   b("Mod-s", t("Speichern"), { entspricht: "app/speichern" }),
   b("Mod-Shift-s", t("Speichern unter")),
   b("Mod-t", t("Neuer Tab")),

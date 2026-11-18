@@ -285,10 +285,12 @@ describe("Editorschrift und F1", () => {
     expect(aktionDerTaste(mac, taste("0", 48, { metaKey: true }), "mac")).toBe("ansicht/schrift-normal");
     expect(aktionDerTaste(mac, taste("F1", 112), "mac")).toBe("helfer/ueber");
     expect(aktionDerTaste(win, taste("F1", 112), "win")).toBe("helfer/ueber");
+    expect(aktionDerTaste(mac, taste("p", 80, { metaKey: true }), "mac")).toBe("app/drucken");
+    expect(aktionDerTaste(win, taste("p", 80, { ctrlKey: true }), "win")).toBe("app/drucken");
   });
 
   it("keine Konflikte mit den Zoom-Gewohnheiten und F1 unter Windows", () => {
-    const k = konflikte(alle().a, {}).filter((x) => x.aktion.startsWith("ansicht/") || x.aktion === "helfer/ueber");
+    const k = konflikte(alle().a, {}).filter((x) => x.aktion.startsWith("ansicht/") || ["helfer/ueber", "app/drucken"].includes(x.aktion));
     expect(k).toEqual([]);
   });
 });

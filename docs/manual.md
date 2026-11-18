@@ -72,7 +72,10 @@ computer – TFTN never sends text anywhere.
 **Invoices** compute items, VAT and the total themselves (each line rounded to the cent). You
 assign the invoice number yourself, consecutive and without gaps; TFTN does not count, not even
 across several computers. Whether the invoice contains every detail required for you is yours to
-check.
+check. Under “Tax exemption” in the “Document” tab you can choose “medical treatment (§ 6 (1) 19
+Austrian VAT Act)” for medical services or “small business (§ 6 (1) 27)”: then there is no VAT, and
+the matching note appears below the total (your own tax note takes precedence). This is not tax
+advice.
 
 **What is a project?** A folder with `tftn.toml`, the main file (usually `main.typ`), and for
 templates also `dokument.toml` (front matter), the bibliography file, the fonts (`fonts/`) and the
@@ -286,6 +289,9 @@ Each profile has two buttons:
   to now (it sets the date in the PDF), the PDF goes to `export/`, and next to it lies
   `<name>.gegenprobe.txt` with the typst command and the PDF's SHA-256.
 
+**Print** (“Export” → “Print …” or Cmd/Ctrl+P): saves, typesets the regular PDF like “Test build”
+into `_renders/` and opens it in the system's PDF viewer, where you print with Cmd/Ctrl+P.
+
 **Archive package** (“Export” → “Archive package (zip)” → “Archive”): one zip for your records, for example for medical
 reports you must keep for years. It is saved as `export/<document folder>-archive-<date>.zip` in the
 document folder (a second one on the same day replaces the first) and contains:
@@ -406,6 +412,7 @@ shortcuts are shown for Mac **and** Windows.
 | Sidebar: Document / Packages / Equation | Mod+Shift+O / +Y / +X |
 | Distraction-free focus view | Mod+Shift+Enter |
 | Save, New, Open | Mod+S, Mod+N, Mod+O |
+| Print … | Mod+P |
 | Bold, Italic, Link | Mod+B, Mod+I, Mod+K |
 | Heading down / up | Mod+Shift+. / Mod+Shift+, |
 | Footnote, Figure, Equation | Mod+Shift+F, +A, +E |

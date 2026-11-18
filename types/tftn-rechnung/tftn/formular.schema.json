@@ -3,7 +3,7 @@
   "title": "Rechnung",
   "type": "object",
   "required": ["nummer", "datum", "empfaenger", "posten"],
-  "x-tftn-reihenfolge": ["nummer", "datum", "leistung", "anrede", "absender", "empfaenger", "posten", "ust", "steuerhinweis", "waehrung", "zahlungsziel", "bank", "gruss", "sprache"],
+  "x-tftn-reihenfolge": ["nummer", "datum", "leistung", "anrede", "absender", "empfaenger", "posten", "befreiung", "ust", "steuerhinweis", "waehrung", "zahlungsziel", "bank", "gruss", "sprache"],
   "properties": {
     "nummer": { "type": "string", "title": "Rechnungsnummer", "description": "Vergibst du selbst, fortlaufend und ohne Lücken; TFTN zählt nicht mit", "minLength": 1 },
     "datum": { "type": "string", "title": "Rechnungsdatum", "format": "date" },
@@ -44,6 +44,16 @@
           "preis": { "type": "number", "title": "Einzelpreis", "description": "netto, ohne Umsatzsteuer" }
         }
       }
+    },
+    "befreiung": {
+      "type": "string",
+      "title": "Steuerbefreiung",
+      "description": "Gewählt: keine Umsatzsteuer und der passende Hinweis unter der Summe (ein eigener Steuerhinweis geht vor). Keine Steuerberatung – im Zweifel nachfragen.",
+      "x-tftn-gruppe": "Summe und Zahlung",
+      "oneOf": [
+        { "const": "heilbehandlung", "title": "Heilbehandlung (§ 6 Abs. 1 Z 19 UStG, Ärztin/Arzt)" },
+        { "const": "kleinunternehmer", "title": "Kleinunternehmer (§ 6 Abs. 1 Z 27 UStG)" }
+      ]
     },
     "ust": { "type": "number", "title": "Umsatzsteuer in Prozent", "description": "0: keine Umsatzsteuer, dann nur der Gesamtbetrag", "minimum": 0, "maximum": 100, "default": 20, "x-tftn-gruppe": "Summe und Zahlung" },
     "steuerhinweis": { "type": "string", "title": "Steuerhinweis", "description": "Steht unter der Summe, z. B. ein Hinweis auf eine Steuerbefreiung", "x-tftn-gruppe": "Summe und Zahlung" },

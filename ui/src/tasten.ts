@@ -42,6 +42,7 @@ export const HELFER: { id: string; titel: string; gruppe: string }[] = [
   { id: "app/speichern", titel: t("Speichern"), gruppe: t("Helfer") },
   { id: "app/neu", titel: t("Neues Projekt …"), gruppe: t("Helfer") },
   { id: "app/oeffnen", titel: t("Projekt öffnen …"), gruppe: t("Helfer") },
+  { id: "app/drucken", titel: t("Drucken …"), gruppe: t("Helfer") },
   { id: "auszeichnung/ebene-plus", titel: t("Überschrift eine Ebene tiefer"), gruppe: t("Auszeichnung") },
   { id: "auszeichnung/ebene-minus", titel: t("Überschrift eine Ebene höher"), gruppe: t("Auszeichnung") },
 ];
@@ -68,6 +69,7 @@ export const STANDARD: Record<string, Partial<Record<Plattform, string[]>>> = {
   "app/speichern": beide("Mod-s"),
   "app/neu": beide("Mod-n"),
   "app/oeffnen": beide("Mod-o"),
+  "app/drucken": beide("Mod-p"),
   "auszeichnung/ebene-plus": beide("Mod-Shift-."),
   "auszeichnung/ebene-minus": beide("Mod-Shift-,"),
   "typst/fett": beide("Mod-b"),

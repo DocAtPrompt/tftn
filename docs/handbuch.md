@@ -68,7 +68,10 @@ schickt nie Text irgendwohin.
 **Rechnungen** rechnen Posten, Umsatzsteuer und Gesamtbetrag selbst (je Zeile auf Cent gerundet).
 Die Rechnungsnummer vergibst du selbst, fortlaufend und ohne Lücken; TFTN zählt nicht mit, auch
 nicht über mehrere Rechner. Ob die Rechnung alle Angaben enthält, die für dich vorgeschrieben sind,
-prüfst du selbst.
+prüfst du selbst. Unter „Steuerbefreiung“ im Fach „Dokument“ lässt sich „Heilbehandlung (§ 6 Abs. 1
+Z 19 UStG)“ für ärztliche Leistungen oder „Kleinunternehmer (§ 6 Abs. 1 Z 27 UStG)“ wählen: Dann gibt
+es keine Umsatzsteuer, und der passende Hinweis steht unter der Summe (ein eigener Steuerhinweis geht
+vor). Das ist keine Steuerberatung.
 
 **Was ist ein Projekt?** Ein Ordner mit `tftn.toml`, der Hauptdatei (meist `main.typ`), bei
 Vorlagen dazu `dokument.toml` (Titelei), der Literaturdatei, den Schriften (`fonts/`) und den
@@ -286,6 +289,9 @@ gibt es zwei Knöpfe:
   springt auf jetzt (er bestimmt das Datum im PDF), das PDF kommt nach `export/`, und daneben liegt
   `<name>.gegenprobe.txt` mit der typst-Zeile und der SHA-256 des PDFs.
 
+**Drucken** („Export“ → „Drucken …“ oder Cmd/Strg+P): speichert, setzt das gewöhnliche PDF wie
+„Probe“ nach `_renders/` und öffnet es im PDF-Betrachter des Systems; dort druckt man mit Cmd/Strg+P.
+
 **Archivpaket** („Export“ → „Archivpaket (Zip)“ → „Archivieren“): ein Zip für die Ablage, etwa für Befunde mit
 Aufbewahrungspflicht. Es liegt als `export/<Dokumentordner>-archiv-<Datum>.zip` im Dokumentordner
 (ein zweites am selben Tag ersetzt das erste) und enthält:
@@ -406,6 +412,7 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Seitenleiste: Dokument / Pakete / Formel | Mod+Umschalt+O / +Y / +X |
 | Schreibansicht ohne Ablenkung | Mod+Umschalt+Eingabe |
 | Speichern, Neu, Öffnen | Mod+S, Mod+N, Mod+O |
+| Drucken … | Mod+P |
 | Fett, Kursiv, Link | Mod+B, Mod+I, Mod+K |
 | Überschrift tiefer / höher | Mod+Umschalt+. / Mod+Umschalt+, |
 | Fußnote, Abbildung, Formel | Mod+Umschalt+F, +A, +E |

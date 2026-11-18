@@ -57,6 +57,7 @@ import { ReiterLeiste, nachSchliessen } from "./reiter";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
 import { UeberDialog, type UeberJs } from "./ueber";
 import { schriftGemerkt, schriftSetzen, schriftStufe } from "./editorschrift";
+import { phrasen } from "./phrasen";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { dezimalzeichen, t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
@@ -707,6 +708,7 @@ async function netzNeu() {
 /** Kürzel, die auch außerhalb des Editors wirken (im Editor über die Keymap). */
 const UEBERALL = new Set([
   "helfer/schreibansicht",
+  "app/drucken",
   "helfer/ueber",
   "ansicht/schrift-groesser",
   "ansicht/schrift-kleiner",
@@ -762,6 +764,13 @@ function ausfuehren(id: string): boolean {
       return true;
     case "helfer/ueber":
       void ueberDialog.zeigen();
+      return true;
+    case "app/drucken":
+      meldung(t("Setze das PDF zum Drucken …"));
+      druckenVorbereiten().then(
+        () => meldung(t("Das PDF ist im PDF-Betrachter geöffnet; dort mit Cmd/Strg+P drucken.")),
+        (fehler) => hinweis(t("Drucken fehlgeschlagen: {fehler}", { fehler: String(fehler) })),
+      );
       return true;
     case "ansicht/schrift-groesser":
     case "ansicht/schrift-kleiner":
@@ -841,6 +850,13 @@ async function bausteinPerKuerzel(e: EintragJs) {
     return;
   }
   await bausteinEinsetzen(e.id, from, to, view.state.sliceDoc(from, to));
+}
+
+/** Speichert, setzt das gewöhnliche PDF und öffnet es im PDF-Betrachter (Export → Drucken, Cmd/Strg+P). */
+async function druckenVorbereiten(): Promise<string> {
+  if (entwurf) throw new Error(t("Das Dokument braucht zuerst einen Namen: Cmd/Strg+S."));
+  if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht exportiert."));
+  return invoke<string>("drucken");
 }
 
 async function kuerzelExport(profil: string) {
@@ -2279,6 +2295,7 @@ async function start() {
       },
       oeffnen: (pfad) => invoke("html_oeffnen", { pfad }),
     },
+    druckenVorbereiten,
   );
   const serieDialog = new SerieDialog({
     pruefen: (quelle) => invoke<SerieJs>("serie_pruefen", { quelle }),
@@ -2388,6 +2405,7 @@ async function start() {
   const [editorStandard, verlaufTasten, suchTasten, vervollstaendigenTasten, tabTaste] = editorKeymaps();
   erweiterungen = () => [
         nurLesen.of(EditorState.readOnly.of(false)),
+        EditorState.phrases.of(phrasen()),
         lineNumbers(),
         highlightSpecialChars(),
         // Widget-Patches einer Farbwahl sind ein Undo-Schritt, auch wenn sie nicht nebeneinander liegen.

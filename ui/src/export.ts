@@ -92,6 +92,8 @@ export class ExportMenue {
     private serie?: () => void,
     private archiv?: () => Promise<ArchivJs>,
     private html?: HtmlAktionen,
+    /** Setzt das gewöhnliche PDF und öffnet es im PDF-Betrachter; gibt den Pfad zurück. */
+    private drucken?: () => Promise<string>,
   ) {
     this.menue = document.createElement("div");
     this.menue.id = "export-menue";
@@ -156,6 +158,18 @@ export class ExportMenue {
       };
       zeile.append(name, probe, abnehmen);
       this.menue.append(zeile);
+    }
+    if (this.drucken) {
+      const d = document.createElement("div");
+      d.className = "export-zeile";
+      const dName = document.createElement("span");
+      dName.textContent = t("Drucken");
+      dName.title = t("Setzt das gewöhnliche PDF (nach _renders/) und öffnet es im PDF-Betrachter des Systems; dort drucken.");
+      const dKnopf = document.createElement("button");
+      dKnopf.textContent = t("Drucken …");
+      dKnopf.onclick = () => void this.druckenLos(d);
+      d.append(dName, dKnopf);
+      this.menue.append(d);
     }
     if (this.archiv) {
       const a = document.createElement("div");
@@ -263,6 +277,18 @@ export class ExportMenue {
         }
       } catch (fehler) {
         ergebnis.textContent = t("Export nach Word fehlgeschlagen: {fehler}", { fehler: String(fehler) });
+      }
+    });
+  }
+
+  private druckenLos(zeile: HTMLElement) {
+    const drucken = this.drucken!;
+    return this.lauf(zeile, t("Setze das PDF zum Drucken …"), async (ergebnis) => {
+      try {
+        await drucken();
+        ergebnis.textContent = t("Das PDF ist im PDF-Betrachter geöffnet; dort mit Cmd/Strg+P drucken.");
+      } catch (fehler) {
+        ergebnis.textContent = t("Drucken fehlgeschlagen: {fehler}", { fehler: String(fehler) });
       }
     });
   }

@@ -910,6 +910,33 @@ async fn exportieren(
     })
 }
 
+/// „Drucken …“: setzt das gewöhnliche PDF als Probe nach `_renders/` und öffnet es im
+/// PDF-Betrachter des Systems, wo der Druckdialog wartet. Gibt den Pfad zurück.
+#[tauri::command]
+async fn drucken(zustand: State<'_, Zustand>) -> Result<String, String> {
+    let projekt = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        if !reiter::alles_gespeichert(s) {
+            return Err(tr!(
+                "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
+            ));
+        }
+        s.projekt.clone()
+    };
+    let profile = tftn_export::profil::profile(&projekt).map_err(|e| e.to_string())?;
+    let id = tftn_export::profil::druckprofil(&profile)
+        .map(|p| p.id.clone())
+        .ok_or_else(|| tr!("Der Dokumenttyp hat kein PDF-Profil zum Drucken."))?;
+    let cli = tftn_export::TypstCli::finden(&projekt.konfig.typst).map_err(|e| e.to_string())?;
+    let e = tftn_export::profil::profil_exportieren(&projekt, &cli, &id, false)
+        .map_err(|e| e.to_string())?;
+    netzprotokoll::mit_system_oeffnen(&e.pfad)?;
+    Ok(e.pfad.display().to_string())
+}
+
 #[derive(Serialize)]
 struct ArchivJs {
     pfad: String,
@@ -4010,6 +4037,7 @@ pub fn run() {
             einstellungsordner_zeigen,
             offline_setzen,
             ueber_stand,
+            drucken,
             link_oeffnen,
             kofi_ausblenden,
             lizenzen_zeigen,

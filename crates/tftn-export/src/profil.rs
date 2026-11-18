@@ -22,6 +22,14 @@ pub struct ExportProfil {
     pub manifest: ExportManifest,
 }
 
+/// Das Profil zum Drucken: das gewöhnliche PDF (`vorschau`), sonst das erste PDF-Profil.
+pub fn druckprofil(liste: &[ExportProfil]) -> Option<&ExportProfil> {
+    liste
+        .iter()
+        .find(|p| p.id == "vorschau")
+        .or_else(|| liste.iter().find(|p| p.manifest.art == "pdf"))
+}
+
 /// Die Export-Profile des Dokumenttyps eines Projekts, nach Namen sortiert.
 pub fn profile(projekt: &Projekt) -> Result<Vec<ExportProfil>, ExportFehler> {
     let paket =
@@ -220,6 +228,21 @@ pub fn zeitstempel_setzen(projekt: &Projekt, sekunden: i64) -> Result<Projekt, E
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn drucken_nimmt_das_gewoehnliche_pdf() {
+        let pdf: ExportManifest = toml::from_str("art = \"pdf\"").unwrap();
+        let png: ExportManifest = toml::from_str("art = \"png\"").unwrap();
+        let p = |id: &str, m: &ExportManifest| ExportProfil {
+            id: id.into(),
+            manifest: m.clone(),
+        };
+        let liste = [p("archiv", &pdf), p("vorschau", &pdf)];
+        assert_eq!(druckprofil(&liste).unwrap().id, "vorschau");
+        let liste = [p("bild", &png), p("druck", &pdf)];
+        assert_eq!(druckprofil(&liste).unwrap().id, "druck");
+        assert!(druckprofil(&[p("bild", &png)]).is_none());
+    }
 
     #[test]
     fn gewoehnliches_pdf_zuerst() {

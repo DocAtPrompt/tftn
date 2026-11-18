@@ -23,6 +23,8 @@
     bank: "Bankverbindung",
     uid: "UID",
     gruss: "Mit freundlichen Grüßen",
+    heilbehandlung: "Umsatzsteuerfrei gemäß § 6 Abs. 1 Z 19 UStG (Heilbehandlung im Bereich der Humanmedizin).",
+    kleinunternehmer: "Umsatzsteuerbefreit – Kleinunternehmer gemäß § 6 Abs. 1 Z 27 UStG.",
     tausend: ".",
     komma: ",",
   ),
@@ -44,6 +46,8 @@
     bank: "Bank details",
     uid: "VAT ID",
     gruss: "Kind regards",
+    heilbehandlung: "Exempt from VAT under § 6 (1) 19 of the Austrian VAT Act (medical treatment).",
+    kleinunternehmer: "Exempt from VAT as a small business under § 6 (1) 27 of the Austrian VAT Act.",
     tausend: ",",
     komma: ".",
   ),
@@ -196,7 +200,12 @@
     (p, menge, cent(dez(menge) * dez(p.at("preis", default: 0))))
   })
   let netto = zeilen.map(z => z.at(2)).sum(default: 0)
-  let satz = daten.at("ust", default: 20)
+  // Steuerbefreiung (Heilbehandlung, Kleinunternehmer): keine USt, Hinweis aus den Beschriftungen,
+  // außer es steht ein eigener Steuerhinweis da.
+  let befreiung = daten.at("befreiung", default: none)
+  let befreit = befreiung in ("heilbehandlung", "kleinunternehmer")
+  let satz = if befreit { 0 } else { daten.at("ust", default: 20) }
+  let hinweis = daten.at("steuerhinweis", default: if befreit { wort.at(befreiung) })
   // netto ist schon in Cent: Steuer auf ganze Cent runden
   let steuer = int(calc.round(decimal(netto) * dez(satz) / 100))
   let mit-w(c) = geld(c, wort) + " " + waehrung
@@ -239,8 +248,8 @@
     table.hline(stroke: 0.6pt),
     text(weight: "bold", wort.gesamt), text(weight: "bold", mit-w(netto + steuer)),
   )))
-  if "steuerhinweis" in daten {
-    tftn-feld("steuerhinweis", text(size: 9pt, daten.steuerhinweis))
+  if hinweis != none {
+    tftn-feld(if "steuerhinweis" in daten { "steuerhinweis" } else { "befreiung" }, text(size: 9pt, hinweis))
   }
   if "zahlungsziel" in daten and "datum" in daten {
     let bis = daten.datum + duration(days: daten.zahlungsziel)
