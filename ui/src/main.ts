@@ -47,6 +47,7 @@ import { BausteinPalette } from "./bausteinpalette";
 import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
 import { editorKeymaps } from "./reserviert";
 import { type SkinsJs, skinAnwenden } from "./skin";
+import { trennerZiehbar } from "./breite";
 import { type McpAuftrag, type McpJs, type McpZugriff, mcpAnzeige, mcpFragtNoch, mcpWechselAbschliessen } from "./mcp";
 import { ikonenSetzen } from "./ikonen";
 import { KnopfMenue } from "./knopfmenue";
@@ -1846,6 +1847,7 @@ async function start() {
     setzen: seiteSetzen,
     weitereSchrift: () => schriftwahl.zeigen(),
   });
+  trennerZiehbar(document.getElementById("arbeit")!);
   seitenleiste = new Seitenleiste(document.getElementById("links")!, {
     hier: hierAbfragen,
     setzen: wertSetzen,

@@ -662,6 +662,8 @@ name = "English"
 "{anzahl} Bausteine · Enter fügt ein · markierter Text wandert in den Baustein" = "{anzahl} blocks · Enter inserts · selected text goes into the block"
 
 # ui/src/breite.ts
+"Breite von Text und Vorschau" = "Width of text and preview"
+"Ziehen verteilt die Breite zwischen Text und Vorschau, Doppelklick stellt halb und halb her" = "Drag to share the width between text and preview, double-click for half and half"
 "Ziehen ändert die Breite, Doppelklick setzt sie zurück" = "Drag to change the width, double-click to reset"
 
 # ui/src/dialoge.ts

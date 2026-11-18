@@ -84,6 +84,9 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
   die Prozentzahl (ein Klick darauf zeigt die echte Größe). Cmd/Strg + Mausrad oder zwei Finger auf
   dem Trackpad zoomen um den Mauszeiger; ist die Seite breiter als die Spalte, gibt es eine waagrechte
   Laufleiste.
+- **Trenner** zwischen Text und Vorschau: Ziehen verteilt die Breite (beide Seiten behalten etwas
+  Platz), Doppelklick stellt halb und halb wieder her. Mit der Tab-Taste erreicht, verschieben ihn die
+  Pfeiltasten. Die Aufteilung gilt je Rechner.
 - **Seitenleiste** (Cmd/Strg+Umschalt+P): Fächer „Hier“, „Einfügen“, „Formel“, „Seite“, „Dokument“,
   „Pakete“. Die Reiter oben sind Symbole; der Name steht nur beim offenen Fach (in einer schmalen
   Leiste auch dort nicht), die anderen nennen ihn samt Zweck beim Darüberfahren.

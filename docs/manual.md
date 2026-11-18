@@ -87,6 +87,9 @@ sync it and keep working on another computer without a network.
   On the right of the status bar: “Width” (pages as wide as the column), “Whole page”, − and +, and
   the percentage (click it for actual size). Cmd/Ctrl + mouse wheel or a two-finger pinch zooms around
   the pointer; a page wider than the column gets a horizontal scrollbar.
+- **Divider** between text and preview: drag it to share the width (both sides keep some room);
+  double-click restores half and half. Reached with the Tab key, the arrow keys move it. The split
+  applies per computer.
 - **Sidebar** (Cmd/Ctrl+Shift+P): panels “Here”, “Insert”, “Equation”, “Page”, “Document”,
   “Packages”. The tabs at the top are icons; only the open panel shows its name (not even that in a
   narrow sidebar), the others show name and purpose when you hover over them. “Insert” is the block
