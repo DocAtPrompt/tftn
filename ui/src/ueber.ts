@@ -147,7 +147,7 @@ export class UeberDialog {
       el(
         "p",
         "netz-hilfe",
-        t("„Ansehen“ führt Schritt für Schritt durch die Oberfläche. „Vorführen“ läuft von selbst ab, ohne Knöpfe im Bild – zum Aufnehmen eines Videos. Esc beendet beide."),
+        t("Jeden Rundgang gibt es auf zwei Arten: „Schritt für Schritt“ wartet, bis du „Weiter“ klickst – zum Lernen im eigenen Tempo. „Abspielen“ läuft von selbst ab: TFTN tippt und klickt selbst, die Untertitel erklären – zum Zuschauen oder um ein Video aufzunehmen. Ein Klick hält an, Esc beendet."),
       ),
       this.rundgaenge,
     );
@@ -240,8 +240,8 @@ export class UeberDialog {
           return b;
         };
         knoepfe.append(
-          knopf("ansehen", t("Ansehen"), t("Schritt für Schritt: Weiter, Zurück, Esc beendet")),
-          knopf("vorfuehren", t("Vorführen"), t("Läuft von selbst ab, ohne Knöpfe im Bild (zum Aufnehmen, am Mac Cmd+Umschalt+5). Klick oder Leertaste hält an, Esc bricht ab.")),
+          knopf("ansehen", t("Schritt für Schritt"), t("Wartet bei jedem Schritt auf „Weiter“ (oder →); „Zurück“ (←) geht einen Schritt zurück, Esc beendet.")),
+          knopf("vorfuehren", t("Abspielen"), t("Läuft von selbst ab und führt alles selbst vor, ohne Knöpfe im Bild (zum Aufnehmen, am Mac Cmd+Umschalt+5). Klick oder Leertaste hält an, Esc bricht ab.")),
         );
         li.append(text, knoepfe);
         return li;

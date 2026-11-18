@@ -168,13 +168,15 @@ sync it and keep working on another computer without a network.
 
 Tours explain the window in subtitles: a band at the bottom centre of the window, usually with the
 element being explained highlighted (the rest of the window is slightly dimmed). You find them in
-“About TFTN” (“?” or F1) under “Tours”, each with two buttons:
+“About TFTN” (“?” or F1) under “Tours”, each with two buttons – the same tour, once to go through yourself, once to
+watch:
 
-- **Watch:** step by step, with “Next” and “Back” in the band (or → and ←); Esc or “End” stops.
-- **Demo:** runs by itself and performs the actions itself – it types, opens menus, inserts blocks,
+- **Step by step:** waits at each step until you click “Next”; “Back” in the band (or → and ←)
+  goes back; Esc or “End” stops.
+- **Play:** runs by itself and performs the actions itself – it types, opens menus, inserts blocks,
   clicks into the preview. No buttons appear on screen, only the subtitles; keys are shown large above
   the subtitle. A mouse click or the Space bar pauses and resumes, Esc stops at any time. Other keys
-  and clicks have no effect during the demo, so nothing gets mixed up.
+  and clicks have no effect while it plays, so nothing gets mixed up.
 
 A tour that writes (such as “Writing and preview”) never runs in your own document: TFTN saves the
 open document, creates a fresh copy of a sample document with made-up data in the temporary folder,
@@ -205,7 +207,7 @@ if “Fully offline” is on or the download fails, the subtitle says so and the
 the package. If the package is already in the cache, it comes from there, without the network.
 
 **Recording a video:** on a Mac press Cmd+Shift+5, choose “Record Entire Screen” or “Record Selected
-Portion” and start, then click “Demo” next to a tour in “About TFTN”. Stop the recording in the menu
+Portion” and start, then click “Play” next to a tour in “About TFTN”. Stop the recording in the menu
 bar at the end. On Windows the Snipping Tool (“Record” mode) records the screen. Beforehand:
 
 - **Trial run:** let the tour run once without recording; the first time, the preview typesets more
