@@ -176,6 +176,15 @@ export class Vorschau {
     }
   }
 
+  /** Bildschirmpunkt (Fensterkoordinaten) zu einem Punkt in pt auf Seite `nr`; `null` ohne die Seite. */
+  punktAufSchirm(nr: number, x: number, y: number): { x: number; y: number } | null {
+    const b = this.bilder[nr];
+    if (!b || !this.seiten[nr]) return null;
+    const r = b.getBoundingClientRect();
+    const m = this.massstab(nr);
+    return { x: r.left + x * m, y: r.top + y * m };
+  }
+
   /** Scrollt zu einem Punkt (interner Verweis). */
   scrollen(nr: number, y: number) {
     const r = this.rahmen[nr];

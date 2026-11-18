@@ -44,6 +44,7 @@ fn rechner_ohne_datei_ist_standard() {
             mcp_beim_wechsel_aus: false,
             oberflaeche: None,
             kofi_ausblenden: false,
+            rundgang_angeboten: false,
         }
     );
     let gesetzt = Rechner {
@@ -55,6 +56,7 @@ fn rechner_ohne_datei_ist_standard() {
         mcp_beim_wechsel_aus: true,
         oberflaeche: None,
         kofi_ausblenden: true,
+        rundgang_angeboten: true,
     };
     gesetzt.speichern(t.p()).unwrap();
     assert_eq!(Rechner::laden(t.p()), gesetzt);

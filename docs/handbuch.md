@@ -112,8 +112,8 @@ synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeiten.
 - **Kopf:** links das Dokument (der volle Pfad erscheint beim Darüberfahren), rechts „Neu“ (leeres
   Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“, das Zahnrad
   (Einstellungen) und „?“ (Über TFTN, F1). In einem schmalen Fenster bleiben nur die Symbole.
-- **Über TFTN** („?“ oder F1) zeigt Version und typst-Version, die Links zu Projektseite, Handbuch und
-  „Fehler melden“, alle geltenden Tastenkürzel zum Nachschlagen („Kürzel ändern …“ führt in die
+- **Über TFTN** („?“ oder F1) zeigt Version und typst-Version, die Rundgänge (unten), die Links zu
+  Projektseite, Handbuch und „Fehler melden“, alle geltenden Tastenkürzel zum Nachschlagen („Kürzel ändern …“ führt in die
   Einstellungen) und die Lizenzen samt mitgelieferten Beilagen; „Lizenztexte zeigen“ öffnet ihren
   Ordner. Ein Link öffnet die Seite nur auf Klick im Standardbrowser (Abschnitt 11).
 - **Öffnen** ist ein Menü: „Dokument öffnen …“ wählt einen Ordner mit `tftn.toml` (Cmd/Strg+O geht
@@ -162,6 +162,34 @@ synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeiten.
   „ungespeichert“), nach einem Netzzugriff dessen Zahl (Kapitel 11), „MCP an“, solange MCP eingeschaltet
   ist (Kapitel 13), und wie lange Typst für den letzten Lauf gebraucht hat („Vorschau: 87 ms“, ab einer
   Sekunde etwa „Vorschau: 1,2 s“).
+
+### Rundgänge
+
+Rundgänge erklären die Oberfläche in Untertiteln: ein Band unten in der Mitte des Fensters, dazu wird
+meist das erklärte Element hervorgehoben (der Rest des Fensters ist leicht abgedunkelt). Sie stehen in
+„Über TFTN“ („?“ oder F1) unter „Rundgänge“, je mit zwei Knöpfen:
+
+- **Ansehen:** Schritt für Schritt, mit „Weiter“ und „Zurück“ im Band (oder → und ←); Esc oder
+  „Beenden“ hört auf.
+- **Vorführen:** läuft von selbst ab und führt die Handgriffe selbst aus – tippt, öffnet Menüs, setzt
+  Bausteine ein, klickt in die Vorschau. Im Bild sind dabei keine Knöpfe, nur die Untertitel; Tasten
+  erscheinen groß über dem Untertitel. Ein Mausklick oder die Leertaste hält an und setzt fort, Esc
+  bricht jederzeit ab. Andere Tasten und Klicks wirken während der Vorführung nicht, damit nichts
+  durcheinandergerät.
+
+Ein Rundgang, der schreibt (etwa „Schreiben und Vorschau“), läuft nie im eigenen Dokument: TFTN
+speichert das offene Dokument, legt eine frische Kopie eines Beispieldokuments mit erfundenen Daten im
+Temp-Ordner an, öffnet sie und öffnet danach wieder das vorige Dokument. Die Kopie erscheint nicht unter
+„Zuletzt geöffnet“; beim nächsten Rundgang räumt TFTN sie weg.
+
+**Ein Video aufnehmen:** am Mac mit Cmd+Umschalt+5 „Gesamten Bildschirm aufnehmen“ oder „Ausgewählten
+Bereich aufnehmen“ wählen und starten, dann in „Über TFTN“ bei einem Rundgang „Vorführen“ klicken.
+Am Ende die Aufnahme in der Menüleiste beenden. Unter Windows nimmt das Snipping-Tool (Modus
+„Aufnehmen“) den Bildschirm auf. Mit englischer Oberfläche (Einstellungen → Sprache) sind
+Untertitel und getippter Text englisch.
+
+Beim allerersten Start bietet TFTN den Überblick einmal im Hinweisband an („Neu hier?“); das gilt je
+Rechner.
 
 ## 3. Schreiben
 

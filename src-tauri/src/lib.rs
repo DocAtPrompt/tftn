@@ -55,6 +55,7 @@ mod skins;
 mod sprachen;
 mod typen;
 mod ueber;
+mod vorfuehrung;
 mod webseite;
 mod word;
 mod zuletzt;
@@ -556,7 +557,9 @@ fn oeffnen(
         None => startordner(&app, waehlen.unwrap_or(false))?,
     };
     let projekt = Projekt::oeffnen(&ordner).map_err(|e| e.to_string())?;
-    if let Some(datei) = zuletzt_datei(&app) {
+    // Die Kopie einer Vorführung (Rundgang) kommt nicht in „Zuletzt geöffnet“.
+    let vorfuehrung = vorfuehrung::ist_vorfuehrung(&projekt.wurzel, &std::env::temp_dir());
+    if let Some(datei) = zuletzt_datei(&app).filter(|_| !vorfuehrung) {
         let bisher = std::fs::read_to_string(&datei).unwrap_or_default();
         let liste = zuletzt::vorn(&zuletzt::aus_text(&bisher), &projekt.wurzel);
         let _ = std::fs::create_dir_all(datei.parent().unwrap());
@@ -1376,7 +1379,8 @@ fn zuletzt_leeren(app: tauri::AppHandle, zustand: State<'_, Zustand>) -> Result<
         .lock()
         .unwrap()
         .as_ref()
-        .map(|s| s.projekt.wurzel.clone());
+        .map(|s| s.projekt.wurzel.clone())
+        .filter(|o| !vorfuehrung::ist_vorfuehrung(o, &std::env::temp_dir()));
     match offen {
         Some(o) => std::fs::write(&datei, zuletzt::als_text(&[o])),
         None => std::fs::remove_file(&datei).or_else(|e| {
@@ -3976,6 +3980,55 @@ fn kofi_ausblenden(app: tauri::AppHandle, aus: bool) -> Result<ueber::UeberJs, S
     ueber_stand(app)
 }
 
+// --- Rundgänge ------------------------------------------------------------------------------
+
+/// Frische Kopie eines Beispieldokuments für einen Rundgang (Vorlage von `typ`, sonst Fachartikel,
+/// mit erfundenen Daten) im Temp-Ordner; liefert den Ordner. Gewechselt wird wie bei „Öffnen“
+/// (`projekt_wechseln`). Ältere Vorführungen räumt das weg, nie die gerade offene.
+#[tauri::command(async)]
+fn vorfuehrung_anlegen(
+    app: tauri::AppHandle,
+    zustand: State<'_, Zustand>,
+    typ: Option<String>,
+) -> Result<String, String> {
+    let (quellen, _) = typquellen(&app)?;
+    let offen = zustand
+        .sitzung
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|s| s.projekt.wurzel.clone());
+    let zeit = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let ziel = vorfuehrung::anlegen(
+        &quellen,
+        typ.as_deref()
+            .filter(|t| !t.is_empty())
+            .unwrap_or(vorfuehrung::STANDARD_TYP),
+        &std::env::temp_dir(),
+        zeit,
+        &tr!("Beispiel"),
+        Some(&tftn_sprachen::kennung()),
+        offen.as_deref(),
+    )?;
+    // Derselbe Pfad, den `oeffnen` danach meldet (die Oberfläche vergleicht beide).
+    Ok(typen::wechsel_pruefen(&ziel)?.display().to_string())
+}
+
+/// Soll der Hinweis „Neu hier? Kurzer Rundgang“ kommen? Je Rechner nur einmal.
+#[tauri::command]
+fn rundgang_angebot(app: tauri::AppHandle) -> Result<bool, String> {
+    Ok(!tftn_einstellungen::Rechner::laden(&app_konfig(&app)?).rundgang_angeboten)
+}
+
+/// Merkt, dass der Hinweis kam.
+#[tauri::command]
+fn rundgang_angeboten(app: tauri::AppHandle) -> Result<(), String> {
+    rechner_aendern(&app_konfig(&app)?, |r| r.rundgang_angeboten = true)
+}
+
 /// Zeigt die mitgelieferten Lizenztexte (`lizenzen/` im Bündel) im Finder bzw. Explorer.
 #[tauri::command]
 fn lizenzen_zeigen(app: tauri::AppHandle) -> Result<(), String> {
@@ -4224,6 +4277,9 @@ pub fn run() {
             drucken,
             link_oeffnen,
             kofi_ausblenden,
+            vorfuehrung_anlegen,
+            rundgang_angebot,
+            rundgang_angeboten,
             lizenzen_zeigen,
             markup_aktion,
             zitat_aendern,

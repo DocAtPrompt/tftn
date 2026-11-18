@@ -53,6 +53,9 @@ pub struct Rechner {
     /// Den Ko-fi-Link in „Über TFTN“ nicht zeigen.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub kofi_ausblenden: bool,
+    /// Der Hinweis „Neu hier? Kurzer Rundgang“ kam schon einmal (er kommt je Rechner nur einmal).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub rundgang_angeboten: bool,
 }
 
 /// Stufen der Oberflächengröße in Prozent.

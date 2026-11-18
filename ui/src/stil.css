@@ -2707,3 +2707,172 @@ button:hover .ikone {
 .psuche-treffer:focus-within .psuche-ersetzen {
   visibility: visible;
 }
+
+/* Rundgänge in „Über TFTN“ (ueber.ts) */
+.ueber-rundgaenge {
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.ueber-rundgaenge li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+}
+.ueber-rundgang-text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.ueber-rundgang-knoepfe {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+/* Rundgang (rundgang.ts): Untertitel unten mittig, Hervorhebung des Ziels, Schutzschicht beim
+   Vorführen. Bewusst ohne `zoom` (Oberflächengröße): Die Hervorhebung rechnet mit sichtbaren Pixeln;
+   die Schrift wächst über `--ui-zoom` mit. Groß genug für ein Video, in den Farben des Skins. */
+.rundgang {
+  position: fixed;
+  left: 50%;
+  bottom: 48px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(880px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.rundgang[hidden],
+.rundgang-band[hidden],
+.rundgang-ring[hidden],
+.rundgang-schutz[hidden] {
+  display: none;
+}
+.rundgang-band {
+  pointer-events: auto;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px 22px;
+  color: var(--text);
+  background: var(--grund);
+  border: 2px solid var(--akzent);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+.rundgang-text {
+  margin: 0;
+  font-size: calc(21px * var(--ui-zoom));
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+}
+.rundgang-fuss {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: calc(13px * var(--ui-zoom));
+  color: var(--leise);
+}
+.rundgang-fuss[hidden],
+.rundgang-fuss [hidden] {
+  display: none;
+}
+.rundgang-pause {
+  flex: 1 1 auto;
+  text-align: center;
+}
+.rundgang-knoepfe {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.rundgang-knoepfe button {
+  font-size: calc(13px * var(--ui-zoom));
+  padding: 4px 12px;
+}
+.rundgang-weiter {
+  color: var(--grund);
+  background: var(--akzent);
+  border-color: var(--akzent);
+}
+.rundgang-taste {
+  min-width: 1.6em;
+  padding: 6px 16px;
+  font-size: calc(26px * var(--ui-zoom));
+  font-weight: 600;
+  color: var(--text);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-bottom-width: 3px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.rundgang-taste.sichtbar {
+  opacity: 1;
+}
+/* Das Ziel bleibt frei, alles andere leicht abgedunkelt (der Schatten deckt das Fenster). */
+.rundgang-ring {
+  position: fixed;
+  z-index: 900;
+  box-sizing: border-box;
+  border: 3px solid var(--akzent);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 3px var(--grund),
+    0 0 0 100vmax rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transition:
+    left 0.25s ease,
+    top 0.25s ease,
+    width 0.25s ease,
+    height 0.25s ease;
+}
+/* Vorführen: fängt Mausklicks ab (Klick = anhalten bzw. fortsetzen), damit nichts durcheinandergerät. */
+.rundgang-schutz {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: transparent;
+}
+/* Ein vorgeführter Klick */
+.rundgang-klick {
+  position: fixed;
+  z-index: 1001;
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border: 3px solid var(--akzent);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: rundgang-klick 0.8s ease-out forwards;
+}
+@keyframes rundgang-klick {
+  from {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rundgang-ring {
+    transition: none;
+  }
+  .rundgang-klick {
+    animation-duration: 0.01s;
+  }
+}

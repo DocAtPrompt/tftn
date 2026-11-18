@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { belegen, aktionen } from "./tasten";
-import { beilagen, editorKuerzel, kuerzelUebersicht, versionZeile, type UeberJs } from "./ueber";
+import { beilagen, editorKuerzel, kuerzelUebersicht, rundgangZusatz, versionZeile, type UeberJs } from "./ueber";
 
 const stand: UeberJs = {
   version: "0.7.0",
@@ -12,6 +12,12 @@ const stand: UeberJs = {
 };
 
 describe("Über TFTN", () => {
+  it("nennt bei einem Rundgang in der Kopie die erfundenen Daten", () => {
+    const r = { id: "x", titel: "X", beschreibung: "Tippt.", kopie: false };
+    expect(rundgangZusatz(r)).toBe("Tippt.");
+    expect(rundgangZusatz({ ...r, kopie: true })).toBe("Tippt. Läuft in einer Kopie mit erfundenen Daten.");
+  });
+
   it("nennt Version und typst", () => {
     const z = versionZeile(stand);
     expect(z).toContain("0.7.0");

@@ -114,8 +114,8 @@ sync it and keep working on another computer without a network.
 - **Header:** the document on the left (hover for the full path); on the right “New” (blank document,
   from template, import), “Open”, “Versions”, “Export”, the gear (settings) and “?” (About TFTN,
   F1). In a narrow window only the icons remain.
-- **About TFTN** (“?” or F1) shows the version and the typst version, links to the project page, the
-  manual and “Report a bug”, all shortcuts currently in effect for reference (“Change shortcuts …”
+- **About TFTN** (“?” or F1) shows the version and the typst version, the tours (below), links to
+  the project page, the manual and “Report a bug”, all shortcuts currently in effect for reference (“Change shortcuts …”
   leads to the settings) and the licenses including the bundled components; “Show license texts”
   opens their folder. A link opens the page in the default browser only when you click it
   (section 11).
@@ -163,6 +163,31 @@ sync it and keep working on another computer without a network.
   number of network accesses once there has been one (chapter 11), “MCP on” while MCP is switched on
   (chapter 13), and how long Typst took for its last run (“Preview: 87 ms”, from one second on e.g.
   “Preview: 1.2 s”).
+
+### Tours
+
+Tours explain the window in subtitles: a band at the bottom centre of the window, usually with the
+element being explained highlighted (the rest of the window is slightly dimmed). You find them in
+“About TFTN” (“?” or F1) under “Tours”, each with two buttons:
+
+- **Watch:** step by step, with “Next” and “Back” in the band (or → and ←); Esc or “End” stops.
+- **Demo:** runs by itself and performs the actions itself – it types, opens menus, inserts blocks,
+  clicks into the preview. No buttons appear on screen, only the subtitles; keys are shown large above
+  the subtitle. A mouse click or the Space bar pauses and resumes, Esc stops at any time. Other keys
+  and clicks have no effect during the demo, so nothing gets mixed up.
+
+A tour that writes (such as “Writing and preview”) never runs in your own document: TFTN saves the
+open document, creates a fresh copy of a sample document with made-up data in the temporary folder,
+opens it and afterwards reopens your previous document. The copy does not appear under recently
+opened documents; the next tour removes it.
+
+**Recording a video:** on a Mac press Cmd+Shift+5, choose “Record Entire Screen” or “Record Selected
+Portion” and start, then click “Demo” next to a tour in “About TFTN”. Stop the recording in the menu
+bar at the end. On Windows the Snipping Tool (“Record” mode) records the screen. With
+the English interface (Settings → Language), subtitles and typed text are in English.
+
+On the very first start TFTN offers the overview once in the message band (“New here?”); this applies
+per computer.
 
 ## 3. Writing
 

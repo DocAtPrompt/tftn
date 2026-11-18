@@ -4,6 +4,7 @@
 
 import { kuerzelText } from "./bausteine";
 import { dialogAnmelden, dialogKopf } from "./dialoge";
+import type { Art } from "./rundgang";
 import { t } from "./sprache";
 import type { Plattform, Zeile } from "./tasten";
 
@@ -81,6 +82,21 @@ export interface UeberAktionen {
   plattform: Plattform;
   einstellungen(): void;
   netzprotokoll(): void;
+  /** Die Rundgänge (rundgaenge.ts); `kopie`: läuft in einer Kopie mit erfundenen Daten. */
+  rundgaenge(): RundgangEintrag[];
+  rundgang(id: string, art: Art): void;
+}
+
+export interface RundgangEintrag {
+  id: string;
+  titel: string;
+  beschreibung: string;
+  kopie: boolean;
+}
+
+/** Was unter einem Rundgang steht: seine Beschreibung, bei einer Kopie mit dem Hinweis darauf. */
+export function rundgangZusatz(r: RundgangEintrag): string {
+  return r.kopie ? t("{beschreibung} Läuft in einer Kopie mit erfundenen Daten.", { beschreibung: r.beschreibung }) : r.beschreibung;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, klasse = "", text = ""): HTMLElementTagNameMap[K] {
@@ -96,6 +112,7 @@ export class UeberDialog {
   private links = el("ul", "ueber-links");
   private offline = el("p", "netz-hilfe");
   private kuerzel = el("div", "ueber-kuerzel");
+  private rundgaenge = el("ul", "ueber-rundgaenge");
   private meldung = el("p", "netz-meldung leiste-hilfe");
 
   constructor(
@@ -123,6 +140,22 @@ export class UeberDialog {
       liste,
       lizenzKnopf,
     );
+    const touren = el("section", "ueber-teil");
+    touren.append(
+      el("h3", "", t("Rundgänge")),
+      el(
+        "p",
+        "netz-hilfe",
+        t("„Ansehen“ führt Schritt für Schritt durch die Oberfläche. „Vorführen“ läuft von selbst ab, ohne Knöpfe im Bild – zum Aufnehmen eines Videos. Esc beendet beide."),
+      ),
+      this.rundgaenge,
+    );
+    this.rundgaenge.addEventListener("click", (e) => {
+      const knopf = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-rundgang]");
+      if (!knopf) return;
+      this.schliessen();
+      this.a.rundgang(knopf.dataset.rundgang!, knopf.dataset.art as Art);
+    });
     const links = el("section", "ueber-teil");
     links.append(el("h3", "", t("Links")), this.offline, this.links);
     const kuerzel = el("section", "ueber-teil");
@@ -136,7 +169,7 @@ export class UeberDialog {
     const knoepfe = el("div", "neu-ordnerzeile netz-unten");
     knoepfe.append(aendern, netz);
     kuerzel.append(el("h3", "", t("Tastenkürzel")), this.kuerzel, knoepfe);
-    this.huelle.append(dialogKopf(t("Über TFTN"), () => this.schliessen()), kopf, links, kuerzel, lizenz, this.meldung);
+    this.huelle.append(dialogKopf(t("Über TFTN"), () => this.schliessen()), kopf, touren, links, kuerzel, lizenz, this.meldung);
     this.links.addEventListener("click", (e) => {
       const knopf = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-link]");
       if (knopf) void this.mitMeldung(() => this.a.oeffnen(knopf.dataset.link!));
@@ -157,6 +190,7 @@ export class UeberDialog {
     this.meldung.textContent = "";
     this.huelle.hidden = false;
     this.kuerzelZeichnen();
+    this.rundgaengeZeichnen();
     try {
       this.zeichnen(await this.a.lesen());
     } catch (fehler) {
@@ -185,6 +219,30 @@ export class UeberDialog {
         b.dataset.link = l.name;
         b.disabled = u.ganz_offline;
         li.append(b, el("span", "ueber-adresse", l.adresse));
+        return li;
+      }),
+    );
+  }
+
+  private rundgaengeZeichnen() {
+    this.rundgaenge.replaceChildren(
+      ...this.a.rundgaenge().map((r) => {
+        const li = el("li");
+        const text = el("div", "ueber-rundgang-text");
+        text.append(el("strong", "", r.titel), el("span", "ueber-adresse", rundgangZusatz(r)));
+        const knoepfe = el("span", "ueber-rundgang-knoepfe");
+        const knopf = (art: Art, titel: string, hilfe: string) => {
+          const b = el("button", "", titel);
+          b.dataset.rundgang = r.id;
+          b.dataset.art = art;
+          b.title = hilfe;
+          return b;
+        };
+        knoepfe.append(
+          knopf("ansehen", t("Ansehen"), t("Schritt für Schritt: Weiter, Zurück, Esc beendet")),
+          knopf("vorfuehren", t("Vorführen"), t("Läuft von selbst ab, ohne Knöpfe im Bild (zum Aufnehmen, am Mac Cmd+Umschalt+5). Klick oder Leertaste hält an, Esc bricht ab.")),
+        );
+        li.append(text, knoepfe);
         return li;
       }),
     );

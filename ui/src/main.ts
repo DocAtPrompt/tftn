@@ -16,6 +16,7 @@ import {
   highlightSpecialChars,
   keymap,
   lineNumbers,
+  runScopeHandlers,
 } from "@codemirror/view";
 import { history, isolateHistory } from "@codemirror/commands";
 import { highlightSelectionMatches } from "@codemirror/search";
@@ -31,7 +32,7 @@ import type { LitDateiJs } from "./literatur";
 import type { DoiJs } from "./doi";
 import { type ArchivJs, type ExportJs, ExportMenue, type ProfilJs, type WordJs } from "./export";
 import { SerieDialog, type SerieErgebnisJs, type SerieJs, hauptdateiAnpassung } from "./serie";
-import { autocompletion, startCompletion } from "@codemirror/autocomplete";
+import { autocompletion, closeCompletion, completionStatus, currentCompletions, setSelectedCompletion, startCompletion } from "@codemirror/autocomplete";
 import {
   type BausteinTextJs,
   type EintragJs,
@@ -40,12 +41,13 @@ import {
   kuerzelText,
   menue,
   nurSlashFehler,
+  slashAnfang,
   slashQuelle,
   typstQuelle, type EingesetztJs,
 } from "./bausteine";
 import { einsetzenSpec, felder } from "./felder";
 import { BausteinPalette } from "./bausteinpalette";
-import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte } from "./tasten";
+import { type Belegung, PLATTFORM, aktionDerTaste, aktionen, belegen, einstellungenNotfall, leistenSchritt, fehlerHinweis, keymapAus, konflikte, normalisieren } from "./tasten";
 import { editorKeymaps } from "./reserviert";
 import { type SkinsJs, skinAnwenden } from "./skin";
 import { trennerZiehbar } from "./breite";
@@ -71,7 +73,9 @@ import { NetzprotokollDialog, type NetzprotokollJs, statusAnzeige } from "./netz
 import type { FormularJs, ProjektJs, VergleichJs } from "./formular";
 import { NeuDialog, PfadDialog } from "./neudialog";
 import { eigeneGruppen, textbausteinFragen, textbausteinHinweis } from "./textbausteine";
-import { einDialogOffen, escAktivieren } from "./dialoge";
+import { alleSchliessen, einDialogOffen, escAktivieren } from "./dialoge";
+import { type Art, type Handgriffe, Lauf, type Rundgang, RundgangBuehne, zielImDokument } from "./rundgang";
+import { rundgaenge } from "./rundgaenge";
 import { kontextmenueBegrenzen } from "./kontextmenue";
 import { dauerText, syncText } from "./statuszeile";
 import * as schreibansicht from "./schreibansicht";
@@ -2003,6 +2007,345 @@ async function projektOeffnen(): Promise<Geoeffnet> {
   }
 }
 
+// --- Rundgänge (rundgang.ts, Daten in rundgaenge.ts) -----------------------------------------
+
+/**
+ * Merker in sessionStorage über das Neuladen hinweg: Ein Rundgang mit `kopie` öffnet eine frische
+ * Kopie mit erfundenen Daten (Neuladen), läuft dort und öffnet danach das eigene Dokument wieder
+ * (noch einmal Neuladen).
+ */
+const RUNDGANG = "tftn-rundgang";
+
+interface RundgangMerker {
+  id: string;
+  art: Art;
+  /** Ordner des eigenen Dokuments, das danach wieder offen sein soll. */
+  zurueck: string;
+  /** Ordner der Kopie (`vorfuehrung_anlegen`). */
+  kopie: string;
+  /** Es geht schon zurück: Nach dem Neuladen bleibt nur die Meldung. */
+  fertig?: boolean;
+}
+
+let buehne: RundgangBuehne | undefined;
+let rundgangLauf: Lauf | undefined;
+/** Das offene Dokument ist die Kopie einer Vorführung: Nur dann dürfen Handgriffe schreiben. */
+let inKopie = false;
+
+/** Stand, den ein Rundgang vorübergehend ändert und danach zurückstellt. */
+interface RundgangZuvor {
+  schrift: number;
+  /** `undefined`: Der Skin blieb unberührt. */
+  skin: string | null | undefined;
+}
+
+/** Aktionen, die nichts in den Text schreiben; sie darf auch ein Rundgang im eigenen Dokument zeigen. */
+const LESENDE_AKTIONEN =
+  /^(helfer\/(baustein|zitat|vervollstaendigen|einstellungen|ueber|projektsuche|seitenleiste|schreibansicht|werte|fach-[a-z]+)|ansicht\/[a-z-]+)$/;
+/** Aktionen, die eine Vorführung nie auslöst: Speichern, Neu, Öffnen, Drucken, Export, Textbausteine. */
+const VERBOTENE_AKTIONEN = /^(app\/|export\/|helfer\/textbaustein$)/;
+
+function merkerLesen(): RundgangMerker | null {
+  try {
+    const roh = sessionStorage.getItem(RUNDGANG);
+    return roh ? (JSON.parse(roh) as RundgangMerker) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** `false`, wenn der Sitzungsspeicher nicht geht (dann kein Wechsel: der Weg zurück ginge verloren). */
+function merkerSetzen(m: RundgangMerker | null): boolean {
+  try {
+    if (m) sessionStorage.setItem(RUNDGANG, JSON.stringify(m));
+    else sessionStorage.removeItem(RUNDGANG);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function gleicherOrdner(a: string, b: string): boolean {
+  const ohneEnde = (p: string) => p.replace(/[\\/]+$/, "");
+  return ohneEnde(a) === ohneEnde(b);
+}
+
+/** Start aus „Über TFTN“ oder aus dem Hinweis beim ersten Start. Mit `kopie`: speichern, Kopie anlegen,
+ *  dorthin wechseln; der Rundgang läuft nach dem Neuladen (`rundgangFortsetzen`). */
+async function rundgangStarten(id: string, art: Art) {
+  const r = rundgaenge().find((x) => x.id === id);
+  if (!r || rundgangLauf?.laeuft) return;
+  alleSchliessen(buehne);
+  hinweis("");
+  if (r.kopie === undefined) return rundgangLaufen(r, art, null);
+  const schonDa = inKopie ? merkerLesen() : null;
+  if (schonDa) {
+    const m = { ...schonDa, id, art, fertig: undefined };
+    merkerSetzen(m);
+    return rundgangLaufen(r, art, m);
+  }
+  await einzeln(async () => {
+    meldung(t("Lege eine Kopie mit erfundenen Daten an …"));
+    try {
+      if (!(await fachVorWechsel()) || !(await speichern())) throw new Error(t("Das offene Dokument ließ sich nicht speichern."));
+      const kopie = await invoke<string>("vorfuehrung_anlegen", { typ: r.kopie });
+      if (!merkerSetzen({ id, art, zurueck: projektOrdner, kopie })) {
+        throw new Error(t("Ohne Sitzungsspeicher fände TFTN nicht zum eigenen Dokument zurück."));
+      }
+      await invoke("projekt_wechseln", { ordner: kopie });
+      location.reload();
+    } catch (fehler) {
+      merkerSetzen(null);
+      hinweis(meldungMit(t("Rundgang nicht gestartet"), String(fehler)));
+    }
+  });
+}
+
+/** Nach dem Neuladen: in der Kopie den Rundgang abspielen; zurück im eigenen Dokument nur melden.
+ *  `true`, wenn ein Rundgang im Spiel war. */
+function rundgangFortsetzen(): boolean {
+  const m = merkerLesen();
+  if (!m) return false;
+  if (m.fertig) {
+    merkerSetzen(null);
+    if (gleicherOrdner(projektOrdner, m.zurueck)) meldung(t("Rundgang beendet – dein Dokument ist wieder offen."));
+    return true;
+  }
+  const r = rundgaenge().find((x) => x.id === m.id);
+  if (!r || !gleicherOrdner(projektOrdner, m.kopie)) {
+    merkerSetzen(null);
+    hinweis(t("Die Kopie für den Rundgang ließ sich nicht öffnen."));
+    return true;
+  }
+  inKopie = true;
+  void rundgangLaufen(r, m.art, m);
+  return true;
+}
+
+/** Spielt `r` ab. Mit `m` (in der Kopie) geht es danach ins eigene Dokument zurück. */
+async function rundgangLaufen(r: Rundgang, art: Art, m: RundgangMerker | null) {
+  buehne ??= new RundgangBuehne();
+  const zuvor: RundgangZuvor = { schrift: editorSchrift, skin: undefined };
+  const lauf = new Lauf(r, art, buehne, (warten) => handgriffe(warten, zuvor), zielImDokument, oberflaecheSchliessen);
+  rundgangLauf = lauf;
+  buehne.verbinden(lauf);
+  try {
+    await lauf.starten();
+  } catch (fehler) {
+    console.error("Rundgang", fehler);
+  } finally {
+    buehne.trennen();
+    rundgangLauf = undefined;
+  }
+  oberflaecheSchliessen();
+  editorSchrift = zuvor.schrift;
+  schriftSetzen(document.documentElement, editorSchrift);
+  view.requestMeasure();
+  if (zuvor.skin !== undefined) {
+    await invoke<SkinsJs>("skin_setzen", { kennung: zuvor.skin }).then(skinsSetzen, (fehler) => hinweis(String(fehler)));
+  }
+  if (m) await rundgangZurueck(m);
+  else view.focus();
+}
+
+/** Ins eigene Dokument zurück (wie „Öffnen“); die Kopie bleibt bis zur nächsten Vorführung liegen. */
+async function rundgangZurueck(m: RundgangMerker) {
+  merkerSetzen({ ...m, fertig: true });
+  try {
+    await speichern();
+    await invoke("projekt_wechseln", { ordner: m.zurueck });
+    location.reload();
+  } catch (fehler) {
+    merkerSetzen(null);
+    hinweis(meldungMit(t("Das vorige Dokument ließ sich nicht wieder öffnen"), String(fehler)), {
+      titel: t("Dokument öffnen …"),
+      aktion: () => void einzeln(projektWechseln),
+    });
+  }
+}
+
+/** Offene Dialoge, Menüs, Seitenleiste und das „/“-Menü schließen (nicht den Rundgang selbst). */
+function oberflaecheSchliessen() {
+  alleSchliessen(buehne);
+  closeCompletion(view);
+  if (seitenleiste?.offen) seitenleiste.schliessen();
+}
+
+/** Tastendruck für CodeMirror aus `Mod-Shift-Enter` (für `runScopeHandlers`, nicht verschickt). */
+function tastenEreignis(k: string): KeyboardEvent {
+  const teile = k.split(/-(?!$)/);
+  const key = teile.pop() ?? k;
+  const hat = (n: string) => teile.includes(n);
+  const mod = hat("Mod");
+  const mac = PLATTFORM === "mac";
+  return new KeyboardEvent("keydown", {
+    key,
+    shiftKey: hat("Shift"),
+    altKey: hat("Alt"),
+    ctrlKey: hat("Ctrl") || (mod && !mac),
+    metaKey: hat("Meta") || hat("Cmd") || (mod && mac),
+    bubbles: true,
+    cancelable: true,
+  });
+}
+
+/**
+ * Die Handgriffe einer Vorführung (rundgang.ts `Handgriffe`): dünne Hüllen um die Funktionen, die
+ * auch Knöpfe und Tasten rufen. `warten` kommt vom Lauf (hält bei einer Pause an, wirft bei Esc).
+ * Was schreibt, läuft nur in der Kopie einer Vorführung (`inKopie`).
+ */
+function handgriffe(warten: (ms: number) => Promise<void>, zuvor: RundgangZuvor): Omit<Handgriffe, "warten"> {
+  const nurInKopie = (was: string) => {
+    if (!inKopie) throw new Error(`Handgriff „${was}“ läuft nur in der Kopie einer Vorführung.`);
+  };
+  const stelle = (text: string) => {
+    const i = view.state.doc.toString().indexOf(text);
+    if (i < 0) throw new Error(`„${text}“ steht nicht im Text.`);
+    return i;
+  };
+  const mac = PLATTFORM === "mac";
+  return {
+    async tippen(text, msJeZeichen = 55) {
+      nurInKopie("tippen");
+      view.focus();
+      for (const z of text) {
+        const { from, to } = view.state.selection.main;
+        // Wie ein Tastendruck: „input.type“ öffnet das „/“-Menü und füllt Felder wie echte Eingabe.
+        view.dispatch({ changes: { from, to, insert: z }, selection: { anchor: from + z.length }, userEvent: "input.type", scrollIntoView: true });
+        await warten(z === "\n" ? msJeZeichen * 3 : msJeZeichen);
+      }
+    },
+    async taste(k) {
+      const zeile = belegung?.zeilen.find((z) => z.aktion.id === k);
+      if (k.includes("/") && !zeile) throw new Error(`Aktion ${k} gibt es nicht.`);
+      const n = zeile ? null : normalisieren(k, PLATTFORM);
+      const id = zeile ? k : n ? (belegung?.taste.get(n) ?? null) : null;
+      const anzeige = zeile ? zeile.kuerzel[0] : k;
+      if (anzeige) buehne?.tasteZeigen(kuerzelText(anzeige, mac));
+      if (id) {
+        if (VERBOTENE_AKTIONEN.test(id)) throw new Error(`Aktion ${id} gehört nicht in eine Vorführung.`);
+        if (!LESENDE_AKTIONEN.test(id)) nurInKopie("taste");
+        ausfuehren(id);
+        await warten(400);
+        return;
+      }
+      if (k !== "Escape") nurInKopie("taste");
+      view.focus();
+      runScopeHandlers(view, tastenEreignis(k), "editor");
+      await warten(150);
+    },
+    async markieren(text) {
+      const i = stelle(text);
+      view.dispatch({ selection: { anchor: i, head: i + text.length }, scrollIntoView: true });
+      view.focus();
+    },
+    async schreibmarke(nach) {
+      const pos = nach === undefined ? view.state.doc.length : stelle(nach) + nach.length;
+      view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: "center" }) });
+      view.focus();
+    },
+    async bausteinWaehlen(x) {
+      nurInKopie("bausteinWaehlen");
+      const e = katalog.find((k) => k.id === x) ?? katalog.find((k) => k.titel === x);
+      if (!e) throw new Error(`Baustein ${x} steht nicht im Katalog.`);
+      for (let i = 0; i < 15 && completionStatus(view.state) === "pending"; i++) await warten(100);
+      if (completionStatus(view.state) === "active") {
+        // Im offenen „/“-Menü: Eintrag sichtbar wählen, dann einsetzen wie mit Enter.
+        const nr = currentCompletions(view.state).findIndex((c) => c.label === e.titel);
+        if (nr >= 0) {
+          view.dispatch({ effects: setSelectedCompletion(nr) });
+          await warten(600);
+        }
+        buehne?.tasteZeigen(kuerzelText("Enter", mac));
+        const kopf = view.state.selection.main.head;
+        const zeile = view.state.doc.lineAt(kopf);
+        const s = slashAnfang(view.state.sliceDoc(zeile.from, kopf));
+        closeCompletion(view);
+        if (s !== null) return bausteinEinsetzen(e.id, zeile.from + s, kopf, "");
+      }
+      const { from, to } = view.state.selection.main;
+      await bausteinEinsetzen(e.id, from, to, view.state.sliceDoc(from, to));
+    },
+    async fachOeffnen(name) {
+      seitenleisteOeffnen(name);
+      await warten(300);
+    },
+    async exportMenue(offen) {
+      const menue = document.getElementById("export-menue");
+      if ((menue ? !menue.hidden : false) !== offen) document.getElementById("export-knopf")!.click();
+      // Die Profile kommen aus Rust; erst dann steht der Kopf des Menüs.
+      for (let i = 0; i < 20 && offen && !document.querySelector("#export-menue .neu-kopf"); i++) await warten(100);
+    },
+    async dialogOeffnen(name) {
+      if (name === "ueber") await ueberDialog.zeigen();
+      else if (name === "einstellungen") einstellDialog.oeffnen();
+      else if (name === "netzprotokoll") await netzDialog.zeigen();
+      else projektSuche?.oeffnen();
+      await warten(300);
+    },
+    async inVorschauKlicken(text) {
+      const pos = stelle(text) + Math.min(1, text.length);
+      let stellen: Stelle[] = [];
+      // Die Vorschau setzt nach dem letzten Tastendruck noch; bis dahin kennt sie die Stelle nicht.
+      for (let i = 0; i < 12 && stellen.length === 0; i++) {
+        stellen = await abfragen((r) => invoke<Stelle[]>("stelle_zeigen", { rev: r, pos }));
+        if (stellen.length === 0) await warten(250);
+      }
+      if (stellen.length === 0) throw new Error(`„${text}“ ist in der Vorschau nicht zu finden.`);
+      const [seite, x, y] = stellen[0];
+      vorschau.folgen(stellen);
+      await warten(700);
+      // Knapp über der Grundlinie und hinter dem ersten Buchstaben, damit der Klick im Text landet.
+      const px = x + 2;
+      const py = y - 3;
+      const p = vorschau.punktAufSchirm(seite, px, py);
+      if (p) buehne?.klickZeigen(p.x, p.y);
+      await warten(200);
+      await klick(seite, px, py);
+    },
+    async reiterOeffnen(datei) {
+      await reiterWaehlen(datei);
+    },
+    async skinSetzen(kennung) {
+      if (zuvor.skin === undefined) zuvor.skin = (await invoke<SkinsJs>("skins_lesen")).gewaehlt;
+      skinsSetzen(await invoke<SkinsJs>("skin_setzen", { kennung }));
+    },
+    async editorSchrift(prozent) {
+      // Nur für die Dauer des Rundgangs (nicht gemerkt); danach gilt wieder `editorSchrift`.
+      const stil = document.documentElement.style;
+      if (prozent === 100) stil.removeProperty("--editor-faktor");
+      else stil.setProperty("--editor-faktor", String(prozent / 100));
+      view.requestMeasure();
+    },
+    async schliessen() {
+      oberflaecheSchliessen();
+      await warten(200);
+    },
+  };
+}
+
+/** Beim allerersten Start (je Rechner gemerkt): ein ruhiger Hinweis auf den Überblick-Rundgang. */
+async function rundgangAnbieten() {
+  if (!(await invoke<boolean>("rundgang_angebot").catch(() => false))) return;
+  // Steht schon ein anderer Hinweis da (eine Warnung, die MCP-Frage), kommt das Angebot beim nächsten Start.
+  if (!document.getElementById("hinweis")!.hidden) return;
+  void invoke("rundgang_angeboten").catch(() => {});
+  hinweis(
+    t("Neu hier? Ein kurzer Rundgang zeigt, wo was ist."),
+    [
+      { titel: t("Kurzer Rundgang"), aktion: () => void rundgangStarten("ueberblick", "ansehen") },
+      {
+        titel: t("Nein danke"),
+        aktion: () => {
+          hinweis("");
+          view.focus();
+        },
+      },
+    ],
+    "kurz",
+  );
+}
+
 /** Größe der Oberfläche (Prozent) als `--ui-zoom` (stil.css). */
 function oberflaecheAnwenden(prozent: number) {
   document.documentElement.style.setProperty("--ui-zoom", String(prozent / 100));
@@ -2372,6 +2715,8 @@ async function start() {
       plattform: PLATTFORM,
       einstellungen: () => einstellDialog.oeffnen(),
       netzprotokoll: () => void netzDialog.zeigen(),
+      rundgaenge: () => rundgaenge().map((r) => ({ id: r.id, titel: r.titel, beschreibung: r.beschreibung, kopie: r.kopie !== undefined })),
+      rundgang: (id, art) => void rundgangStarten(id, art),
     },
     [ueberKnopf],
   );
@@ -2657,6 +3002,7 @@ async function start() {
   } catch {
     // ohne sessionStorage keine Meldung
   }
+  if (!rundgangFortsetzen()) void rundgangAnbieten();
 }
 
 start().catch((fehler) => hinweis(t("Start fehlgeschlagen: {fehler}", { fehler: String(fehler) })));

@@ -58,6 +58,14 @@ export function einDialogOffen(): boolean {
   return escZiel(dialoge) !== null;
 }
 
+/** Schließt alle offenen Dialoge und Menüs, den obersten zuerst, außer `ausser` (etwa der Rundgang). */
+export function alleSchliessen(ausser?: Dialog) {
+  for (let i = dialoge.length - 1; i >= 0; i--) {
+    const d = dialoge[i];
+    if (d.offen && d !== ausser) d.schliessen();
+  }
+}
+
 /** Einmal beim Start. Was ein Dialog oder der Editor schon selbst behandelt hat, bleibt unberührt. */
 export function escAktivieren() {
   // Vor allem anderen (Capture), damit der Klick, der daneben ging, trotzdem seine Wirkung hat.
