@@ -29,14 +29,22 @@ pub fn profile(projekt: &Projekt) -> Result<Vec<ExportProfil>, ExportFehler> {
     let manifest = paket
         .manifest()
         .map_err(|e| ExportFehler::Sonstiges(e.to_string()))?;
-    Ok(manifest
+    let mut liste: Vec<ExportProfil> = manifest
         .export
         .iter()
         .map(|(id, m)| ExportProfil {
             id: id.clone(),
             manifest: m.clone(),
         })
-        .collect())
+        .collect();
+    reihenfolge(&mut liste);
+    Ok(liste)
+}
+
+/// Das gewöhnliche PDF (`vorschau`) zuerst, die übrigen in alphabetischer Folge (das Manifest kommt
+/// als `BTreeMap`; sonst stünde „archiv“ vor „vorschau“).
+fn reihenfolge(liste: &mut [ExportProfil]) {
+    liste.sort_by(|a, b| (a.id != "vorschau", &a.id).cmp(&(b.id != "vorschau", &b.id)));
 }
 
 impl ExportProfil {
@@ -207,4 +215,23 @@ pub fn zeitstempel_setzen(projekt: &Projekt, sekunden: i64) -> Result<Projekt, E
     std::fs::write(&pfad, neu.join("\n") + "\n")
         .map_err(|e| ExportFehler::Sonstiges(e.to_string()))?;
     Projekt::oeffnen(&projekt.wurzel).map_err(|e| ExportFehler::Sonstiges(e.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gewoehnliches_pdf_zuerst() {
+        let m: ExportManifest = toml::from_str("art = \"pdf\"").unwrap();
+        let mut liste: Vec<ExportProfil> = ["archiv", "png", "vorschau"]
+            .map(|id| ExportProfil {
+                id: id.into(),
+                manifest: m.clone(),
+            })
+            .into();
+        reihenfolge(&mut liste);
+        let ids: Vec<&str> = liste.iter().map(|p| p.id.as_str()).collect();
+        assert_eq!(ids, ["vorschau", "archiv", "png"]);
+    }
 }
