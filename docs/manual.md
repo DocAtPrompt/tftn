@@ -39,12 +39,15 @@ notarized: on first launch, right-click → “Open”. The matching typst CLI i
 current user without admin rights. The installer is not signed: if SmartScreen warns, choose
 “More info” → “Run anyway”.
 
-**Linux:** download `TFTN-<version>-linux-x64.AppImage` (Intel/AMD) or `…-linux-arm64.AppImage`
-from the releases page, make it executable (`chmod +x TFTN-*.AppImage`) and start it; everything,
-including the typst CLI, is inside. It runs on Ubuntu 22.04 or comparable systems and later. If it
-does not start, FUSE is usually missing: `sudo apt install libfuse2` (Ubuntu 24.04: `libfuse2t64`).
-As on Windows, the Ctrl shortcuts apply, and opening asks for a path instead of showing a folder
-dialog. The Linux build is new and has hardly been tried by hand yet.
+**Linux:** there is no ready-made download yet; you build TFTN yourself in four commands (see
+“Building on Linux” in the README): install the system packages for WebKitGTK, Rust and Node.js,
+then run `npm ci`, `cargo xtask typst-holen --nur-host` and
+`npx tauri build --bundles deb --config src-tauri/tauri.buendel.json` in the source folder. The
+result is a `.deb` with the typst CLI and the download helper, installed with
+`sudo apt install ./target/release/bundle/deb/TFTN_*.deb` (or an AppImage with `--bundles appimage`).
+The first build takes 15 to 30 minutes. As on Windows, the Ctrl shortcuts apply, and opening asks
+for a path instead of showing a folder dialog. The Linux build is new and has hardly been tried by
+hand yet.
 
 **Try it:** use “Open” → “Open project …” and choose the `demo/` folder from the source. The sample article shows
 equations, a figure, a table, footnotes, cross-references and citations. Feel free to change

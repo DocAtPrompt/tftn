@@ -72,8 +72,8 @@ as plain files. New documents follow the interface language.
 *Bibliography manager: search your `.bib` file, edit an entry in a form, see what you have not cited yet.*
 
 **Status:** early but usable day to day on macOS (Apple silicon). The Windows build passes the test
-suite and an automated install check, but has hardly been used by hand yet. Linux (AppImage for x64
-and arm64) is new: built and checked automatically, barely tried by hand.
+suite and an automated install check, but has hardly been used by hand yet. On Linux there is no
+download yet: the app builds there in CI, and you can [build it yourself](#building-on-linux).
 
 ## Documentation
 
@@ -90,11 +90,13 @@ Download from the [releases](https://github.com/DocAtPrompt/tftn/releases):
 - **Windows** (10/11, x64): run `TFTN-<version>-windows-x64-setup.exe`; it installs for the current
   user without admin rights. The installer is not signed: if SmartScreen warns, choose “More info” →
   “Run anyway”.
+- **Linux** (x64, arm64): no download yet – [build it yourself](#building-on-linux), it takes four
+  commands and produces a `.deb` (or an AppImage).
 
 The matching typst CLI is bundled.
 
 Optional: [Pandoc](https://pandoc.org) 3.1.2 or later for import, Word export and paste conversion
-(`brew install pandoc`, `winget install --id JohnMacFarlane.Pandoc`).
+(`brew install pandoc`, `winget install --id JohnMacFarlane.Pandoc`, `sudo apt install pandoc`).
 
 ## Build from source
 
@@ -106,6 +108,7 @@ Optional: [Pandoc](https://pandoc.org) 3.1.2 or later for import, Word export an
 | Pandoc | ≥ 3.1.2 | optional: import, Word export |
 | veraPDF + Java | ≥ 1.30 / ≥ 11 | optional: PDF/A checks in the tests |
 | Windows | MSVC Build Tools, WebView2 | “Desktop development with C++” |
+| Linux | WebKitGTK 4.1 and build tools | see [Building on Linux](#building-on-linux) |
 
 ```bash
 npm ci
@@ -125,6 +128,53 @@ npm run buendel
 
 `npx tauri dev` starts the app in development mode (`TFTN_PROJEKT=<folder>` opens a specific
 project). `npm run buendel` builds `target/release/bundle/macos/TFTN.app` (release, ad-hoc signed).
+
+### Building on Linux
+
+Until there is a ready-made download, Linux users build TFTN themselves. The CI builds and tests the
+app on Ubuntu 24.04 with every push; other distributions should work the same way. The first build
+takes 15–30 minutes.
+
+1. System packages (WebKitGTK and build tools), as listed by [Tauri](https://v2.tauri.app/start/prerequisites/#linux):
+
+   ```bash
+   sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+   ```
+
+   Fedora: `sudo dnf install webkit2gtk4.1-devel openssl-devel curl wget file libappindicator-gtk3-devel librsvg2-devel libxdo-devel` and `sudo dnf group install c-development`.
+   Arch: `sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl appmenu-gtk-module libappindicator-gtk3 librsvg xdotool`.
+
+2. [Rust via rustup](https://rustup.rs) (the version in `rust-toolchain.toml` is installed by itself)
+   and Node.js in the version from `.nvmrc` (e.g. with [nvm](https://github.com/nvm-sh/nvm): `nvm install`).
+
+3. In the source folder (`git clone https://github.com/DocAtPrompt/tftn && cd tftn`):
+
+   ```bash
+   npm ci
+   ```
+
+   ```bash
+   cargo xtask typst-holen --nur-host
+   ```
+
+   ```bash
+   npx tauri build --bundles deb --config src-tauri/tauri.buendel.json
+   ```
+
+   `typst-holen` downloads the official typst CLI and checks it against `xtask/typst-cli.sha256`.
+   The last command builds a `.deb` with the typst CLI and the download helper inside.
+
+4. Install it:
+
+   ```bash
+   sudo apt install ./target/release/bundle/deb/TFTN_*.deb
+   ```
+
+   Instead of a `.deb`, `--bundles appimage` builds a self-contained AppImage under
+   `target/release/bundle/appimage/`; `--bundles rpm` builds an `.rpm` for Fedora.
+
+On Linux, TFTN uses the Ctrl shortcuts like on Windows, and opening a project asks for its path
+instead of showing a folder dialog.
 
 ## Repository layout
 

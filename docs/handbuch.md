@@ -35,12 +35,14 @@ nicht notarisiert: Beim ersten Start Rechtsklick → „Öffnen“. Die passende
 für den aktuellen Benutzer, ohne Administratorrechte. Der Installer ist nicht signiert: Warnt
 SmartScreen, „Weitere Informationen“ → „Trotzdem ausführen“.
 
-**Linux:** `TFTN-<version>-linux-x64.AppImage` (Intel/AMD) bzw. `…-linux-arm64.AppImage` von der
-Release-Seite laden, ausführbar machen (`chmod +x TFTN-*.AppImage`) und starten; alles, auch die
-typst-CLI, steckt darin. Läuft ab Ubuntu 22.04 bzw. vergleichbaren Systemen. Startet es nicht, fehlt
-meist FUSE: `sudo apt install libfuse2` (Ubuntu 24.04: `libfuse2t64`). Wie unter Windows gelten die
-Strg-Kürzel, und statt eines Ordnerdialogs gibt man beim Öffnen den Pfad ein. Die Linux-Fassung ist
-neu und erst wenig von Hand ausprobiert.
+**Linux:** Einen fertigen Download gibt es noch nicht; TFTN baut man selbst, in vier Befehlen
+(Anleitung in der README unter „Building on Linux“): Systempakete für WebKitGTK, Rust und Node.js
+installieren, dann im Quellordner `npm ci`, `cargo xtask typst-holen --nur-host` und
+`npx tauri build --bundles deb --config src-tauri/tauri.buendel.json`. Heraus kommt ein `.deb` mit
+typst-CLI und Hilfsprogramm, das man mit `sudo apt install ./target/release/bundle/deb/TFTN_*.deb`
+installiert (oder mit `--bundles appimage` ein AppImage). Der erste Bau dauert 15 bis 30 Minuten. Wie
+unter Windows gelten die Strg-Kürzel, und statt eines Ordnerdialogs gibt man beim Öffnen den Pfad ein.
+Die Linux-Fassung ist neu und erst wenig von Hand ausprobiert.
 
 **Ausprobieren:** Mit „Öffnen“ → „Projekt öffnen …“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
 zeigt Formeln, eine Abbildung, eine Tabelle, Fußnoten, Querverweise und Zitate. Ändern ist

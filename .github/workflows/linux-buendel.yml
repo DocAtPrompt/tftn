@@ -1,3 +1,6 @@
+# NOCH NICHT IN GEBRAUCH: Linux-Nutzer bauen TFTN vorerst selbst (README, „Building on Linux“).
+# Erst laufen lassen, wenn ein Selbstbau von Hand ausprobiert ist.
+#
 # Linux-AppImages zu einem Release (von Hand: Actions → Linux-Bündel → Run workflow).
 # Baut aus dem Stand des Tags je ein AppImage für x64 und arm64, prüft die mitgelieferten Teile im
 # entpackten Abbild und hängt beide an das Release des Tags. Gebaut wird auf Ubuntu 22.04, damit das
