@@ -51,7 +51,7 @@ describe("menueEintraege", () => {
   it("menue_fuer_vorlage_und_nichts", () => {
     expect(menueEintraege({ art: "vorlage" }, null)).toEqual([{ art: "formular", feld: null }]);
     expect(menueEintraege({ art: "nichts" }, null)).toEqual([]);
-    expect(menueEintraege({ art: "datei", datei: "lib.typ" }, null)).toEqual([]);
+    expect(menueEintraege({ art: "datei", datei: "lib.typ", pos: 0, rev: null }, null)).toEqual([]);
     expect(menueEintraege({ art: "url", url: "https://x" }, null)).toEqual([]);
   });
 

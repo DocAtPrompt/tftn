@@ -435,11 +435,19 @@ fn status(app: &AppHandle) -> Result<Ergebnis, String> {
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
     let rev = s.spiegel.rev();
+    let reiter = if crate::reiter::haupt_aktiv(s) {
+        String::new()
+    } else {
+        format!(
+            "\nIm Editor offen: {} (Kapitel; Revision und Meldungen gelten für diese Datei)",
+            crate::reiter::relativ(&s.projekt.wurzel, &s.datei)
+        )
+    };
     Ok(Ergebnis::text(format!(
-        "Projekt: {}\nHauptdatei: {}\nRevision: {rev}\n{}\n{}",
+        "Projekt: {}\nHauptdatei: {}{reiter}\nRevision: {rev}\n{}\n{}",
         s.projekt.wurzel.display(),
         s.projekt.konfig.haupt,
-        if s.spiegel.pruefsumme() == s.auf_platte {
+        if crate::reiter::alles_gespeichert(s) {
             "gespeichert"
         } else {
             "ungespeichert (TFTN speichert nach einer Sekunde selbst)"
@@ -452,12 +460,13 @@ fn quelltext(app: &AppHandle) -> Result<Ergebnis, String> {
     let zustand = app.state::<Zustand>();
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
+    let haupt = crate::reiter::haupt_spiegel(s);
     let mut t = format!(
         "{} (Rev {}), Zeilennummer und Tabulator stehen nicht im Text:\n",
         s.projekt.konfig.haupt,
-        s.spiegel.rev()
+        haupt.rev()
     );
-    for (i, z) in s.spiegel.text().lines().enumerate() {
+    for (i, z) in haupt.text().lines().enumerate() {
         t.push_str(&format!("{}\t{z}\n", i + 1));
     }
     Ok(Ergebnis::text(t))
@@ -615,7 +624,7 @@ fn auswahl_lesen(app: &AppHandle) -> Result<Ergebnis, String> {
     let (kz, ks) = z.byte_to_line_column(kopf).unwrap_or((0, 0));
     let mut t = format!(
         "{}: Schreibmarke in Zeile {}, Spalte {}.",
-        s.projekt.konfig.haupt,
+        crate::reiter::relativ(&s.projekt.wurzel, &s.datei),
         kz + 1,
         ks + 1
     );
@@ -698,7 +707,7 @@ fn gliederung_lesen(app: &AppHandle) -> Result<Ergebnis, String> {
     let zustand = app.state::<Zustand>();
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
-    let quelle = s.spiegel.quelle();
+    let quelle = crate::reiter::haupt_spiegel(s).quelle();
     // Eingebundene Dateien relativ zur Hauptdatei, an ihrer Stelle; Zeilen darin gelten in der Datei.
     let basis = Path::new(&s.projekt.konfig.haupt)
         .parent()
@@ -772,12 +781,15 @@ fn datei_lesen(app: &AppHandle, rel: &str) -> Result<Ergebnis, String> {
     let wurzel = &s.projekt.wurzel;
     let p = crate::projektdateien::pfad(wurzel, rel)?;
     let (text, kopf) = if crate::projektdateien::pfad(wurzel, &s.projekt.konfig.haupt)? == p {
+        let haupt = crate::reiter::haupt_spiegel(s);
         (
-            s.spiegel.text().to_string(),
-            format!(
-                "{rel} (Hauptdatei, Stand im Editor, Rev {})",
-                s.spiegel.rev()
-            ),
+            haupt.text().to_string(),
+            format!("{rel} (Hauptdatei, Stand im Editor, Rev {})", haupt.rev()),
+        )
+    } else if let Some(offen) = crate::reiter::offener_spiegel(s, &p) {
+        (
+            offen.text().to_string(),
+            format!("{rel} (als Reiter offen, Stand im Editor)"),
         )
     } else {
         (crate::projektdateien::lesen(wurzel, rel)?, rel.to_string())
@@ -802,6 +814,11 @@ fn datei_aendern(
     let daten = relativ(&wurzel, s.formular.datei()).unwrap_or_default();
     let ziel =
         crate::projektdateien::schreiben_pruefen(&wurzel, rel, &s.projekt.konfig.haupt, &daten)?;
+    if crate::reiter::offener_spiegel(s, &ziel).is_some() {
+        return Err(format!(
+            "{rel} ist in TFTN gerade als Reiter offen. Ändern lässt sich die Datei erst, wenn der Benutzer den Reiter schließt."
+        ));
+    }
     let alt = if ziel.exists() {
         Some(crate::projektdateien::lesen(&wurzel, rel)?)
     } else {
@@ -986,13 +1003,14 @@ fn fassung_sichern(app: &AppHandle) -> Result<Ergebnis, String> {
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
     let ordner = s.projekt.wurzel.join(crate::fassungen::ORDNER);
-    let neu = crate::fassungen::ablegen(&ordner, s.spiegel.text(), crate::fassungen::jetzt(), true)
+    let haupt = crate::reiter::haupt_spiegel(s);
+    let neu = crate::fassungen::ablegen(&ordner, haupt.text(), crate::fassungen::jetzt(), true)
         .map_err(|e| format!("Fassung nicht gesichert: {e}"))?;
     Ok(Ergebnis::text(if neu {
         format!(
             "Fassung von {} gesichert (Rev {}); der Benutzer holt sie in TFTN über „Fassungen“ zurück.",
             s.projekt.konfig.haupt,
-            s.spiegel.rev()
+            haupt.rev()
         )
     } else {
         "Der Text ist derselbe wie in der letzten Fassung; nichts Neues gesichert.".to_string()
@@ -1007,7 +1025,7 @@ fn rechtschreibung_pruefen(app: &AppHandle, pfad: Option<String>) -> Result<Erge
     let (haupt, quelle, name) = {
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
-        let haupt = s.spiegel.quelle().clone();
+        let haupt = crate::reiter::haupt_spiegel(s).quelle().clone();
         match pfad.filter(|p| !p.trim().is_empty()) {
             Some(p)
                 if crate::projektdateien::pfad(&s.projekt.wurzel, &p)?
@@ -1116,15 +1134,15 @@ fn aendern(
         let (patch, rev) = {
             let sitzung = zustand.sitzung.lock().unwrap();
             let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
-            let alt = s.spiegel.text();
+            let haupt = crate::reiter::haupt_spiegel(s);
+            let alt = haupt.text();
             let neu = neuer_text(alt)?;
             if neu == alt {
                 return Ok(Ergebnis::text("Nichts zu ändern: Der Text ist schon so."));
             }
             let (bereich, text) = tftn_mcp::kleinster_bereich(alt, &neu);
-            let rev = s.spiegel.rev();
-            let patch =
-                crate::patch_js(s.spiegel.quelle(), rev, tftn_edit::Patch { bereich, text })?;
+            let rev = haupt.rev();
+            let patch = crate::patch_js(haupt.quelle(), rev, tftn_edit::Patch { bereich, text })?;
             (patch, rev)
         };
         let auftrag = json!({ "art": "patch", "patch": patch });
@@ -1140,7 +1158,7 @@ fn aendern(
                 .lock()
                 .unwrap()
                 .as_ref()
-                .map_or(rev, |s| s.spiegel.rev());
+                .map_or(rev, |s| crate::reiter::haupt_spiegel(s).rev());
             neu_rev > rev
         });
         if neu_rev > rev {

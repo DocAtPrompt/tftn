@@ -48,6 +48,7 @@ mod netzprotokoll;
 mod pakete;
 mod projektdateien;
 mod rechtschreibung;
+mod reiter;
 mod schriftwahl;
 mod skins;
 mod sprachen;
@@ -84,6 +85,8 @@ struct Sitzung {
     auf_platte: u64,
     /// Fingerabdruck der Schriften beim letzten Einbinden (0: noch nie in dieser Sitzung).
     schriften_abdruck: u64,
+    /// Weitere offene Dateien (Reiter), gerade nicht angezeigt (`reiter.rs`).
+    geparkt: Vec<reiter::Geparkt>,
 }
 
 #[derive(Default)]
@@ -122,7 +125,12 @@ struct Zustand {
 
 struct Auftrag {
     rev: u64,
+    /// Die Quelle des aktiven Reiters.
     quelle: Source,
+    /// Die übrigen offenen Dateien, ebenfalls ungespeichert aus dem Editor.
+    weitere: Vec<Source>,
+    /// Der aktive Reiter, relativ zum Projekt (Meldungen und `rev` gehören zu ihm).
+    datei: String,
 }
 
 struct Anzeige {
@@ -149,6 +157,8 @@ struct MeldungJs {
 
 #[derive(Clone, Serialize)]
 struct VorschauEreignis {
+    /// Der aktive Reiter des Laufs; `rev` und die Bereiche der Meldungen gehören zu ihm.
+    datei: String,
     rev: u64,
     gelungen: bool,
     stand_rev: Option<u64>,
@@ -215,7 +225,7 @@ fn kompilierer_starten(
             let zeilen = auftrag.quelle.clone();
             let lauf = {
                 let mut vorschau = vorschau.lock().unwrap();
-                let lauf = vorschau.lauf(auftrag.rev, Some(auftrag.quelle));
+                let lauf = vorschau.lauf_offen(auftrag.rev, auftrag.quelle, auftrag.weitere);
                 if lauf.gelungen
                     && let Some(gut) = vorschau.gut()
                 {
@@ -234,6 +244,7 @@ fn kompilierer_starten(
                 meldungen: fuer_mcp,
             });
             let ereignis = VorschauEreignis {
+                datei: auftrag.datei,
                 rev: lauf.rev,
                 gelungen: lauf.gelungen,
                 stand_rev: lauf.stand_rev,
@@ -263,6 +274,8 @@ fn kompilieren_lassen(zustand: &Zustand, s: &Sitzung) {
         let _ = tx.send(Auftrag {
             rev: s.spiegel.rev(),
             quelle: s.spiegel.quelle().clone(),
+            weitere: reiter::geparkte_quellen(s),
+            datei: reiter::relativ(&s.projekt.wurzel, &s.datei),
         });
     }
 }
@@ -545,7 +558,10 @@ fn oeffnen(
         let _ = std::fs::create_dir_all(datei.parent().unwrap());
         let _ = std::fs::write(&datei, zuletzt::als_text(&liste));
     }
-    let datei = projekt.haupt();
+    let datei = projekt
+        .haupt()
+        .canonicalize()
+        .unwrap_or_else(|_| projekt.haupt());
     let roh = std::fs::read_to_string(&datei).map_err(|e| format!("{}: {e}", datei.display()))?;
     let vorschau = Vorschau::neu(&projekt).map_err(|e| e.to_string())?;
     let spiegel = Spiegel::neu(vorschau.world().haupt(), &roh);
@@ -579,6 +595,7 @@ fn oeffnen(
         spiegel,
         auf_platte,
         schriften_abdruck: 0,
+        geparkt: Vec::new(),
     };
     // Vorschau und Lauf des vorigen Dokuments gelten nicht mehr; sein Kompilierer legt nichts mehr ab.
     let meine = ablage::neue_sitzung(&zustand.sitzung_nr);
@@ -856,7 +873,7 @@ async fn exportieren(
         let s = sitzung
             .as_ref()
             .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-        if s.spiegel.pruefsumme() != s.auf_platte {
+        if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
             ));
@@ -912,7 +929,7 @@ async fn archivieren(zustand: State<'_, Zustand>) -> Result<ArchivJs, String> {
         let s = sitzung
             .as_ref()
             .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-        if s.spiegel.pruefsumme() != s.auf_platte {
+        if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
             ));
@@ -1035,7 +1052,7 @@ fn serie_erzeugen(
         let s = sitzung
             .as_ref()
             .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-        if s.spiegel.pruefsumme() != s.auf_platte {
+        if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
             ));
@@ -1290,7 +1307,7 @@ fn gespeichertes_projekt(zustand: &Zustand) -> Result<Projekt, String> {
     let s = sitzung
         .as_ref()
         .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-    if s.spiegel.pruefsumme() != s.auf_platte {
+    if !reiter::alles_gespeichert(s) {
         return Err(tr!(
             "Bitte zuerst speichern: verglichen wird die Datei auf der Platte."
         ));
@@ -1351,6 +1368,7 @@ fn typ_uebernehmen(
         let s = sitzung
             .as_ref()
             .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        reiter::nur_haupt(s)?;
         helfer::rev_pruefen(s.spiegel.rev(), rev)?;
         s.spiegel.quelle().clone()
     };
@@ -1712,7 +1730,9 @@ fn literatur_aus_doi(
         .unwrap_or(&datei)
         .to_string_lossy()
         .replace('\\', "/");
+    // Das Verzeichnis gehört ans Ende der Hauptdatei; aus einem Kapitel heraus nicht anhängen.
     let verzeichnis = (!typ_regelt_literatur(&s.projekt)
+        && reiter::haupt_aktiv(s)
         && !s.spiegel.quelle().text().contains("bibliography("))
     .then(|| format!("\n#bibliography(\"{relativ}\")\n"));
     kompilieren_lassen(&zustand, s);
@@ -2277,6 +2297,7 @@ fn seite_stand(zustand: State<'_, Zustand>) -> Result<SeitenJs, String> {
     let s = sitzung
         .as_ref()
         .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    reiter::nur_haupt(s)?;
     let vorschau = zustand.vorschau.lock().unwrap().clone();
     let schriften = vorschau
         .ok_or_else(|| tr!("kein Projekt geöffnet"))?
@@ -2321,6 +2342,7 @@ fn seite_setzen(
     let s = sitzung
         .as_ref()
         .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    reiter::nur_haupt(s)?;
     helfer::rev_pruefen(s.spiegel.rev(), rev)?;
     let quelle = s.spiegel.quelle();
     let z = quelle.lines();
@@ -2961,8 +2983,12 @@ enum KlickAntwort {
         rev: u64,
         pos: usize,
     },
+    /// Eine Kapiteldatei: UTF-16-Position, bezogen auf Revision `rev` ihres Reiters (`None`: noch
+    /// nicht offen; der Text ist dann der auf der Platte).
     Datei {
         datei: String,
+        pos: usize,
+        rev: Option<u64>,
     },
     /// Titelei: das Formularfeld im Fach „Dokument“ (PLAN-M2 AP7).
     Feld {
@@ -2997,24 +3023,52 @@ async fn klick(
     y: f64,
     zustand: State<'_, Zustand>,
 ) -> Result<KlickAntwort, String> {
+    // Revisionen der offenen Reiter: Liegt die Datei geparkt, kennt die World genau ihren Stand.
+    let (wurzel, haupt, revs) = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        let mut revs: Vec<(PathBuf, u64)> = vec![(s.datei.clone(), s.spiegel.rev())];
+        revs.extend(s.geparkt.iter().map(|g| (g.datei.clone(), g.spiegel.rev())));
+        (s.projekt.wurzel.clone(), s.projekt.haupt(), revs)
+    };
     let vorschau = vorschau_von(&zustand)?;
     let v = vorschau.lock().unwrap();
+    // Für die zuletzt gesetzte Datei gilt die Revision des Laufs, für geparkte ihre eigene.
+    let rev_von = |id: typst::syntax::FileId, pfad: &Path| -> Option<u64> {
+        if v.quelle_datei() == Some(id) {
+            return Some(v.quelle_rev());
+        }
+        let pfad = pfad.canonicalize().ok()?;
+        revs.iter().find(|(p, _)| *p == pfad).map(|(_, r)| *r)
+    };
     Ok(match v.klick(seite, x, y) {
         Sprung::Haupt(byte) => {
-            let quelle = v
-                .world()
-                .source(v.world().haupt())
-                .map_err(|e| e.to_string())?;
+            let id = v.world().haupt();
+            let quelle = v.world().source(id).map_err(|e| e.to_string())?;
             let pos = quelle
                 .lines()
                 .byte_to_utf16(byte)
                 .ok_or_else(|| tr!("Position außerhalb"))?;
             KlickAntwort::Haupt {
-                rev: v.quelle_rev(),
+                rev: rev_von(id, &haupt).unwrap_or(v.quelle_rev()),
                 pos,
             }
         }
-        Sprung::Datei(datei, _) => KlickAntwort::Datei { datei },
+        Sprung::Datei(datei, byte) => {
+            let pfad = wurzel.join(&datei);
+            let id = v.world().datei_id(&pfad);
+            let pos = id
+                .and_then(|id| v.world().source(id).ok())
+                .and_then(|q| q.lines().byte_to_utf16(byte))
+                .unwrap_or(0);
+            KlickAntwort::Datei {
+                rev: id.and_then(|id| rev_von(id, &pfad)),
+                datei,
+                pos,
+            }
+        }
         Sprung::Feld(feld) => KlickAntwort::Feld { feld },
         Sprung::Vorlage => KlickAntwort::Vorlage,
         Sprung::Url(url) => KlickAntwort::Url { url },
@@ -3139,35 +3193,51 @@ fn speichern(zustand: State<'_, Zustand>) -> Result<(), String> {
     sitzung_speichern(&zustand)
 }
 
-/// Schreibt den Text der Sitzung, legt bei Bedarf eine Fassung ab und ergänzt eingebundene Schriften.
+/// Atomar: in eine Nachbardatei schreiben, auf die Platte zwingen, umbenennen.
+fn atomar_schreiben(datei: &Path, text: &str) -> std::io::Result<()> {
+    let name = datei
+        .file_name()
+        .ok_or_else(|| std::io::Error::other(tr!("Datei ohne Namen")))?
+        .to_string_lossy()
+        .into_owned();
+    let zwischen = datei.with_file_name(format!(".{name}.tftn-speichern"));
+    let schreiben = || -> std::io::Result<()> {
+        let mut f = std::fs::File::create(&zwischen)?;
+        f.write_all(text.as_bytes())?;
+        f.sync_all()?;
+        std::fs::rename(&zwischen, datei)
+    };
+    schreiben().inspect_err(|_| {
+        let _ = std::fs::remove_file(&zwischen);
+    })
+}
+
+/// Schreibt die Texte der Sitzung (alle offenen Reiter), legt bei Bedarf eine Fassung der
+/// Hauptdatei ab und ergänzt eingebundene Schriften.
 fn sitzung_speichern(zustand: &Zustand) -> Result<(), String> {
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
         .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-    let name = s
-        .datei
-        .file_name()
-        .ok_or_else(|| tr!("Datei ohne Namen"))?
-        .to_string_lossy()
-        .into_owned();
-    let zwischen = s.datei.with_file_name(format!(".{name}.tftn-speichern"));
-    let schreiben = || -> std::io::Result<()> {
-        let mut f = std::fs::File::create(&zwischen)?;
-        f.write_all(s.spiegel.text().as_bytes())?;
-        f.sync_all()?;
-        std::fs::rename(&zwischen, &s.datei)
-    };
     // Erst die Prüfsumme setzen, damit der Dateiwächter die eigene Speicherung erkennt.
     let vorher = s.auf_platte;
     s.auf_platte = s.spiegel.pruefsumme();
-    if let Err(e) = schreiben() {
+    if let Err(e) = atomar_schreiben(&s.datei, s.spiegel.text()) {
         s.auf_platte = vorher;
-        let _ = std::fs::remove_file(&zwischen);
         return Err(tr!("Speichern fehlgeschlagen: {fehler}", fehler = e));
     }
+    // Die übrigen offenen Reiter mit.
+    for g in s.geparkt.iter_mut().filter(|g| g.ungespeichert()) {
+        let vorher = g.auf_platte;
+        g.auf_platte = g.spiegel.pruefsumme();
+        if let Err(e) = atomar_schreiben(&g.datei, g.spiegel.text()) {
+            g.auf_platte = vorher;
+            return Err(tr!("Speichern fehlgeschlagen: {fehler}", fehler = e));
+        }
+    }
     let fassungen = s.projekt.wurzel.join(fassungen::ORDNER);
-    if let Err(e) = fassungen::ablegen(&fassungen, s.spiegel.text(), fassungen::jetzt(), false) {
+    let haupttext = reiter::haupt_spiegel(s).text().to_string();
+    if let Err(e) = fassungen::ablegen(&fassungen, &haupttext, fassungen::jetzt(), false) {
         eprintln!("Keine Fassung abgelegt: {e}");
     }
     // Eingebundene Schriften ergänzen, wenn das Dokument inzwischen andere benutzt. Das liest den
@@ -3194,7 +3264,7 @@ fn beim_schliessen(zustand: &Zustand) {
         .lock()
         .unwrap()
         .as_ref()
-        .is_some_and(|s| s.spiegel.pruefsumme() != s.auf_platte);
+        .is_some_and(|s| !reiter::alles_gespeichert(s));
     if offen && let Err(e) = sitzung_speichern(zustand) {
         eprintln!("Beim Schließen nicht gespeichert: {e}");
     }
@@ -3210,7 +3280,7 @@ fn word_exportieren(zustand: State<'_, Zustand>) -> Result<word::WordJs, String>
         let s = sitzung
             .as_ref()
             .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-        if s.spiegel.pruefsumme() != s.auf_platte {
+        if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
             ));
@@ -3247,7 +3317,7 @@ fn html_exportieren(zustand: State<'_, Zustand>) -> Result<webseite::WebseiteJs,
         let s = sitzung
             .as_ref()
             .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-        if s.spiegel.pruefsumme() != s.auf_platte {
+        if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
             ));
@@ -3818,8 +3888,8 @@ pub fn run() {
     let zustand = Zustand::default();
     let anzeige = zustand.anzeige.clone();
     tauri::Builder::default()
-        .manage(zustand)
         .plugin(tauri_plugin_dialog::init())
+        .manage(zustand)
         .register_asynchronous_uri_scheme_protocol("tftn", move |_ctx, anfrage, antwort| {
             let anzeige = anzeige.clone();
             std::thread::spawn(move || {
@@ -3932,6 +4002,9 @@ pub fn run() {
             ordner_waehlen_dialog,
             projekt_anlegen,
             projekt_wechseln,
+            reiter::datei_aktivieren,
+            reiter::datei_schliessen,
+            reiter::kapiteldateien,
             zuletzt_liste,
             zuletzt_leeren,
             typ_vergleichen,

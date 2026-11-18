@@ -53,6 +53,7 @@ import { type McpAuftrag, type McpJs, type McpZugriff, mcpAnzeige, mcpFragtNoch,
 import { InkognitoDialog, type InkognitoJs } from "./inkognito";
 import { ikonenSetzen } from "./ikonen";
 import { KnopfMenue } from "./knopfmenue";
+import { ReiterLeiste, nachSchliessen } from "./reiter";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { dezimalzeichen, t, texteUebersetzen } from "./sprache";
@@ -93,6 +94,15 @@ interface Geoeffnet {
   rev: number;
   entwurf: boolean;
   vorschlag: string | null;
+}
+
+/** Stand eines Reiters aus Rust (`reiter::DateiJs`). */
+interface DateiJs {
+  datei: string;
+  haupt: boolean;
+  text: string;
+  rev: number;
+  ungespeichert: boolean;
 }
 
 interface Antwort {
@@ -148,6 +158,120 @@ let sichernZeitgeber: number | undefined;
 let view: EditorView;
 let vorschau: Vorschau;
 
+// --- Reiter: mehrere offene Dateien (reiter.ts, Rust reiter.rs) -----------------------------
+
+/** Zustand eines nicht angezeigten Reiters; der aktive lebt in `view`, `rev`, `verlauf` usw. */
+interface ReiterZustand {
+  datei: string;
+  haupt: boolean;
+  state: EditorState | null;
+  rev: number;
+  verlauf: { rev: number; changes: ChangeSet }[];
+  verlaufAb: number;
+  ungespeichert: boolean;
+}
+/** Offene Dateien in der Reihenfolge der Reiter, die Hauptdatei zuerst. */
+const reiter: ReiterZustand[] = [];
+let aktiveDatei = "";
+let hauptDatei = "";
+let reiterLeiste: ReiterLeiste | undefined;
+/** Erweiterungen jedes Editorzustands (für neue Reiter dieselben wie beim ersten). */
+let erweiterungen: () => import("@codemirror/state").Extension[] = () => [];
+/** Während eines Wechsels nimmt der Editor keine Eingaben an (sonst gingen sie an die falsche Datei). */
+const nurLesen = new Compartment();
+
+function reiterZeigen() {
+  reiterLeiste?.zeigen(
+    reiter.map((r) => ({ datei: r.datei, haupt: r.haupt, ungespeichert: r.datei === aktiveDatei ? ungespeichert : r.ungespeichert })),
+    aktiveDatei,
+  );
+}
+
+function irgendwoUngespeichert(): boolean {
+  return ungespeichert || reiter.some((r) => r.datei !== aktiveDatei && r.ungespeichert);
+}
+
+/**
+ * Reiter `datei` aktiv machen, eine noch nicht offene Kapiteldatei dabei öffnen. Läuft in der Kette
+ * der Nachrichten an Rust, damit alle Änderungen des bisherigen Reiters vorher angekommen sind.
+ */
+function reiterWaehlen(datei: string): Promise<void> {
+  if (!view || datei === aktiveDatei) return Promise.resolve();
+  view.dispatch({ effects: nurLesen.reconfigure(EditorState.readOnly.of(true)) });
+  const lauf = kette.then(async () => {
+    try {
+      const d = await invoke<DateiJs>("datei_aktivieren", { datei });
+      const alt = reiter.find((r) => r.datei === aktiveDatei);
+      if (alt) {
+        alt.state = view.state;
+        alt.rev = rev;
+        alt.verlauf = verlauf.splice(0);
+        alt.verlaufAb = verlaufAb;
+        alt.ungespeichert = ungespeichert;
+      }
+      let ziel = reiter.find((r) => r.datei === d.datei);
+      if (!ziel) {
+        ziel = { datei: d.datei, haupt: d.haupt, state: null, rev: d.rev, verlauf: [], verlaufAb: d.rev, ungespeichert: d.ungespeichert };
+        reiter.push(ziel);
+      }
+      // Geparkter Zustand mit Rückgängig, wenn er zum Stand in Rust passt; sonst frisch.
+      const passt = ziel.state !== null && ziel.state.doc.toString() === d.text && ziel.rev === d.rev;
+      view.setState(passt ? ziel.state! : EditorState.create({ doc: d.text, extensions: erweiterungen() }));
+      aktiveDatei = d.datei;
+      rev = d.rev;
+      verlauf.length = 0;
+      if (passt) verlauf.push(...ziel.verlauf);
+      verlaufAb = passt ? ziel.verlaufAb : d.rev;
+      ungespeichert = d.ungespeichert;
+      ziel.state = null;
+      ziel.verlauf = [];
+    } finally {
+      view.dispatch({ effects: nurLesen.reconfigure(EditorState.readOnly.of(false)) });
+    }
+  });
+  kette = lauf.catch(() => {});
+  return lauf.then(nachReiterwechsel, (fehler) => {
+    hinweis(String(fehler));
+    reiterZeigen();
+  });
+}
+
+/** Nach dem Wechsel: Leiste, Hervorhebung, Gliederung und Seitenleiste für den neuen Reiter. */
+async function nachReiterwechsel() {
+  reiterZeigen();
+  status();
+  if (letzterLauf) markierungenSetzen(letzterLauf);
+  view.focus();
+  gliederungSpaeter(0);
+  stelleZeigenSpaeter();
+  const h = await invoke<Bereich[] | null>("hervorheben", { rev, sichtbar: sichtbar() }).catch(() => null);
+  if (h) view.dispatch({ effects: setzeHervorhebung.of(dekorationen(h, view.state.doc.length)) });
+}
+
+/** Für alles, was in die Hauptdatei schreibt (MCP, Fassung, Dokumenttyp, Serie): erst ihr Reiter. */
+function hauptWaehlen(): Promise<void> {
+  return reiterWaehlen(hauptDatei);
+}
+
+/** Reiter schließen (die Datei bleibt im Projekt); Ungespeichertes wird vorher gesichert. */
+async function reiterSchliessen(datei: string) {
+  const r = reiter.find((x) => x.datei === datei);
+  if (!r || r.haupt) return;
+  const offen = datei === aktiveDatei ? ungespeichert : r.ungespeichert;
+  if (offen && !(await speichern())) return;
+  if (datei === aktiveDatei) await reiterWaehlen(nachSchliessen(reiter.map((x) => x.datei), datei, aktiveDatei));
+  if (datei === aktiveDatei) return;
+  const lauf = kette.then(() => invoke("datei_schliessen", { datei, verwerfen: false }));
+  kette = lauf.catch(() => {});
+  try {
+    await lauf;
+    reiter.splice(reiter.indexOf(r), 1);
+  } catch (fehler) {
+    hinweis(String(fehler));
+  }
+  reiterZeigen();
+}
+
 // --- Positionen älterer Revisionen auf den aktuellen Text abbilden (Klicksprung, KONZEPT 4.3) ----
 const verlauf: { rev: number; changes: ChangeSet }[] = [];
 /** Ältere Revisionen lassen sich nicht mehr abbilden (Neusynchronisation oder Verlauf gekürzt). */
@@ -196,7 +320,10 @@ function sichtbar(): [number, number] {
 }
 
 function anwenden(a: Antwort) {
-  ungespeichert = a.ungespeichert;
+  if (ungespeichert !== a.ungespeichert) {
+    ungespeichert = a.ungespeichert;
+    reiterZeigen();
+  }
   if (ungespeichert) sichernSpaeter();
   if (a.rev === rev) {
     view.dispatch({ effects: setzeHervorhebung.of(dekorationen(a.hervorhebung, view.state.doc.length)) });
@@ -819,6 +946,7 @@ async function kontext(seite: number, x: number, y: number, maus: { x: number; y
   const a = await invoke<KlickAntwort>("klick", { seite, x, y });
   let hier: HierJs | null = null;
   if (a.art === "haupt") {
+    await hauptWaehlen();
     menuePos = abbilden(a.pos, a.rev);
     hier = await hierAbfragen(menuePos);
     menueRev = hier?.rev ?? -1;
@@ -981,6 +1109,7 @@ async function klick(seite: number, x: number, y: number) {
   const a = await invoke<KlickAntwort>("klick", { seite, x, y });
   switch (a.art) {
     case "haupt": {
+      await hauptWaehlen();
       const pos = abbilden(a.pos, a.rev);
       view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: "center" }) });
       view.focus();
@@ -993,9 +1122,16 @@ async function klick(seite: number, x: number, y: number) {
     case "vorlage":
       dokumentOeffnen(null);
       break;
-    case "datei":
-      hinweis(t("Diese Stelle steht in {datei}; TFTN öffnet derzeit nur die Hauptdatei.", { datei: a.datei }));
+    case "datei": {
+      // Kapiteldatei: ihren Reiter öffnen bzw. wählen, dann an die Stelle.
+      await reiterWaehlen(a.datei);
+      if (aktiveDatei !== a.datei) break;
+      const pos = a.rev === null ? Math.min(a.pos, view.state.doc.length) : abbilden(a.pos, a.rev);
+      view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: "center" }) });
+      view.focus();
+      hinweis("");
       break;
+    }
     case "url":
       meldung(t("Verweis auf {url}", { url: a.url }));
       break;
@@ -1084,7 +1220,7 @@ let letzterLauf: VorschauEreignis | null = null;
 /** Fehlerstellen im Editor unterwellen. */
 function markierungenSetzen(lauf: VorschauEreignis) {
   // Markierungen nur, wenn sie zum aktuellen Text passen; sonst kommt bald ein neuer Lauf.
-  if (view && lauf.rev === rev) {
+  if (view && lauf.rev === rev && (lauf.datei ?? aktiveDatei) === aktiveDatei) {
     const laenge = view.state.doc.length;
     const diagnosen: Diagnostic[] = lauf.meldungen
       .filter((m) => m.von !== null && m.bis !== null && m.bis <= laenge)
@@ -1246,11 +1382,18 @@ const sichtbereich = ViewPlugin.fromClass(
   },
 );
 
+/** Rust schreibt beim Speichern alle offenen Reiter. */
+function alleGespeichert() {
+  ungespeichert = false;
+  for (const r of reiter) r.ungespeichert = false;
+  reiterZeigen();
+}
+
 async function speichern(): Promise<boolean> {
   await kette;
   try {
     await invoke("speichern");
-    ungespeichert = false;
+    alleGespeichert();
     hinweis("");
   } catch (fehler) {
     hinweis(String(fehler));
@@ -1269,7 +1412,7 @@ function sichernSpaeter() {
     kette = kette.then(async () => {
       try {
         await invoke("speichern");
-        ungespeichert = false;
+        alleGespeichert();
         status();
       } catch (fehler) {
         hinweis(String(fehler));
@@ -1388,6 +1531,7 @@ interface UebernahmeJs {
 
 /** Neuere Version des Dokumenttyps übernehmen: Importzeile als ein Undo-Schritt, dann speichern. */
 async function typUebernehmen(): Promise<string> {
+  await hauptWaehlen();
   if (!(await speichern())) throw new Error(t("Speichern fehlgeschlagen – nicht übernommen."));
   const r = await invoke<UebernahmeJs>("typ_uebernehmen", { rev });
   let text = r.hinweis ?? "";
@@ -1452,7 +1596,7 @@ async function paketWechseln(spec: string, version: string): Promise<string> {
 
 function status() {
   const s = document.getElementById("sync")!;
-  const z = syncText(zahlen, rev, ungespeichert, import.meta.env.DEV);
+  const z = syncText(zahlen, rev, irgendwoUngespeichert(), import.meta.env.DEV);
   s.textContent = z.text;
   s.classList.toggle("warnung", z.warnung);
 }
@@ -1601,6 +1745,7 @@ async function mcpAuftrag(a: McpAuftrag) {
   const antwort = (ok: boolean, fehler: string | null = null) => invoke("mcp_antwort", { id: a.id, ok, fehler });
   try {
     if (a.art === "patch") {
+      await hauptWaehlen();
       const p = a.patch;
       // Veraltet (der Benutzer tippt gerade): die App rechnet neu, ohne Hinweis.
       if (p.rev !== rev) return void (await antwort(false));
@@ -1791,6 +1936,7 @@ async function start() {
     },
     text: (name) => invoke<string>("fassung_text", { name }),
     zurueckholen: async (name) => {
+      await hauptWaehlen();
       await kette;
       const alt = await invoke<string>("fassung_zurueckholen", { name });
       view.dispatch({
@@ -2054,6 +2200,7 @@ async function start() {
       return invoke<SerieErgebnisJs>("serie_erzeugen", { quelle, ausgabe: wahl.ausgabe, beidseitig: wahl.beidseitig });
     },
     anpassen: async (daten) => {
+      await hauptWaehlen();
       const a = hauptdateiAnpassung(view.state.doc.toString(), daten);
       if (!a) {
         hinweis(t("Die Stelle toml(\"{daten}\") steht nicht genau einmal in der Hauptdatei; bitte von Hand anpassen.", { daten }));
@@ -2112,10 +2259,11 @@ async function start() {
   });
   await listen<VorschauEreignis>("vorschau", (e) => {
     // Nur „/“ für das Bausteinmenü getippt: kein Fehlerband, die Vorschau bleibt, wie sie ist.
-    if (view && e.payload.rev === rev && nurSlashFehler(view.state.doc.toString(), e.payload)) return;
+    const meiner = (e.payload.datei ?? aktiveDatei) === aktiveDatei;
+    if (view && meiner && e.payload.rev === rev && nurSlashFehler(view.state.doc.toString(), e.payload)) return;
     // Gerade eingefügtes Markdown ist meist kein gültiges Typst: Das Angebot „In Typst umwandeln“
     // bleibt stehen, solange seither nichts getippt wurde; die Vorschau bleibt beim letzten Stand.
-    if (view && e.payload.rev === rev && umwandelnWartet(e.payload, umwandelnAngebotStand?.doc === view.state.doc)) {
+    if (view && meiner && e.payload.rev === rev && umwandelnWartet(e.payload, umwandelnAngebotStand?.doc === view.state.doc)) {
       // Lehnt man ab (Band schließen), kommt dieser Lauf mit seinem Fehler nach.
       umwandelnZurueckgehalten = e.payload;
       return;
@@ -2132,6 +2280,9 @@ async function start() {
   document.getElementById("datei-rest")!.textContent = kopf.rest;
   document.getElementById("datei")!.title = kopf.titel;
   rev = g.rev;
+  hauptDatei = g.datei;
+  aktiveDatei = g.datei;
+  reiter.push({ datei: g.datei, haupt: true, state: null, rev: g.rev, verlauf: [], verlaufAb: 0, ungespeichert: false });
   try {
     katalog = await invoke<EintragJs[]>("katalog").then(texteUebersetzen);
   } catch (fehler) {
@@ -2147,11 +2298,8 @@ async function start() {
   const warnungen = einstellHinweise(einstellungen!, belegung!.meldungen).warnungen;
   if (warnungen.length) hinweis(warnungen[0]);
   const [editorStandard, verlaufTasten, suchTasten, vervollstaendigenTasten, tabTaste] = editorKeymaps();
-  view = new EditorView({
-    parent: document.getElementById("editor")!,
-    state: EditorState.create({
-      doc: g.text,
-      extensions: [
+  erweiterungen = () => [
+        nurLesen.of(EditorState.readOnly.of(false)),
         lineNumbers(),
         highlightSpecialChars(),
         // Widget-Patches einer Farbwahl sind ein Undo-Schritt, auch wenn sie nicht nebeneinander liegen.
@@ -2203,9 +2351,17 @@ async function start() {
         sichtbereich,
         bildAblage,
         markenErweiterung((m, dom) => void markeGeklickt(m, dom)),
-      ],
-    }),
+      ];
+  view = new EditorView({
+    parent: document.getElementById("editor")!,
+    state: EditorState.create({ doc: g.text, extensions: erweiterungen() }),
   });
+  reiterLeiste = new ReiterLeiste(document.getElementById("editor")!, {
+    waehlen: (datei) => void reiterWaehlen(datei),
+    schliessen: (datei) => void reiterSchliessen(datei),
+    kapitel: () => invoke<string[]>("kapiteldateien"),
+  });
+  reiterZeigen();
   popover = new Popover(() => view.focus());
   // Der erste Lauf startet schon beim Öffnen und war meist vor dem Editor fertig.
   if (letzterLauf) markierungenSetzen(letzterLauf);
@@ -2214,7 +2370,9 @@ async function start() {
   const h = await invoke<Bereich[] | null>("hervorheben", { rev, sichtbar: sichtbar() });
   if (h) view.dispatch({ effects: setzeHervorhebung.of(dekorationen(h, view.state.doc.length)) });
 
-  await listen<string>("extern-geaendert", (e) => {
+  await listen<string>("extern-geaendert", async (e) => {
+    // Der Wächter beobachtet die Hauptdatei.
+    await hauptWaehlen();
     if (!ungespeichert) {
       textErsetzen(e.payload);
       meldung(t("Datei wurde außerhalb von TFTN geändert und neu geladen."));

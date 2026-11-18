@@ -96,6 +96,14 @@ sync it and keep working on another computer without a network.
   typed something into a dialog (a project name, say), only × or Esc closes it.
 - **Editor** (left): Typst source with highlighting. Above it: “Block”, “Citation”, “Outline”,
   “Page” and, as icons, sidebar and focus view.
+- **Tabs** above the editor: the main file and further chapter files (`.typ`, included for example
+  with `#include "chapters/one.typ"`). “+” opens a chapter file of the project; clicking text from a
+  chapter in the preview opens its tab by itself and jumps to the spot. Each tab has its own undo; a
+  dot shows that it is not saved yet, × closes it (the file stays in the project, the main file is
+  always open). The preview always shows the whole document, including unsaved chapters. All tabs
+  are saved together (Cmd/Ctrl+S, or by themselves after a second). Outline, the Here panel,
+  spelling and counting apply to the active tab; page settings, versions, document type and AI
+  assistants (MCP) to the main file – changing something there takes you to its tab.
 - **Preview** (right): the finished pages. Clicking in the preview jumps to the matching place in
   the text; the preview follows the cursor. Right-click opens a menu with “Edit …” and “Show in
   code”.

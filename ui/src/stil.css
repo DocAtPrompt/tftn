@@ -125,7 +125,8 @@ body.trenner-zieht {
 #schreiben {
   grid-column: 2;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  /* Editorleiste, Reiter (reiter.ts), Editor */
+  grid-template-rows: auto auto minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
 }
@@ -1752,6 +1753,7 @@ body.schreibansicht #arbeit {
 }
 
 body.schreibansicht #vorschau,
+body.schreibansicht #reiter,
 body.schreibansicht .arbeit-griff,
 body.schreibansicht #gliederung,
 body.schreibansicht #editor-knoepfe,
@@ -2362,4 +2364,72 @@ button:hover .ikone {
   margin-left: 0.6em;
   color: var(--leise);
   font-size: 0.9em;
+}
+
+/* Reiter über dem Editor (reiter.ts): Hauptdatei und offene Kapitel, Punkt = ungespeichert. */
+#reiter {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--linie);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  font-size: 0.9em;
+}
+.reiter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 16em;
+  padding: 3px 4px 3px 10px;
+  color: var(--leise);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+.reiter:hover {
+  color: var(--text);
+}
+.reiter.aktiv {
+  color: var(--text);
+  border-bottom-color: var(--akzent);
+}
+.reiter:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: -2px;
+}
+.reiter-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reiter-punkt {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: transparent;
+  flex: none;
+}
+.reiter.ungespeichert .reiter-punkt {
+  background: var(--akzent);
+}
+#reiter .reiter-zu,
+#reiter .reiter-plus {
+  border: none;
+  background: none;
+  color: var(--leise);
+  padding: 0 4px;
+  min-height: 0;
+  line-height: 1.4;
+  border-radius: 4px;
+}
+#reiter .reiter-zu:hover,
+#reiter .reiter-plus:hover {
+  color: var(--text);
+  background: var(--flaeche);
+}
+/* Ohne Hauptdatei-Punkt: die Hauptdatei hat kein ×, damit die Reiter gleich hoch bleiben. */
+.reiter:not(:has(.reiter-zu)) {
+  padding-right: 10px;
 }

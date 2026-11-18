@@ -21,6 +21,8 @@ export interface MeldungJs {
 }
 
 export interface VorschauEreignis {
+  /** Der aktive Reiter des Laufs; `rev` und die Bereiche der Meldungen gehören zu ihm. */
+  datei?: string;
   rev: number;
   gelungen: boolean;
   stand_rev: number | null;

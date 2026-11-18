@@ -585,6 +585,12 @@ name = "English"
 "„{lang}“: kein Wörterbuch" = "“{lang}”: no dictionary"
 "„{wort}“ ist kein einzelnes Wort." = "“{wort}” is not a single word."
 
+# src-tauri/src/reiter.rs
+"Das steht in der Hauptdatei. Bitte zuerst ihren Reiter wählen." = "This belongs to the main file. Please select its tab first."
+"Die Hauptdatei bleibt offen." = "The main file stays open."
+"{datei} ist keine Kapiteldatei dieses Dokuments." = "{datei} is not a chapter file of this document."
+"{datei} ist nicht gespeichert." = "{datei} is not saved."
+
 # src-tauri/src/schriftwahl.rs
 "Die Schrift „{name}“ ist nicht mehr zu finden." = "The font “{name}” can no longer be found."
 "{datei} ist keine lesbare Schriftdatei (.otf, .ttf, .otc, .ttc)." = "{datei} is not a readable font file (.otf, .ttf, .otc, .ttc)."
@@ -990,7 +996,6 @@ name = "English"
 "Die Importzeile in der Hauptdatei bitte von Hand auf die neue Version ändern." = "Please change the import line in the main file to the new version by hand."
 "Die Sprache gilt ab dem nächsten Start." = "The language changes after TFTN restarts."
 "Die Stelle toml(\"{daten}\") steht nicht genau einmal in der Hauptdatei; bitte von Hand anpassen." = "toml(\"{daten}\") does not appear exactly once in the main file; please adjust it by hand."
-"Diese Stelle steht in {datei}; TFTN öffnet derzeit nur die Hauptdatei." = "This spot is in {datei}; TFTN currently opens only the main file."
 "Dieses Dokument hat ein KI-Assistent über MCP geöffnet. Soll MCP aktiv bleiben?" = "An AI assistant opened this document via MCP. Should MCP stay active?"
 "Ein Dokumentwechsel läuft noch – bitte die offene Frage beantworten oder kurz warten." = "A document switch is still in progress – please answer the open question or wait a moment."
 "Export {profil}: {fehler}" = "Export {profil}: {fehler}"
@@ -1177,6 +1182,16 @@ name = "English"
 "Ins Wörterbuch aufnehmen" = "Add to dictionary"
 "Keine Vorschläge" = "No suggestions"
 "Vorschläge …" = "Suggestions …"
+
+# ui/src/reiter.ts
+"Alle .typ-Dateien des Projekts sind schon offen." = "All .typ files of the project are already open."
+"Hauptdatei" = "Main file"
+"Kapiteldatei öffnen" = "Open chapter file"
+"Keine weiteren Kapiteldateien" = "No further chapter files"
+"Offene Dateien" = "Open files"
+"Reiter schließen (die Datei bleibt im Projekt)" = "Close tab (the file stays in the project)"
+"ungespeichert" = "unsaved"
+"{datei} schließen" = "Close {datei}"
 
 # ui/src/reserviert.ts
 "Abmelden" = "Log out"
@@ -1391,7 +1406,6 @@ name = "English"
 "Abgleich gestört ({anzahl}) · {zustand}" = "Sync problem ({anzahl}) · {zustand}"
 "Rev {rev} · Prüfsummen gleich {gleich} · abweichend {abweichend} · Neusync {neusync} · Fehler {fehler} · {zustand}" = "Rev {rev} · checksums equal {gleich} · different {abweichend} · resync {neusync} · errors {fehler} · {zustand}"
 "gespeichert" = "saved"
-"ungespeichert" = "unsaved"
 
 # ui/src/tasten.ts
 "Auszeichnung" = "Markup"

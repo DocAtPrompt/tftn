@@ -11,7 +11,8 @@ import { anAnker } from "./platz";
 /** Antwort von `klick` (Rust `KlickAntwort`). */
 export type KlickAntwort =
   | { art: "haupt"; rev: number; pos: number }
-  | { art: "datei"; datei: string }
+  /** Eine Kapiteldatei; `rev` ist die ihres Reiters (null: noch nicht offen). */
+  | { art: "datei"; datei: string; pos: number; rev: number | null }
   | { art: "vorlage" }
   | { art: "feld"; feld: string }
   | { art: "url"; url: string }

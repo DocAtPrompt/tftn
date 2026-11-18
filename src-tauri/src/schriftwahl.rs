@@ -39,10 +39,8 @@ fn dokument(zustand: &Zustand) -> Result<(String, BTreeSet<String>), String> {
         .lock()
         .unwrap()
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?
-        .spiegel
-        .quelle()
-        .clone();
+        .map(|s| crate::reiter::haupt_spiegel(s).quelle().clone())
+        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
     let sprache = tftn_edit::seite_lesen(&sprache)
         .sprache
         .unwrap_or_else(|| "en".into());

@@ -92,6 +92,15 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
   in einem Dialog schon etwas eingetippt (etwa einen Projektnamen), schließt ihn nur × oder Esc.
 - **Editor** (links): Typst-Quelltext mit Hervorhebung. Darüber die Knöpfe „Baustein“, „Zitat“,
   „Gliederung“, „Seite“ und als Symbole Seitenleiste und Schreibansicht.
+- **Reiter** über dem Editor: die Hauptdatei und weitere Kapiteldateien (`.typ`, etwa mit
+  `#include "kapitel/eins.typ"` eingebunden). „+“ öffnet eine Kapiteldatei des Projekts; ein Klick in
+  der Vorschau auf Text aus einem Kapitel öffnet dessen Reiter von selbst und springt an die Stelle.
+  Jeder Reiter hat sein eigenes Rückgängig; ein Punkt zeigt, dass er noch nicht gespeichert ist, ×
+  schließt ihn (die Datei bleibt im Projekt, die Hauptdatei bleibt immer offen). Die Vorschau zeigt
+  stets das ganze Dokument, auch mit ungespeicherten Kapiteln. Gespeichert werden alle Reiter
+  zusammen (Cmd/Strg+S oder von selbst nach einer Sekunde). Gliederung, Fach „Hier“, Rechtschreibung
+  und Zählen gelten für den aktiven Reiter; Seite, Fassungen, Dokumenttyp und KI-Assistenten (MCP)
+  für die Hauptdatei – wer dort etwas ändert, landet dafür in ihrem Reiter.
 - **Vorschau** (rechts): die fertigen Seiten. Ein Klick in die Vorschau springt an die Stelle im Text;
   die Vorschau folgt der Schreibmarke. Rechtsklick öffnet ein Menü mit „Ändern …“ und „Im Code zeigen“.
   Rechts in der Statuszeile: „Breite“ (Seiten so breit wie die Spalte), „Ganze Seite“, − und + sowie
