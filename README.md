@@ -14,10 +14,17 @@ with Typst without handing them to a third party.
 - **Live preview with click-to-source** in both directions.
 - **Blocks and completion** for figures, tables, equations, citations and more – type “/” on an empty
   line.
+- **Your own text blocks:** standard phrases and paragraphs with gaps to fill in, kept in one file in
+  your settings folder (synced to every computer if you like); select text and save it as a block
+  with a right-click.
+- **Find and replace across the project:** search all chapter files at once (match case, whole word,
+  regular expressions), jump to a match, replace in the editor with undo per file.
 - **Change values without code:** markers, a context sidebar, a table grid and an equation palette.
 - **Document types** as Typst packages, with a form for the front matter. TFTN ships a blank
   document, letter, invoice, medical report, report, journal article, book, poster and CV – and
-  copies any of them into a custom type of your own in Settings.
+  copies any of them into a custom type of your own in Settings. Letter, medical report and invoice
+  take a logo and a scanned signature; the invoice knows the Austrian VAT exemptions for medical
+  treatment and small businesses.
 - **Any font, the same everywhere:** pick an installed font or a font file; TFTN copies the family
   into the project, so preview, export and every other computer typeset with the very same files.
   Missing characters (ß, umlauts, €, …) are flagged when you choose the font and wherever the text
@@ -37,7 +44,8 @@ with Typst without handing them to a third party.
 - **Import** from Word, OpenDocument, Markdown, HTML, EPUB and LaTeX, **export** to PDF (incl.
   PDF/A), to Word for proofreading and to an e-book (EPUB, both via Pandoc) and to a
   self-contained web page (HTML).
-- **Series for letters and invoices:** one `.toml` with many records, or a folder of `.toml` files,
+- **Series for letters and invoices:** a CSV from Excel (columns matched to the form fields, umlauts
+  from old Windows files included), one `.toml` with many records, or a folder of `.toml` files,
   run over the document – one PDF per record, or all in one PDF for a single print run (optionally
   with blank pages for double-sided printing). Each record holds only what changes; sender, bank
   and the rest come from the project.
@@ -46,7 +54,7 @@ with Typst without handing them to a third party.
   from the zip's contents alone, so years later – without TFTN – the same typst version gives the
   same PDF, byte for byte.
 - **Autosave with versions**, outline with drag-and-drop sections, spell checking, word count,
-  distraction-free focus view.
+  distraction-free focus view, editor font size with ⌘/Ctrl + and −, printing with ⌘/Ctrl+P.
 - **AI assistants via MCP** (opt-in): Claude Code or the agent of your choice – a local model
   included – can read and edit the open document in the running app; every change shows up at once
   and can be undone. Off by default; once you switch it on, the assistant you connect sees the
@@ -62,6 +70,7 @@ with Typst without handing them to a third party.
   normally none – and prints a one-page sheet for your records or data protection officer. Your
   text stays plain Typst; `tftn gegenprobe` prints the `typst compile` command that produces the
   identical PDF without TFTN.
+- **About TFTN** (F1): version, licenses, links and every keyboard shortcut in effect at a glance.
 
 Interface and bundled document types in English and German; more interface languages can be added
 as plain files. New documents follow the interface language.
