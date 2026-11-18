@@ -471,7 +471,7 @@ export class DokumentFach {
   private bildKnopf(f: Feld, pfad: Pfad, eingabe: HTMLInputElement, meldung: HTMLElement): HTMLElement {
     const b = el("button", "dok-bildwahl", t("Bild wählen …"));
     b.type = "button";
-    b.title = t("Bilddatei wählen; liegt sie nicht im Projekt, wird sie nach bilder/ kopiert");
+    b.title = t("Bilddatei wählen; liegt sie nicht im Dokumentordner, wird sie nach bilder/ kopiert");
     b.addEventListener("click", async () => {
       b.disabled = true;
       try {
@@ -564,7 +564,7 @@ export class DokumentFach {
         beiAenderung(ta);
         const format = art.element.art === "text" ? art.element.format : null;
         const v = format ? this.js!.vorschlaege[format] : undefined;
-        if (v?.length) ta.title = t("Im Projekt: {liste}", { liste: v.filter((x) => !x.includes(" ")).slice(0, 12).join(", ") });
+        if (v?.length) ta.title = t("Im Dokumentordner: {liste}", { liste: v.filter((x) => !x.includes(" ")).slice(0, 12).join(", ") });
         return ta;
       }
       case "text": {
@@ -605,7 +605,7 @@ export class DokumentFach {
 
   private projektTeil(): HTMLElement {
     const s = el("section", "dok-gruppe");
-    s.append(el("h3", "", t("Projekt")));
+    s.append(el("h3", "", t("Dokumentordner")));
     const p = this.projekt;
     if (!p) return s;
     const dl = el("dl", "dok-projekt");

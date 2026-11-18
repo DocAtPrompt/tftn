@@ -6,7 +6,7 @@ describe("name_pruefen", () => {
     for (const schlecht of ["", "a/b", "a\\b", "..", ".x", "  "]) {
       const m = namePruefen(schlecht);
       expect(m, schlecht).not.toBeNull();
-      expect(m!.startsWith("Projektname")).toBe(true);
+      expect(m!.startsWith("Name")).toBe(true);
     }
     expect(namePruefen("Mein Artikel 2026")).toBeNull();
     // Abschlussprüfung: unter Windows unzulässig bzw. laufwerksrelativ (wie Rust).

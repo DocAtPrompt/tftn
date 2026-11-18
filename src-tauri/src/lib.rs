@@ -451,7 +451,7 @@ fn einfuegen_umwandeln(
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .projekt
             .wurzel
             .clone()
@@ -505,14 +505,14 @@ fn startordner(app: &tauri::AppHandle, waehlen: bool) -> Result<PathBuf, String>
             Some(&tftn_sprachen::kennung()),
         );
     }
-    match ordner_waehlen(app, &tr!("TFTN-Projektordner wählen (mit tftn.toml)")) {
+    match ordner_waehlen(app, &tr!("Dokumentordner wählen (mit tftn.toml)")) {
         Some(p) if p.join("tftn.toml").is_file() => Ok(p),
         Some(p) => Err(tr!(
-            "{ordner} ist kein TFTN-Projekt (keine tftn.toml).",
+            "{ordner} ist kein TFTN-Dokument (keine tftn.toml).",
             ordner = p.display()
         )),
         None => Err(tr!(
-            "Kein Projekt gewählt. Alternativ im Terminal: open -a TFTN --args <Ordner mit tftn.toml>"
+            "Kein Dokument gewählt. Alternativ im Terminal: open -a TFTN --args <Ordner mit tftn.toml>"
         )),
     }
 }
@@ -720,7 +720,7 @@ fn aendern(anfrage: Anfrage, zustand: State<'_, Zustand>) -> Result<Antwort, Str
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if let Err(fehler) = s.spiegel.anwenden(anfrage.basis, &anfrage.aenderungen) {
         protokollieren(&s.projekt, &format!("Sync-Fehler: {fehler}"));
         return Err(fehler.to_string());
@@ -754,7 +754,7 @@ fn neusync(
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     s.spiegel.neu_aufsetzen(&text, rev);
     protokollieren(&s.projekt, &format!("Neusynchronisation, jetzt Rev {rev}"));
     kompilieren_lassen(&zustand, s);
@@ -851,7 +851,7 @@ fn export_profile(zustand: State<'_, Zustand>) -> Result<Vec<ProfilJs>, String> 
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     Ok(tftn_export::profil::profile(&s.projekt)
         .map_err(|e| e.to_string())?
         .into_iter()
@@ -883,7 +883,7 @@ async fn exportieren(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
@@ -928,7 +928,7 @@ async fn drucken(zustand: State<'_, Zustand>) -> Result<String, String> {
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
@@ -966,7 +966,7 @@ async fn archivieren(zustand: State<'_, Zustand>) -> Result<ArchivJs, String> {
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
@@ -1074,7 +1074,7 @@ fn serie_projekt(zustand: &Zustand) -> Result<Projekt, String> {
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     Ok(s.projekt.clone())
 }
 
@@ -1151,7 +1151,7 @@ fn serie_erzeugen(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
@@ -1398,9 +1398,9 @@ fn projekt_wechseln(
     ordner: Option<String>,
 ) -> Result<(), String> {
     let ordner = match ordner {
-        Some(o) => typen::pfad_aus_eingabe(&o).ok_or_else(|| tr!("Kein Projekt gewählt."))?,
-        None => ordner_waehlen(&app, &tr!("TFTN-Projektordner wählen (mit tftn.toml)"))
-            .ok_or_else(|| tr!("Kein Projekt gewählt."))?,
+        Some(o) => typen::pfad_aus_eingabe(&o).ok_or_else(|| tr!("Kein Dokument gewählt."))?,
+        None => ordner_waehlen(&app, &tr!("Dokumentordner wählen (mit tftn.toml)"))
+            .ok_or_else(|| tr!("Kein Dokument gewählt."))?,
     };
     *zustand.naechstes.lock().unwrap() = Some(typen::wechsel_pruefen(&ordner)?);
     Ok(())
@@ -1411,7 +1411,7 @@ fn gespeichertes_projekt(zustand: &Zustand) -> Result<Projekt, String> {
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if !reiter::alles_gespeichert(s) {
         return Err(tr!(
             "Bitte zuerst speichern: verglichen wird die Datei auf der Platte."
@@ -1472,7 +1472,7 @@ fn typ_uebernehmen(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         reiter::nur_haupt(s)?;
         helfer::rev_pruefen(s.spiegel.rev(), rev)?;
         s.spiegel.quelle().clone()
@@ -1480,7 +1480,7 @@ fn typ_uebernehmen(
     let (a, patch) = typen::uebernehmen(&projekt, &quellen, &projekt.konfig.haupt, &quelle)?;
     if !uebernahme_einspielen(&zustand, &projekt.wurzel)? {
         return Err(tr!(
-            "Inzwischen wurde das Projekt gewechselt; die Übernahme gilt nur für die Dateien des alten Projekts."
+            "Inzwischen wurde das Dokument gewechselt; die Übernahme gilt nur für die Dateien des alten Dokuments."
         ));
     }
     protokollieren(
@@ -1567,7 +1567,7 @@ fn pakete_stand(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         (
             s.projekt.wurzel.clone(),
             s.katalog.clone(),
@@ -1705,7 +1705,7 @@ fn paket_wechseln(
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .spiegel
             .quelle()
             .clone()
@@ -1730,7 +1730,7 @@ fn paket_wechseln(
     )?;
     if !uebernahme_einspielen(&zustand, &projekt.wurzel)? {
         return Err(tr!(
-            "Inzwischen wurde das Projekt gewechselt; die Übernahme gilt nur für die Dateien des alten Projekts."
+            "Inzwischen wurde das Dokument gewechselt; die Übernahme gilt nur für die Dateien des alten Dokuments."
         ));
     }
     protokollieren(&projekt, &format!("Paket gewechselt: {alt} → {}", version));
@@ -1796,7 +1796,7 @@ fn literatur_aus_doi(
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .projekt
             .clone()
     };
@@ -1813,7 +1813,7 @@ fn literatur_aus_doi(
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if s.projekt.wurzel != projekt.wurzel {
         return Err(tr!("Inzwischen ist ein anderes Dokument offen."));
     }
@@ -1885,7 +1885,7 @@ fn pakete_suchen(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         (s.projekt.clone(), s.katalog.clone())
     };
     Ok(pakete::treffer_js(
@@ -1908,7 +1908,7 @@ fn paket_readme(
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .projekt
             .wurzel
             .clone()
@@ -1943,7 +1943,7 @@ fn paket_hinzufuegen(
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .projekt
             .clone()
     };
@@ -1961,7 +1961,7 @@ fn paket_hinzufuegen(
     let (u, warnungen) = pakete::hinzufuegen_kern(&projekt, &zs, &rechner, &spec, holer)?;
     if !uebernahme_einspielen(&zustand, &projekt.wurzel)? {
         return Err(tr!(
-            "Inzwischen wurde das Projekt gewechselt; die Pakete liegen im alten Projekt."
+            "Inzwischen wurde das Dokument gewechselt; die Pakete liegen im alten Dokument."
         ));
     }
     let neu: Vec<String> = u.kopiert.iter().map(ToString::to_string).collect();
@@ -1973,7 +1973,7 @@ fn paket_hinzufuegen(
         ),
     );
     let mut hinweis = if neu.is_empty() {
-        tr!("{spec} lag schon im Projekt.", spec)
+        tr!("{spec} lag schon im Dokumentordner.", spec)
     } else {
         tr!("Hinzugefügt: {namen}.", namen = neu.join(", "))
     };
@@ -1982,7 +1982,7 @@ fn paket_hinzufuegen(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         let quelle = s.spiegel.quelle();
         let zeile = format!("#import \"{spec}\"");
         if s.spiegel.rev() != rev {
@@ -2036,7 +2036,7 @@ fn mit_formular<T>(
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     f(&mut s.formular)
 }
 
@@ -2108,7 +2108,7 @@ fn projekt_info(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     Ok(formular::projekt_js(&s.projekt, &s.formular, &quellen))
 }
 
@@ -2167,7 +2167,7 @@ fn literatur_liste(zustand: State<'_, Zustand>) -> Result<Vec<LitDateiJs>, Strin
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     Ok(literatur_dateien_js(s))
 }
 
@@ -2250,7 +2250,7 @@ fn literatur_eintrag_speichern(
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     literatur_speichern(&zustand, s, &datei, alt, &eintrag)
 }
 
@@ -2294,7 +2294,7 @@ fn literatur_eintrag_loeschen(
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let pfad = bib_datei(&s.projekt, &datei)?;
     let neu = tftn_literatur::verwaltung::loeschen(&bib_lesen(&pfad)?, &schluessel)?;
     bib_schreiben(
@@ -2311,7 +2311,7 @@ fn zitate_suchen(anfrage: String, zustand: State<'_, Zustand>) -> Result<ZitatSu
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let start = std::time::Instant::now();
     let treffer = s.literatur.suchen(&anfrage, 50);
     Ok(ZitatSuche {
@@ -2333,7 +2333,7 @@ fn zitat_text(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if s.spiegel.rev() != rev {
         return Err("veraltet".into());
     }
@@ -2359,7 +2359,7 @@ fn zitat_aendern(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let quelle = s.spiegel.quelle();
     let z = quelle.lines();
     let byte = z
@@ -2401,11 +2401,11 @@ fn seite_stand(zustand: State<'_, Zustand>) -> Result<SeitenJs, String> {
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     reiter::nur_haupt(s)?;
     let vorschau = zustand.vorschau.lock().unwrap().clone();
     let schriften = vorschau
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?
         .lock()
         .unwrap()
         .world()
@@ -2429,7 +2429,7 @@ fn schriften_einbinden(zustand: State<'_, Zustand>) -> Result<(), String> {
         .lock()
         .unwrap()
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?
         .projekt
         .wurzel
         .clone();
@@ -2446,7 +2446,7 @@ fn seite_setzen(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     reiter::nur_haupt(s)?;
     helfer::rev_pruefen(s.spiegel.rev(), rev)?;
     let quelle = s.spiegel.quelle();
@@ -2502,7 +2502,7 @@ fn gliederung_lesen(zustand: State<'_, Zustand>) -> Result<GliederungJs, String>
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let quelle = s.spiegel.quelle();
     let z = quelle.lines();
     let eintraege = tftn_edit::gliederung(quelle)
@@ -2545,7 +2545,7 @@ fn zaehlen_bereich(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if helfer::rev_pruefen(s.spiegel.rev(), rev).is_err() {
         return Ok(None);
     }
@@ -2595,7 +2595,7 @@ fn rechtschreibung_pruefen(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if helfer::rev_pruefen(s.spiegel.rev(), rev).is_err() {
             return Ok(None);
         }
@@ -2674,7 +2674,7 @@ fn abschnitt_verschieben(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     helfer::rev_pruefen(s.spiegel.rev(), rev)?;
     let quelle = s.spiegel.quelle();
     let patch = tftn_edit::abschnitt_verschieben(quelle, nr, vor).map_err(|e| e.to_string())?;
@@ -2692,7 +2692,7 @@ fn hier(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if helfer::rev_pruefen(s.spiegel.rev(), rev).is_err() {
         return Ok(None);
     }
@@ -2717,7 +2717,7 @@ fn marken(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if helfer::rev_pruefen(s.spiegel.rev(), rev).is_err() {
         return Ok(Vec::new());
     }
@@ -2743,7 +2743,7 @@ fn modus(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if s.spiegel.rev() != rev {
         return Ok(None);
     }
@@ -2773,7 +2773,7 @@ fn katalog(zustand: State<'_, Zustand>) -> Result<Vec<EintragJs>, String> {
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     Ok(s.katalog
         .eintraege()
         .iter()
@@ -2836,7 +2836,7 @@ fn baustein_text(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if s.spiegel.rev() != rev {
         return Err("veraltet".into());
     }
@@ -2917,7 +2917,7 @@ fn formel_stand(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     helfer::rev_pruefen(s.spiegel.rev(), rev)?;
     let quelle = s.spiegel.quelle();
     let byte = quelle
@@ -2937,7 +2937,7 @@ fn formel_vorschau(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         (s.projekt.clone(), s.spiegel.text().to_string())
     };
     let mut merker = zustand.formel_world.lock().unwrap();
@@ -2962,7 +2962,7 @@ fn formel_setzen(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     helfer::rev_pruefen(s.spiegel.rev(), rev)?;
     let quelle = s.spiegel.quelle();
     let byte = quelle
@@ -2985,7 +2985,7 @@ fn formel_einfuegen(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     helfer::rev_pruefen(s.spiegel.rev(), rev)?;
     let quelle = s.spiegel.quelle();
     let byte = quelle
@@ -3039,7 +3039,7 @@ fn wert_setzen(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     helfer::rev_pruefen(s.spiegel.rev(), rev)?;
     let quelle = s.spiegel.quelle();
     let byte = quelle
@@ -3066,7 +3066,7 @@ fn tabelle_aktion(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     helfer::rev_pruefen(s.spiegel.rev(), rev)?;
     let quelle = s.spiegel.quelle();
     let byte = quelle
@@ -3117,7 +3117,7 @@ fn vorschau_von(zustand: &Zustand) -> Result<Arc<Mutex<Vorschau>>, String> {
         .lock()
         .unwrap()
         .clone()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))
 }
 
 /// Vorschau → Quelle (KONZEPT 4.4).
@@ -3133,7 +3133,7 @@ async fn klick(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         let mut revs: Vec<(PathBuf, u64)> = vec![(s.datei.clone(), s.spiegel.rev())];
         revs.extend(s.geparkt.iter().map(|g| (g.datei.clone(), g.spiegel.rev())));
         (s.projekt.wurzel.clone(), s.projekt.haupt(), revs)
@@ -3193,7 +3193,7 @@ async fn stelle_zeigen(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if s.spiegel.rev() != rev {
             return Ok(Vec::new());
         }
@@ -3239,7 +3239,7 @@ async fn vervollstaendigen(
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if s.spiegel.rev() != rev {
             return Ok(None);
         }
@@ -3323,7 +3323,7 @@ fn sitzung_speichern(zustand: &Zustand) -> Result<(), String> {
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     // Erst die Prüfsumme setzen, damit der Dateiwächter die eigene Speicherung erkennt.
     let vorher = s.auf_platte;
     s.auf_platte = s.spiegel.pruefsumme();
@@ -3384,7 +3384,7 @@ fn word_exportieren(zustand: State<'_, Zustand>) -> Result<word::WordJs, String>
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
@@ -3404,7 +3404,7 @@ fn epub_exportieren(zustand: State<'_, Zustand>) -> Result<word::WordJs, String>
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
@@ -3424,7 +3424,7 @@ fn im_ordner_zeigen(pfad: String, zustand: State<'_, Zustand>) -> Result<(), Str
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .projekt
             .wurzel
             .clone()
@@ -3441,7 +3441,7 @@ fn html_exportieren(zustand: State<'_, Zustand>) -> Result<webseite::WebseiteJs,
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         if !reiter::alles_gespeichert(s) {
             return Err(tr!(
                 "Bitte zuerst speichern: exportiert wird die Datei auf der Platte."
@@ -3460,7 +3460,7 @@ fn html_oeffnen(pfad: String, zustand: State<'_, Zustand>) -> Result<(), String>
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .projekt
             .wurzel
             .clone()
@@ -3490,7 +3490,7 @@ fn bild_ablegen(
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .projekt
             .wurzel
             .clone()
@@ -3511,7 +3511,7 @@ fn bild_waehlen(
         let sitzung = zustand.sitzung.lock().unwrap();
         sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?
             .projekt
             .wurzel
             .clone()
@@ -3535,7 +3535,7 @@ fn fassungen_liste(zustand: State<'_, Zustand>) -> Result<Vec<fassungen::Fassung
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     Ok(fassungen::liste(
         &s.projekt.wurzel.join(fassungen::ORDNER),
         s.spiegel.text(),
@@ -3547,7 +3547,7 @@ fn fassung_text(name: String, zustand: State<'_, Zustand>) -> Result<String, Str
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     fassungen::lesen(&s.projekt.wurzel.join(fassungen::ORDNER), &name)
 }
 
@@ -3557,7 +3557,7 @@ fn fassung_zurueckholen(name: String, zustand: State<'_, Zustand>) -> Result<Str
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let ordner = s.projekt.wurzel.join(fassungen::ORDNER);
     let alt = fassungen::lesen(&ordner, &name)?;
     fassungen::ablegen(&ordner, s.spiegel.text(), fassungen::jetzt(), true).map_err(|e| {
@@ -4110,7 +4110,7 @@ fn markup_aktion(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     if s.spiegel.rev() != rev {
         return Err("veraltet".into());
     }

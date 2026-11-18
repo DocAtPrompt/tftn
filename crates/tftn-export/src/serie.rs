@@ -105,7 +105,7 @@ pub fn lesen(quelle: &Path) -> Result<Quelle, String> {
         // Ein Projektordner hat auch .toml-Dateien (tftn.toml, dokument.toml) – Datensätze sind das nicht.
         if quelle.join("tftn.toml").is_file() {
             return Err(tr!(
-                "{ordner} ist ein TFTN-Projektordner, keine Sammlung von Datensätzen. Die Datensätze gehören in einen eigenen Ordner, etwa „serie“ im Projekt.",
+                "{ordner} ist ein TFTN-Dokumentordner, keine Sammlung von Datensätzen. Die Datensätze gehören in einen eigenen Ordner, etwa „serie“ im Dokumentordner.",
                 ordner = quelle.display()
             ));
         }
@@ -677,7 +677,7 @@ mod tests {
         let o = ordner("projekt");
         std::fs::write(o.join("tftn.toml"), "tftn = 1\n").unwrap();
         std::fs::write(o.join("dokument.toml"), "nummer = \"1\"\n").unwrap();
-        assert!(lesen(&o).unwrap_err().contains("Projektordner"));
+        assert!(lesen(&o).unwrap_err().contains("Dokumentordner"));
         let _ = std::fs::remove_dir_all(&o);
     }
 

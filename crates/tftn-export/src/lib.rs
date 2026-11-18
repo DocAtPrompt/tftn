@@ -51,7 +51,7 @@ impl fmt::Display for ExportFehler {
                 gefunden,
                 erwartet,
             } => f.write_str(&tr!(
-                "{pfad} ist typst {gefunden}, das Projekt verlangt typst {erwartet}. Export abgebrochen.",
+                "{pfad} ist typst {gefunden}, das Dokument verlangt typst {erwartet}. Export abgebrochen.",
                 pfad = pfad.display(),
                 gefunden,
                 erwartet

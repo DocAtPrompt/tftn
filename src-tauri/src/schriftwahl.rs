@@ -40,7 +40,7 @@ fn dokument(zustand: &Zustand) -> Result<(String, BTreeSet<String>), String> {
         .unwrap()
         .as_ref()
         .map(|s| crate::reiter::haupt_spiegel(s).quelle().clone())
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let sprache = tftn_edit::seite_lesen(&sprache)
         .sprache
         .unwrap_or_else(|| "en".into());
@@ -151,7 +151,7 @@ pub fn schrift_hinzufuegen(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let erstmals = !s.projekt.schriften().is_dir();
     let dateien = schriften::familie_einbinden(&s.projekt, &familie).map_err(|e| e.to_string())?;
     let vorschau = zustand.vorschau.lock().unwrap().clone();

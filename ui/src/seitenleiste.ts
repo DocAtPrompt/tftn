@@ -139,7 +139,7 @@ export class Seitenleiste {
     fach("formel", "formel", t("Formel"), t("Formel mit Palette bearbeiten"));
     fach("seite", "seite", t("Seite"), t("Format, Schrift und Sprache"));
     fach("dokument", "dokument", t("Dokument"), t("Titelei und Angaben des Dokumenttyps"));
-    fach("pakete", "pakete", t("Pakete"), t("Typst-Pakete des Projekts"));
+    fach("pakete", "pakete", t("Pakete"), t("Typst-Pakete des Dokuments"));
     const zu = el("button", "leiste-zu", "×");
     zu.title = t("Seitenleiste schließen");
     zu.addEventListener("click", () => this.schliessen());

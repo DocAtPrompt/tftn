@@ -31,7 +31,7 @@ function anwenden(text: string, a: SuchAnfrage): string {
     .reduce((s, c) => s.slice(0, c.from) + c.insert + s.slice(c.to), text);
 }
 
-describe("Im Projekt suchen", () => {
+describe("Im ganzen Dokument suchen", () => {
   const dateien = [
     { datei: "main.typ", text: "= Einleitung\nDie Größe der Straße.\n#include \"kapitel/eins.typ\"\n" },
     { datei: "kapitel/eins.typ", text: "= Methode\nGRÖSSE, Größe und größe\n" },

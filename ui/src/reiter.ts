@@ -41,7 +41,7 @@ export function nachSchliessen(liste: string[], weg: string, aktiv: string): str
 export function kapitelPunkte(alle: string[], offen: string[], waehlen: (datei: string) => void): MenuePunkt[] {
   const neu = alle.filter((d) => !offen.includes(d));
   if (!neu.length)
-    return [{ text: t("Keine weiteren Kapiteldateien"), titel: t("Alle .typ-Dateien des Projekts sind schon offen."), aktion: () => {} }];
+    return [{ text: t("Keine weiteren Kapiteldateien"), titel: t("Alle .typ-Dateien des Dokuments sind schon offen."), aktion: () => {} }];
   return neu.map((d) => ({ text: d, ikone: "dokument", aktion: () => waehlen(d) }));
 }
 
@@ -107,7 +107,7 @@ export class ReiterLeiste {
         const zu = document.createElement("button");
         zu.className = "reiter-zu";
         zu.textContent = "×";
-        zu.title = t("Reiter schließen (die Datei bleibt im Projekt)");
+        zu.title = t("Reiter schließen (die Datei bleibt im Dokumentordner)");
         zu.setAttribute("aria-label", t("{datei} schließen", { datei: reiterName(r.datei) }));
         zu.addEventListener("click", (e) => {
           e.stopPropagation();

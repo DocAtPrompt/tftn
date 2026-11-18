@@ -49,13 +49,22 @@ typst-CLI und Hilfsprogramm, das man mit `sudo apt install ./target/release/bund
 installiert (oder mit `--bundles appimage` ein AppImage). Der erste Bau dauert 15 bis 30 Minuten. Wie
 unter Windows gelten die Strg-Kürzel. Die Linux-Fassung ist neu und erst wenig von Hand ausprobiert.
 
-**Ausprobieren:** Mit „Öffnen“ → „Projekt öffnen …“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
+**Ausprobieren:** Mit „Öffnen“ → „Dokument öffnen …“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
 zeigt Formeln, eine Abbildung, eine Tabelle, Fußnoten, Querverweise und Zitate. Ändern ist
 ausdrücklich erwünscht.
 
-**Ein neues Dokument:** TFTN startet mit einem leeren Entwurf. Einfach losschreiben; Cmd/Strg+S gibt
-ihm einen Namen und legt es im Ordner „Dokumente“ ab. „Neu“ → „Aus Vorlage …“ legt stattdessen ein
-Dokument eines Dokumenttyps an. Mitgeliefert sind: leeres Dokument, Brief, Rechnung, Befund/Arztbrief, Bericht,
+**Ein neues Dokument anlegen** (anderswo „neues Projekt“): alles über den Knopf **„Neu“** oben rechts.
+- „Aus Vorlage …“: Dokumenttyp wählen (Brief, Rechnung, Befund …), Namen vergeben – TFTN legt den
+  Dokumentordner an und öffnet ihn. Der übliche Weg.
+- „Leeres Dokument“ (Cmd/Strg+N): einfach losschreiben; beim ersten Cmd/Strg+S fragt TFTN nach dem
+  Namen und legt den Ordner im Ordner „Dokumente“ an. Auch beim Start ist schon ein solcher leerer
+  Entwurf offen.
+- „Importieren …“: macht aus einer Word-, Markdown-, LaTeX- oder anderen Datei ein neues Dokument
+  (Kapitel 7).
+
+Wieder öffnen über „Öffnen“: die zuletzt geöffneten Dokumente oder „Dokument öffnen …“.
+
+**Dokumenttypen:** Mitgeliefert sind: leeres Dokument, Brief, Rechnung, Befund/Arztbrief, Bericht,
 Fachartikel, Fachbuch, Plakat und Lebenslauf, jeweils auf Deutsch und Englisch. Beim Anlegen aus
 einer Vorlage und beim ersten Speichern mit Cmd/Strg+S gibt es das Häkchen „Schriften einbinden“: Damit
 bringt das Dokument die benutzten Schriften in `fonts/` mit (meist 1 bis 3 MB) und sieht auf jedem
@@ -82,7 +91,7 @@ vor). Das ist keine Steuerberatung.
 **Logo und Unterschrift:** Brief, Befund und Rechnung setzen ein Logo in den Kopf (beim Brief und bei
 der Rechnung rechts oben über dem Absender, beim Befund links neben dem Namen der Ordination), Brief und
 Befund auf Wunsch das Bild der Unterschrift über dem Namen. Im Fach „Dokument“ (Gruppe „Absender“ bzw.
-„Ordination“) holt „Bild wählen …“ die Datei ins Projekt – liegt sie noch nicht darin, landet eine
+„Ordination“) holt „Bild wählen …“ die Datei ins Dokument – liegt sie noch nicht darin, landet eine
 Kopie unter `bilder/` – und trägt den Pfad ein; „Höhe des Logos in cm“ (Standard 1,5) bestimmt die
 Größe. Für die Unterschrift eignet sich ein Scan mit durchsichtigem Hintergrund (PNG). Ohne Bild bleibt
 wie bisher Platz zum Unterschreiben von Hand. Die Bilder erreicht der Dokumenttyp über die Zeile
@@ -91,34 +100,36 @@ Version des Typs benutzt, setzt unverändert weiter; nach dem Aktualisieren (Fac
 Kapitel 5) zeigt es statt des Bilds einen roten Hinweis, bis die Zeile ergänzt ist, etwa
 `#show: brief.with(daten: daten, pfad: p => path(p))`.
 
-**Was ist ein Projekt?** Ein Ordner mit `tftn.toml`, der Hauptdatei (meist `main.typ`), bei
-Vorlagen dazu `dokument.toml` (Titelei), der Literaturdatei, den Schriften (`fonts/`) und den
-benutzten Paketen (`packages/`). Alles, was das Dokument braucht, liegt im Ordner – er lässt sich
-kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeiten.
+**Was ist ein Dokument?** Bei TFTN ist jedes Dokument ein eigener Ordner, der Dokumentordner (andere
+Programme nennen so etwas ein Projekt; auf der Kommandozeile und in technischen Texten heißt er
+auch so). Darin liegen `tftn.toml`, die Hauptdatei (meist `main.typ`), bei Vorlagen dazu `dokument.toml` (Titelei),
+Kapiteldateien, Bilder, die Literaturdatei, die Schriften (`fonts/`) und die benutzten Pakete
+(`packages/`). Alles, was das Dokument braucht, liegt im Ordner – er lässt sich kopieren,
+synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeiten.
 
 ## 2. Die Oberfläche
 
-- **Kopf:** links das Projekt (der volle Pfad erscheint beim Darüberfahren), rechts „Neu“ (leeres
+- **Kopf:** links das Dokument (der volle Pfad erscheint beim Darüberfahren), rechts „Neu“ (leeres
   Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“, das Zahnrad
   (Einstellungen) und „?“ (Über TFTN, F1). In einem schmalen Fenster bleiben nur die Symbole.
 - **Über TFTN** („?“ oder F1) zeigt Version und typst-Version, die Links zu Projektseite, Handbuch und
   „Fehler melden“, alle geltenden Tastenkürzel zum Nachschlagen („Kürzel ändern …“ führt in die
   Einstellungen) und die Lizenzen samt mitgelieferten Beilagen; „Lizenztexte zeigen“ öffnet ihren
   Ordner. Ein Link öffnet die Seite nur auf Klick im Standardbrowser (Abschnitt 11).
-- **Öffnen** ist ein Menü: „Projekt öffnen …“ wählt einen Ordner mit `tftn.toml` (Cmd/Strg+O geht
-  gleich dorthin), darunter stehen die zuletzt geöffneten Projekte, bis zu zehn, das neueste oben. Der
-  volle Pfad erscheint beim Darüberfahren; heißen zwei Projekte gleich, steht der Ordner darüber leise
-  dahinter. Ein Projekt, das gerade nicht erreichbar ist (etwa ein nicht eingebundener Tresor), fehlt
-  im Menü, bleibt aber gemerkt. „Liste leeren“ vergisst die Liste; die Projekte selbst bleiben. Die
+- **Öffnen** ist ein Menü: „Dokument öffnen …“ wählt einen Ordner mit `tftn.toml` (Cmd/Strg+O geht
+  gleich dorthin), darunter stehen die zuletzt geöffneten Dokumente, bis zu zehn, das neueste oben. Der
+  volle Pfad erscheint beim Darüberfahren; heißen zwei Dokumente gleich, steht der Ordner darüber leise
+  dahinter. Ein Dokument, das gerade nicht erreichbar ist (etwa ein nicht eingebundener Tresor), fehlt
+  im Menü, bleibt aber gemerkt. „Liste leeren“ vergisst die Liste; die Dokumente selbst bleiben. Die
   Liste gilt je Rechner.
 - **Hinweise** erscheinen in einem Band unter dem Kopf. Kurze Meldungen verschwinden von selbst;
   Fehler und Fragen bleiben, bis man sie mit × schließt oder beantwortet.
 - **Fenster wie Export, Neu oder Fassungen** schließen mit ×, Esc oder einem Klick daneben. Hat man
-  in einem Dialog schon etwas eingetippt (etwa einen Projektnamen), schließt ihn nur × oder Esc.
+  in einem Dialog schon etwas eingetippt (etwa einen Namen), schließt ihn nur × oder Esc.
 - **Editor** (links): Typst-Quelltext mit Hervorhebung. Darüber die Knöpfe „Baustein“, „Zitat“,
-  „Gliederung“, „Seite“ und als Symbole „Im Projekt suchen“ (Lupe), Seitenleiste und Schreibansicht.
+  „Gliederung“, „Seite“ und als Symbole „Im ganzen Dokument suchen“ (Lupe), Seitenleiste und Schreibansicht.
 - **Reiter** über dem Editor: die Hauptdatei und weitere Kapiteldateien (`.typ`, etwa mit
-  `#include "kapitel/eins.typ"` eingebunden). „+“ öffnet eine Kapiteldatei des Projekts; ein Klick in
+  `#include "kapitel/eins.typ"` eingebunden). „+“ öffnet eine Kapiteldatei des Dokuments; ein Klick in
   der Vorschau auf Text aus einem Kapitel öffnet dessen Reiter von selbst und springt an die Stelle.
   Schreibt man `#include "kapitel/neu.typ"` für eine Datei, die es noch nicht gibt, legt TFTN sie kurz
   nach dem letzten Tastendruck an, mit einer Überschrift aus ihrem Namen (fehlende Ordner entstehen
@@ -127,7 +138,7 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
   hat. Ein Kapitel sieht die Importe der Hauptdatei nicht; braucht es etwas aus der
   Vorlage, holt es sich das mit einer eigenen `#import`-Zeile.
   Jeder Reiter hat sein eigenes Rückgängig; ein Punkt zeigt, dass er noch nicht gespeichert ist, ×
-  schließt ihn (die Datei bleibt im Projekt, die Hauptdatei bleibt immer offen). Die Vorschau zeigt
+  schließt ihn (die Datei bleibt im Dokument, die Hauptdatei bleibt immer offen). Die Vorschau zeigt
   stets das ganze Dokument, auch mit ungespeicherten Kapiteln. Gespeichert werden alle Reiter
   zusammen (Cmd/Strg+S oder von selbst nach einer Sekunde). Gliederung, Fach „Hier“, Rechtschreibung
   und Zählen gelten für den aktiven Reiter; Seite, Fassungen, Dokumenttyp und KI-Assistenten (MCP)
@@ -230,8 +241,8 @@ Mehrere `//`-Zeilen untereinander gelten als ein Kommentar.
 **Suchen und Ersetzen:** Cmd/Strg+F öffnet die Suchleiste unter dem Editor; sie sucht und ersetzt im
 aktiven Reiter (mit „Groß/klein beachten“, „ganzes Wort“ und „regulärer Ausdruck“).
 
-**Im Projekt suchen** (Lupe über dem Editor oder Cmd/Strg+Umschalt+H) durchsucht alle `.typ`-Dateien
-des Projekts: die Hauptdatei und alle Kapitel, auch die, die gerade nicht als Reiter offen sind (nicht
+**Im ganzen Dokument suchen** (Lupe über dem Editor oder Cmd/Strg+Umschalt+H) durchsucht alle `.typ`-Dateien
+des Dokuments: die Hauptdatei und alle Kapitel, auch die, die gerade nicht als Reiter offen sind (nicht
 in versteckten Ordnern, `packages/`, `export/`, `_lokal/` und `_renders/`). Für offene Reiter gilt der
 Stand im Editor, auch ungespeichert. Eine markierte Stelle im Text steht beim Öffnen schon im Suchfeld.
 Dieselben Schalter wie in der Suchleiste: „Groß/klein“, „ganzes Wort“, „regulärer Ausdruck“ (wie in
@@ -269,7 +280,7 @@ Typst-Kenntnisse ändern. Jede Änderung ist geprüft und ein Rückgängig-Schri
 **Seite** (Knopf „Seite“): Format, Querformat, doppelseitig, Spalten, Ränder, Schrift, Größe,
 Zeilenabstand, Blocksatz, nummerierte Überschriften, Sprache, Seitenzahl, Kopf- und Fußzeile (mit
 `{seite}` und `{kapitel}`). Jede Einstellung steht als `#set`-Zeile oben im Text. Vorlagen wie der
-Fachartikel legen das selbst fest. Mit „Schriften einbinden“ kommen die benutzten Schriften ins Projekt.
+Fachartikel legen das selbst fest. Mit „Schriften einbinden“ kommen die benutzten Schriften ins Dokument.
 
 **Weitere Schriften:** „Weitere Schrift …“ unter der Schriftwahl zeigt die auf dem Rechner
 installierten Schriften, jede mit einer Probezeile, der Zahl der Schnitte und der Größe. Mit
@@ -288,7 +299,7 @@ Schrift oder zeichnet ein leeres Kästchen. TFTN meldet beides als Warnung mit S
 
 **Titelei** (Fach „Dokument“, Cmd/Strg+Umschalt+O): ein Formular aus dem Dokumenttyp – Titel,
 Autorinnen und Autoren, Datum (`31.12.2026`), Zusammenfassung, Schlagwörter, Literaturdateien und
-Zitierstil (eingebauter Name wie `ieee` oder eine `.csl`-Datei im Projekt). Jeder Wert wird geprüft und
+Zitierstil (eingebauter Name wie `ieee` oder eine `.csl`-Datei im Dokument). Jeder Wert wird geprüft und
 erst dann in `dokument.toml` geschrieben; der Text in `main.typ` bleibt unberührt. Ein Klick auf die
 Titelei in der Vorschau öffnet das Fach am passenden Feld. „Als Text bearbeiten“ zeigt
 `dokument.toml` als Text, etwa für Felder, die das Formular nicht kennt, oder um eine fehlerhafte Datei
@@ -312,9 +323,9 @@ mitnehmen.
 ## 6. Pakete aus Typst Universe
 
 Das Fach „Pakete“ (Cmd/Strg+Umschalt+Y) sucht im Paketindex nach Name, Beschreibung und Schlagwort.
-„Hinzufügen“ holt das Paket samt seinen Abhängigkeiten, legt es unter `packages/preview/` ins Projekt,
+„Hinzufügen“ holt das Paket samt seinen Abhängigkeiten, legt es unter `packages/preview/` ins Dokument,
 hält seine Prüfsumme in `tftn.toml` fest und setzt auf Wunsch den `#import`. Danach baut das Dokument
-ohne Netz, auch auf einem anderen Rechner. „Fehlt im Projekt“ listet Pakete, die ein abgetippter Import
+ohne Netz, auch auf einem anderen Rechner. „Fehlt im Dokument“ listet Pakete, die ein abgetippter Import
 verlangt. „Entfernen“ und „Neuere Version …“ (mit Vergleich) stehen am Paket.
 
 **Pakete mit Helfern:** Für cetz (Zeichnungen), fletcher (Ablaufdiagramme) und cetz-plot (Diagramme
@@ -390,7 +401,7 @@ oder Calibre. Es hat eine Titelseite, ein Inhaltsverzeichnis über zwei Ebenen u
 erster Ebene) einen eigenen Abschnitt; Fußnoten, Tabellen, Bilder, Formeln (als MathML), Zitate und
 Literaturverzeichnis kommen mit, das Seitenlayout nicht – Schrift und Größe wählt der Leser. Titel,
 Autorinnen und Autoren und die Sprache kommen aus dem Dokument, das Datum aus dem Datumsfeld im Fach
-„Dokument“ (sonst der Zeitstempel des Projekts). TFTN legt ein schlichtes Stilblatt dazu (Abbildungen
+„Dokument“ (sonst der Zeitstempel des Dokuments). TFTN legt ein schlichtes Stilblatt dazu (Abbildungen
 höchstens so breit wie die Seite). Die Datei liegt als `<Dokumentname>.epub` im Dokumentordner und wird
 beim nächsten Export überschrieben; was typst im HTML weglässt, nennt der Dialog („Im E-Book fehlt: …“).
 Pandoc läuft abgeschottet und lädt nichts aus dem Netz. Ein Titelbild gibt es nicht.
@@ -398,7 +409,7 @@ Pandoc läuft abgeschottet und lädt nichts aus dem Netz. Ein Titelbild gibt es 
 **Serie** („Export“ → „Serie …“): ein PDF je Datensatz, etwa für Serienbriefe und Rechnungen. Die
 Datensätze liegen entweder als Ordner mit `.toml`-Dateien vor (je Datei ein Dokument, das PDF heißt
 wie die Datei) oder als eine `.toml` mit Abschnitten `[[serie]]`. Ein Datensatz enthält nur, was sich
-ändert; alles andere – Absender, Bank, Grußformel – kommt aus dem Fach „Dokument“ des Projekts. Gruppen
+ändert; alles andere – Absender, Bank, Grußformel – kommt aus dem Fach „Dokument“. Gruppen
 wie `[absender]` werden zusammengeführt, alle anderen Werte ersetzt. Das Feld `datei` gibt dem PDF
 seinen Namen; ohne es wird nummeriert (`rechnungen-001.pdf`).
 
@@ -454,19 +465,19 @@ Datei;Rechnungsnummer;Empfänger 1;Empfänger 2;Empfänger 3;Empfänger 4;Anrede
   ins Dokument gehen, und die Fehler mit Zeile und Spalte (Zeilennummer wie in Excel, die Kopfzeile ist
   Zeile 1). Eine Zeile mit Fehler ergibt kein PDF; die anderen entstehen, und sie wird am Ende gemeldet.
 - **Eigene Zuordnung:** In der Auswahl neben jeder Spalte lässt sich ein anderes Feld oder „nicht
-  verwenden“ wählen. TFTN merkt sich das im Projekt, in `tftn.toml` unter `[serie-csv."<Dateiname>.csv"]`
+  verwenden“ wählen. TFTN merkt sich das im Dokument, in `tftn.toml` unter `[serie-csv."<Dateiname>.csv"]`
   – nur Spaltennamen und Feldnamen, keine Werte. Eine neue Ausfuhr mit demselben Dateinamen findet die
-  Zuordnung wieder, auch an anderem Ort. Im Projekt reist die Zuordnung mit dem Dokumenttyp, dessen
+  Zuordnung wieder, auch an anderem Ort. Im Dokumentordner reist die Zuordnung mit dem Dokumenttyp, dessen
   Felder sie nennt, und wird mit ihm gesichert; neben einer frisch exportierten CSV (oft im
   Download-Ordner) ginge sie leicht verloren.
 
 Intern wird jede Zeile derselbe Datensatz wie ein Abschnitt `[[serie]]`; Sammel-PDF, beidseitiger
 Druck, Gegenprobe (`_lokal/serie/<name>.toml`) und Inkognito gelten also genauso. Liegt die CSV im
-Projektordner, kennt Inkognito ihre Werte, auch aus Spalten mit mehrdeutigem Namen wie „Name“; eine
+Dokumentordner, kennt Inkognito ihre Werte, auch aus Spalten mit mehrdeutigem Namen wie „Name“; eine
 Spalte, die zu keinem Feld passt (etwa „Telefon“ bei einem Brief), kennt es nicht. Adresslisten liegen
-deshalb am besten außerhalb des Projekts; dort sieht sie ein Assistent gar nicht.
+deshalb am besten außerhalb des Dokuments; dort sieht sie ein Assistent gar nicht.
 
-Auf der Kommandozeile: `tftn serie <projekt> --daten <ordner, .toml oder .csv> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
+Auf der Kommandozeile: `tftn serie <ordner> --daten <ordner, .toml oder .csv> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
 
 ## 8. Sichern und Fassungen
 
@@ -486,7 +497,7 @@ Englisch (USA, Großbritannien), Französisch, Italienisch, Spanisch.
 
 **Silbentrennung:** Typst trennt am Zeilenende selbst, nach den Regeln der Dokumentsprache. Trennt es
 ein Wort falsch (Fachbegriffe, Namen, „Urin-stinkt“), trägt man es in `trennungen.txt` im
-Projektordner ein – Fachartikel, Fachbuch und Bericht haben diese Datei. Ein Wort je Zeile, die
+Dokumentordner ein – Fachartikel, Fachbuch und Bericht haben diese Datei. Ein Wort je Zeile, die
 erlaubten Trennstellen mit `-` markiert; ein Wort ohne `-` wird nie getrennt. Zeilen mit `#` sind
 Kommentare.
 
@@ -520,7 +531,7 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Einstellungen | Mod+, |
 | Über TFTN und Tastenkürzel | F1 |
 | Suchen und Ersetzen im aktiven Reiter (Editor) | Mod+F |
-| Im Projekt suchen und ersetzen | Mod+Umschalt+H |
+| Im ganzen Dokument suchen und ersetzen | Mod+Umschalt+H |
 | Editorschrift größer / kleiner / wie im Skin | Mod++ (auch Mod+=) / Mod+− / Mod+0 |
 | Werte an dieser Stelle (Marken) | Mod+Umschalt+M oder ⌥ bzw. Alt halten |
 | Auswahl als Textbaustein speichern … | keins (belegbar); Rechtsklick in die Markierung |
@@ -618,7 +629,7 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 
 | Befehl | Wirkung |
 |---|---|
-| `tftn neu --typ tftn-fachartikel <ordner> [--sprache en]` | Projekt aus einem Dokumenttyp anlegen (`--sprache en`: englische Vorlage) |
+| `tftn neu --typ tftn-fachartikel <ordner> [--sprache en]` | Dokument aus einem Dokumenttyp anlegen (`--sprache en`: englische Vorlage) |
 | `tftn check <ordner>` | prüfen, Fehler und fehlende Pakete melden |
 | `tftn build <ordner> [-o ziel]` | PDF über die typst-CLI (nach `_renders/`) |
 | `tftn build <ordner> --png [--ppi 144]` | Seitenbilder statt PDF |
@@ -626,7 +637,7 @@ Das Programm `tftn` (aus dem Quelltext gebaut) arbeitet ohne Oberfläche:
 | `tftn archiv <ordner>` | Archivpaket nach `export/` (PDF/A, Quelltext, Schriften, Pakete, Anleitung) |
 | `tftn gegenprobe <ordner>` | die gleichwertige `typst compile`-Zeile ausgeben |
 | `tftn serie <ordner> --daten <quelle> [--ausgabe einzeln\|gesamt\|beides] [--beidseitig] [--anpassen]` | ein PDF je Datensatz oder alle in einem (Serie) |
-| `tftn katalog <ordner>` | Bausteine des Projekts auflisten |
+| `tftn katalog <ordner>` | Bausteine des Dokuments auflisten |
 | `tftn typ-pruefen <ordner>` | alle Bausteine eines Dokumenttyps prüfen |
 
 `tftn gegenprobe` zeigt, wie dasselbe PDF ohne TFTN entsteht – Ihr Dokument hängt nie an TFTN.
@@ -664,14 +675,14 @@ bleiben soll („Aktiv lassen“ oder „MCP ausschalten“); bis dahin lehnt TF
 
 | Werkzeug | Wirkung |
 |---|---|
-| `status` | Projekt, Revision, gespeichert?, Ergebnis des letzten Typst-Laufs |
+| `status` | Dokument, Revision, gespeichert?, Ergebnis des letzten Typst-Laufs |
 | `quelltext_lesen` | Quelltext der Hauptdatei, wie er im Editor steht |
 | `text_ersetzen` | eine Stelle wörtlich ersetzen (oder jedes Vorkommen) |
 | `quelltext_setzen` | den ganzen Quelltext ersetzen |
 | `auswahl_lesen` | was du markiert hast und wo die Schreibmarke steht |
 | `gliederung_lesen` | Überschriften und Kommentare, auch der eingebundenen Kapiteldateien |
-| `dateien_auflisten` | Dateien im Projektordner |
-| `datei_lesen` | eine Textdatei des Projekts (Kapitel, `.bib`, `trennungen.txt` …) |
+| `dateien_auflisten` | Dateien im Dokumentordner |
+| `datei_lesen` | eine Textdatei des Dokuments (Kapitel, `.bib`, `trennungen.txt` …) |
 | `datei_ersetzen` | eine Stelle in einer solchen Datei ersetzen |
 | `datei_schreiben` | eine solche Datei ganz schreiben oder neu anlegen |
 | `literatur_lesen` | Einträge der Literaturdateien, zitiert oder nicht |
@@ -682,10 +693,10 @@ bleiben soll („Aktiv lassen“ oder „MCP ausschalten“); bis dahin lehnt TF
 | `formular_lesen` | Felder und Werte des Formulars (Titel, Autoren, Datum …) |
 | `formular_setzen` | mehrere Felder auf einmal setzen, geprüft wie im Fach; ein Rückgängig-Schritt |
 | `typen_auflisten` | Dokumenttypen für ein neues Dokument |
-| `dokument_anlegen` | neues Projekt aus einem Typ anlegen und öffnen |
-| `dokument_oeffnen` | ein anderes Projekt öffnen (das offene wird vorher gespeichert) |
+| `dokument_anlegen` | neues Dokument aus einem Typ anlegen und öffnen |
+| `dokument_oeffnen` | ein anderes Dokument öffnen (das offene wird vorher gespeichert) |
 
-**Grenzen:** Der Assistent erreicht nur Dateien im Projektordner, nicht versteckte Ordner, `_lokal/`
+**Grenzen:** Der Assistent erreicht nur Dateien im Dokumentordner, nicht versteckte Ordner, `_lokal/`
 oder `packages/`. Schreiben darf er nur Textdateien; die Hauptdatei ändert er über den Editor (mit
 Rückgängig), die Formulardaten über das Formular. Ändert er eine andere Datei, etwa ein Kapitel, greift
 Rückgängig im Editor nicht – TFTN legt den alten Inhalt deshalb vorher unter `.fassungen/dateien/` ab (auch bei Literatur).
@@ -707,11 +718,11 @@ er zurückschreibt.
   „[Patient/in]“ je nach dem Feld **Geschlecht** und „[geb. 1970]“ für das Geburtsdatum: Geschlecht
   und Geburtsjahr braucht eine medizinische Kontrolle, und beide gehen deshalb mit. Neben dem Kreuz
   können Sie für jedes Feld einen eigenen Ersatztext eintragen (ohne Klammern; leer: der Vorschlag der
-  Vorlage). Gibt es mehrere Personen (eine Serie im Projekt), heißen sie „[Patientin]“, „[Patientin 2]“
+  Vorlage). Gibt es mehrere Personen (eine Serie im Dokument), heißen sie „[Patientin]“, „[Patientin 2]“
   usw.
 - **Was ersetzt wird:** die Werte aus der Datendatei (`dokument.toml`) und aus Datensätzen einer Serie,
-  die im Projektordner liegen (TOML oder CSV) – überall, wo der Assistent sie zu sehen bekäme: im Quelltext, in
-  Kapiteln und anderen Dateien, im Formular, in Dateinamen und im Pfad des Projekts, in Meldungen.
+  die im Dokumentordner liegen (TOML oder CSV) – überall, wo der Assistent sie zu sehen bekäme: im Quelltext, in
+  Kapiteln und anderen Dateien, im Formular, in Dateinamen und im Pfad des Dokuments, in Meldungen.
   Erkannt werden der ganze Wert, die Teile eines Namens („Frau Musterfrau“ allein, auch
   „Musterfraus“), Datumswerte in den üblichen Schreibweisen (1970-02-01, 01.02.1970, 1. Februar 1970 …)
   und Nummern mit oder ohne Leerzeichen; Groß- und Kleinschreibung spielt keine Rolle. Jede

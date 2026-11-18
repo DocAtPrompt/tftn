@@ -48,7 +48,7 @@ impl fmt::Display for PaketFehler {
                 vermerkt,
                 gefunden,
             } => f.write_str(&tr!(
-                "{spec}: Prüfsumme weicht ab – im Projekt vermerkt {vermerkt}, geholt {gefunden}. Abgebrochen, nichts übernommen.",
+                "{spec}: Prüfsumme weicht ab – im Dokument vermerkt {vermerkt}, geholt {gefunden}. Abgebrochen, nichts übernommen.",
                 spec,
                 vermerkt,
                 gefunden

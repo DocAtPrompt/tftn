@@ -54,14 +54,21 @@ result is a `.deb` with the typst CLI and the download helper, installed with
 The first build takes 15 to 30 minutes. As on Windows, the Ctrl shortcuts apply. The Linux build is
 new and has hardly been tried by hand yet.
 
-**Try it:** use “Open” → “Open project …” and choose the `demo/` folder from the source. The sample article shows
+**Try it:** use “Open” → “Open document …” and choose the `demo/` folder from the source. The sample article shows
 equations, a figure, a table, footnotes, cross-references and citations. Feel free to change
 anything.
 
-**A new document:** TFTN starts with an empty draft. Just start writing; Cmd/Ctrl+S gives it a
-name and saves it in your Documents folder. “New” → “From template …” instead creates a document of a document
-type, for example a journal article with front matter and bibliography. Both when creating from a
-template and when saving for the first time with Cmd/Ctrl+S there is a checkbox “Embed fonts”: with
+**Creating a new document** (a “new document” elsewhere): everything goes through the **“New”** button
+at the top right.
+- “From template …”: choose a document type (letter, invoice, medical report …) and a name – TFTN
+  creates the document folder and opens it. The usual way.
+- “Blank document” (Cmd/Ctrl+N): just start writing; the first Cmd/Ctrl+S asks for a name and
+  creates the folder in your Documents folder. An empty draft like this is also open at start-up.
+- “Import …”: turns a Word, Markdown, LaTeX or other file into a new document (chapter 7).
+
+Open it again via “Open”: the recently opened documents or “Open document …”.
+
+**Embed fonts:** both when creating from a template and when saving for the first time with Cmd/Ctrl+S there is a checkbox “Embed fonts”: with
 it the document carries the fonts it uses in `fonts/` (usually 1 to 3 MB) and looks the same on every
 computer – recommended for sharing and archiving. Without it, it uses TFTN's fonts; you can embed them
 later in the “Page” panel.
@@ -86,7 +93,7 @@ advice.
 **Logo and signature:** letters, medical reports and invoices put a logo in the header (letters
 and invoices at the top right above the sender, medical reports to the left of the practice name);
 letters and medical reports can also show an image of your signature above the name. In the
-“Document” tab (group “Sender” or “Practice”), “Choose image …” brings the file into the project – if
+“Document” tab (group “Sender” or “Practice”), “Choose image …” brings the file into the document – if
 it is not there yet, a copy goes to `bilder/` – and fills in the path; “Logo height in cm” (default
 1.5) sets the size. For the signature, a scan with a transparent background (PNG) works best.
 Without an image there is space to sign by hand, as before. The document type reaches the images
@@ -95,14 +102,16 @@ uses an older version of the type keeps typesetting unchanged; after updating it
 see chapter 5) it shows a red note instead of the image until the line is added, for example
 `#show: brief.with(daten: daten, pfad: p => path(p))`.
 
-**What is a project?** A folder with `tftn.toml`, the main file (usually `main.typ`), and for
-templates also `dokument.toml` (front matter), the bibliography file, the fonts (`fonts/`) and the
-packages in use (`packages/`). Everything the document needs lives in the folder – you can copy it,
+**What is a document?** In TFTN every document is a folder of its own, the document folder (other
+programs call this a project; on the command line and in technical texts it is called that too).
+It holds `tftn.toml`, the main file (usually `main.typ`), and for templates also `dokument.toml`
+(front matter), chapter files, images, the bibliography file, the fonts (`fonts/`) and the packages
+in use (`packages/`). Everything the document needs lives in the folder – you can copy it,
 sync it and keep working on another computer without a network.
 
 ## 2. The window
 
-- **Header:** the project on the left (hover for the full path); on the right “New” (blank document,
+- **Header:** the document on the left (hover for the full path); on the right “New” (blank document,
   from template, import), “Open”, “Versions”, “Export”, the gear (settings) and “?” (About TFTN,
   F1). In a narrow window only the icons remain.
 - **About TFTN** (“?” or F1) shows the version and the typst version, links to the project page, the
@@ -110,20 +119,20 @@ sync it and keep working on another computer without a network.
   leads to the settings) and the licenses including the bundled components; “Show license texts”
   opens their folder. A link opens the page in the default browser only when you click it
   (section 11).
-- **Open** is a menu: “Open project …” chooses a folder with `tftn.toml` (Cmd/Ctrl+O goes straight
-  there); below it are the recently opened projects, up to ten, newest first. Hover for the full
-  path; if two projects share a name, the folder above follows quietly. A project that is out of
+- **Open** is a menu: “Open document …” chooses a folder with `tftn.toml` (Cmd/Ctrl+O goes straight
+  there); below it are the recently opened documents, up to ten, newest first. Hover for the full
+  path; if two documents share a name, the folder above follows quietly. A document that is out of
   reach for the moment (say, a vault that is not mounted) is left out of the menu but stays
-  remembered. “Clear list” forgets the list; the projects themselves stay. The list applies per
+  remembered. “Clear list” forgets the list; the documents themselves stay. The list applies per
   computer.
 - **Messages** appear in a band below the header. Short notices disappear by themselves; errors and
   questions stay until you close them with × or answer them.
 - **Panels such as Export, New or Versions** close with ×, Esc or a click outside. Once you have
-  typed something into a dialog (a project name, say), only × or Esc closes it.
+  typed something into a dialog (a name, say), only × or Esc closes it.
 - **Editor** (left): Typst source with highlighting. Above it: “Block”, “Citation”, “Outline”,
-  “Page” and, as icons, “Search in project” (magnifier), sidebar and focus view.
+  “Page” and, as icons, “Search the whole document” (magnifier), sidebar and focus view.
 - **Tabs** above the editor: the main file and further chapter files (`.typ`, included for example
-  with `#include "chapters/one.typ"`). “+” opens a chapter file of the project; clicking text from a
+  with `#include "chapters/one.typ"`). “+” opens a chapter file of the document; clicking text from a
   chapter in the preview opens its tab by itself and jumps to the spot. If you write
   `#include "chapters/new.typ"` for a file that does not exist yet, TFTN creates it shortly after
   the last keystroke, with a heading from its name (missing folders are created too); “Open” in the
@@ -131,7 +140,7 @@ sync it and keep working on another computer without a network.
   the way to `methode.typ`) are removed again as long as nobody has written into them. A chapter does not
   see the imports of the main file; if it needs something from the template, it gets it with its
   own `#import` line. Each tab has its own undo; a
-  dot shows that it is not saved yet, × closes it (the file stays in the project, the main file is
+  dot shows that it is not saved yet, × closes it (the file stays in the document, the main file is
   always open). The preview always shows the whole document, including unsaved chapters. All tabs
   are saved together (Cmd/Ctrl+S, or by themselves after a second). Outline, the Here panel,
   spelling and counting apply to the active tab; page settings, versions, document type and AI
@@ -231,8 +240,8 @@ count as one comment.
 **Find and replace:** Cmd/Ctrl+F opens the search bar below the editor; it finds and replaces in the
 active tab (with “match case”, “by word” and “regexp”).
 
-**Search in project** (magnifier above the editor or Cmd/Ctrl+Shift+H) searches all `.typ` files of
-the project: the main file and every chapter, including those not open as a tab (not in hidden
+**Search the whole document** (magnifier above the editor or Cmd/Ctrl+Shift+H) searches all `.typ` files of
+the document: the main file and every chapter, including those not open as a tab (not in hidden
 folders, `packages/`, `export/`, `_lokal/` and `_renders/`). For open tabs, the text in the editor
 counts, even if unsaved. A selection in the text is already in the search field when the window opens.
 The same switches as in the search bar: “Match case”, “by word”, “regexp” (as in JavaScript; a broken
@@ -270,7 +279,7 @@ Every change is checked and is one undo step.
 spacing, justification, numbered headings, language, page numbers, header and footer (with `{seite}`
 for the page and `{kapitel}` for the chapter). Each setting is a `#set` line at the top of the text.
 Templates such as the journal article set this themselves. “Embed fonts” copies the fonts in use into
-the project.
+the document.
 
 **More fonts:** “More fonts …” below the font choice lists the fonts installed on the computer, each
 with a sample line, the number of styles and the size. “Font file …” adds an
@@ -288,7 +297,7 @@ character …; it is taken from …” or “… shows up as an empty box”.
 
 **Front matter** (“Document” panel, Cmd/Ctrl+Shift+O): a form defined by the document type – title,
 authors, date, abstract, keywords, bibliography files and citation style (a built-in name such as
-`ieee` or a `.csl` file in the project). Each value is checked before it is written to
+`ieee` or a `.csl` file in the document). Each value is checked before it is written to
 `dokument.toml`; the text in `main.typ` is never touched. Clicking the front matter in the preview
 opens the panel at the matching field. “Edit as text” shows `dokument.toml` as text, for fields the
 form doesn't know or to repair a broken file: “Apply” (Cmd/Ctrl+Enter) only writes valid TOML, and
@@ -312,8 +321,8 @@ travels with the settings folder to other computers.
 
 The “Packages” panel (Cmd/Ctrl+Shift+Y) searches the package index by name, description and
 keyword. “Add” fetches the package and its dependencies, stores them under `packages/preview/` in
-the project, records their checksums in `tftn.toml` and inserts the `#import` if you like. From then
-on the document builds offline, also on another computer. “Missing in the project” lists packages that a
+the document, records their checksums in `tftn.toml` and inserts the `#import` if you like. From then
+on the document builds offline, also on another computer. “Missing in the document” lists packages that a
 typed import needs. “Remove” and “Newer version …” (with comparison) are next to each package.
 
 **Packages with helpers:** for cetz (drawings), fletcher (flow diagrams) and cetz-plot (charts from
@@ -388,7 +397,7 @@ Calibre. It has a title page, a table of contents over two levels and a section 
 chapter (first-level heading); footnotes, tables, images, equations (as MathML), citations and
 bibliography come along, the page layout does not – the reader chooses font and size. Title, authors
 and language come from the document, the date from the date field in the “Document” panel (otherwise
-the project's timestamp). TFTN adds a plain stylesheet (figures at most as wide as the page). The file
+the document's timestamp). TFTN adds a plain stylesheet (figures at most as wide as the page). The file
 is saved as `<document name>.epub` in the document folder and overwritten by the next export; whatever
 typst leaves out of the HTML is listed in the dialog (“Missing from the e-book: …”). Pandoc runs
 sandboxed and loads nothing from the internet. There is no cover image.
@@ -396,7 +405,7 @@ sandboxed and loads nothing from the internet. There is no cover image.
 **Series** (“Export” → “Series …”): one PDF per record, e.g. for mail merge and invoices. The records
 are either a folder of `.toml` files (one document per file, the PDF is named after the file) or one
 `.toml` with `[[serie]]` sections. A record holds only what changes; everything else – sender, bank,
-closing – comes from the Document pane of the project. Groups such as `[absender]` are merged, all other
+closing – comes from the Document pane. Groups such as `[absender]` are merged, all other
 values are replaced. The field `datei` names the PDF; without it the PDFs are numbered
 (`invoices-001.pdf`).
 
@@ -451,20 +460,20 @@ Datei;Rechnungsnummer;Empfänger 1;Empfänger 2;Empfänger 3;Empfänger 4;Anrede
   and the errors with row and column (row numbers as in Excel, the header row is row 1). A row with an
   error produces no PDF; the others are made, and it is reported at the end.
 - **Your own assignment:** the drop-down next to each column picks another field or “do not use”.
-  TFTN remembers this in the project, in `tftn.toml` under `[serie-csv."<file name>.csv"]` – only column
+  TFTN remembers this in the document, in `tftn.toml` under `[serie-csv."<file name>.csv"]` – only column
   names and field names, no values. A fresh export with the same file name finds the assignment again,
-  even in another folder. In the project the assignment travels with the document type whose fields it
+  even in another folder. In the document folder the assignment travels with the document type whose fields it
   names and is backed up with it; next to a freshly exported CSV (often in Downloads) it would easily
   get lost.
 
 Internally every row becomes the same record as a `[[serie]]` section, so the combined PDF,
 double-sided printing, the cross-check (`_lokal/serie/<name>.toml`) and incognito work the same way.
-If the CSV is inside the project folder, incognito knows its values, even from columns with an
+If the CSV is inside the document folder, incognito knows its values, even from columns with an
 ambiguous name such as “Name”; a column that matches no field (e.g. “Telefon” for a letter) it does not
-know. Address lists are therefore best kept outside the project, where an assistant cannot see them at
+know. Address lists are therefore best kept outside the document, where an assistant cannot see them at
 all.
 
-On the command line: `tftn serie <project> --daten <folder, .toml or .csv> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
+On the command line: `tftn serie <folder> --daten <folder, .toml or .csv> [--ausgabe einzeln|gesamt|beides] [--beidseitig]`.
 
 ## 8. Saving and versions
 
@@ -484,7 +493,7 @@ Switzerland), English (US, UK), French, Italian, Spanish.
 
 **Hyphenation:** Typst hyphenates at the end of a line by itself, following the rules of the document
 language. If it breaks a word wrongly (technical terms, names, “the-rapist”), add the word to
-`trennungen.txt` in the project folder – journal article, book and report have this file. One word
+`trennungen.txt` in the document folder – journal article, book and report have this file. One word
 per line, allowed break points marked with `-`; a word without `-` is never hyphenated. Lines starting
 with `#` are comments.
 
@@ -519,7 +528,7 @@ shortcuts are shown for Mac **and** Windows.
 | Settings | Mod+, |
 | About TFTN and keyboard shortcuts | F1 |
 | Find and replace in the active tab (editor) | Mod+F |
-| Search and replace in project | Mod+Shift+H |
+| Search and replace in the whole document | Mod+Shift+H |
 | Editor font larger / smaller / as in the skin | Mod++ (also Mod+=) / Mod+− / Mod+0 |
 | Values at this position (markers) | Mod+Shift+M or hold ⌥/Alt |
 | Save selection as text block … | none (assignable); right-click into the selection |
@@ -616,7 +625,7 @@ The `tftn` program (built from source) works without the window:
 
 | Command | Effect |
 |---|---|
-| `tftn neu --typ tftn-fachartikel <folder> [--sprache en]` | create a project from a document type (`--sprache en`: English template) |
+| `tftn neu --typ tftn-fachartikel <folder> [--sprache en]` | create a document from a document type (`--sprache en`: English template) |
 | `tftn check <folder>` | check, report errors and missing packages |
 | `tftn build <folder> [-o target]` | PDF via the typst CLI (into `_renders/`) |
 | `tftn build <folder> --png [--ppi 144]` | page images instead of a PDF |
@@ -624,7 +633,7 @@ The `tftn` program (built from source) works without the window:
 | `tftn archiv <folder>` | archive package in `export/` (PDF/A, source, fonts, packages, instructions) |
 | `tftn gegenprobe <folder>` | print the equivalent `typst compile` command |
 | `tftn serie <folder> --daten <source> [--ausgabe einzeln\|gesamt\|beides] [--beidseitig] [--anpassen]` | one PDF per record or all in one (series) |
-| `tftn katalog <folder>` | list the project’s blocks |
+| `tftn katalog <folder>` | list the document’s blocks |
 | `tftn typ-pruefen <folder>` | check all blocks of a document type |
 
 `tftn gegenprobe` shows how to produce the same PDF without TFTN – your document never depends on
@@ -662,14 +671,14 @@ active” or “Turn MCP off”); until then TFTN refuses its calls.
 
 | Tool | Effect |
 |---|---|
-| `status` | project, revision, saved?, result of the last Typst run |
+| `status` | document, revision, saved?, result of the last Typst run |
 | `quelltext_lesen` | source of the main file as it is in the editor |
 | `text_ersetzen` | replace one passage literally (or every occurrence) |
 | `quelltext_setzen` | replace the whole source |
 | `auswahl_lesen` | what you have selected and where the cursor is |
 | `gliederung_lesen` | headings and comments, including included chapter files |
-| `dateien_auflisten` | files in the project folder |
-| `datei_lesen` | a text file of the project (chapter, `.bib`, `trennungen.txt` …) |
+| `dateien_auflisten` | files in the document folder |
+| `datei_lesen` | a text file of the document (chapter, `.bib`, `trennungen.txt` …) |
 | `datei_ersetzen` | replace a passage in such a file |
 | `datei_schreiben` | write such a file as a whole or create it |
 | `literatur_lesen` | entries of the bibliography files, cited or not |
@@ -680,10 +689,10 @@ active” or “Turn MCP off”); until then TFTN refuses its calls.
 | `formular_lesen` | fields and values of the form (title, authors, date …) |
 | `formular_setzen` | set several fields at once, checked as in the pane; one undo step |
 | `typen_auflisten` | document types for a new document |
-| `dokument_anlegen` | create a new project from a type and open it |
-| `dokument_oeffnen` | open another project (the open one is saved first) |
+| `dokument_anlegen` | create a new document from a type and open it |
+| `dokument_oeffnen` | open another document (the open one is saved first) |
 
-**Limits:** the assistant only reaches files inside the project folder, not hidden folders, `_lokal/`
+**Limits:** the assistant only reaches files inside the document folder, not hidden folders, `_lokal/`
 or `packages/`. It may only write text files; it changes the main file through the editor (with
 undo) and the form data through the form. When it changes another file, such as a chapter, undo in the
 editor does not apply – so TFTN first keeps the old content in `.fassungen/dateien/` (bibliography too). The assistant
@@ -704,11 +713,11 @@ stand-in texts before anything reaches the assistant, and puts the real values b
   patient]” or “[Patient]” depending on the field **Sex**, and “[born 1970]” for the date of birth:
   a medical check needs sex and year of birth, so both are passed on. Next to the checkbox you can
   enter your own stand-in text for each field (without brackets; empty: the template's suggestion).
-  With several people (a series in the project) they become “[Female patient]”, “[Female patient 2]”
+  With several people (a series in the document) they become “[Female patient]”, “[Female patient 2]”
   and so on.
 - **What is replaced:** the values from the data file (`dokument.toml`) and from series records inside
-  the project folder (TOML or CSV) – wherever the assistant would see them: in the source, in chapters and other
-  files, in the form, in file names and the project path, in messages. TFTN recognises the whole value,
+  the document folder (TOML or CSV) – wherever the assistant would see them: in the source, in chapters and other
+  files, in the form, in file names and the document path, in messages. TFTN recognises the whole value,
   the parts of a name (the surname alone, also with a genitive s), dates in the usual spellings
   (1970-02-01, 01.02.1970, 1 February 1970 …) and numbers with or without spaces, regardless of
   upper or lower case. Each spelling gets its own stand-in text (such as “[Female patient, part 2]”),

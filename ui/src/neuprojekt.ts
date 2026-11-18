@@ -24,13 +24,13 @@ const RESERVIERT = new Set(["con", "prn", "aux", "nul", ...[1, 2, 3, 4, 5, 6, 7,
 /** null = gültig, sonst die Meldung (gleiche Regeln wie Rust `name_pruefen`). */
 export function namePruefen(name: string): string | null {
   const n = name.trim();
-  if (n === "") return t("Projektname fehlt");
-  if (n.includes("/") || n.includes("\\")) return t("Projektname darf kein / oder \\ enthalten");
+  if (n === "") return t("Name fehlt");
+  if (n.includes("/") || n.includes("\\")) return t("Name darf kein / oder \\ enthalten");
   // eslint-disable-next-line no-control-regex
-  if (/[<>:"|?*\u0000-\u001f\u007f]/.test(n)) return t("Projektname darf keines der Zeichen < > : \" | ? * enthalten");
-  if (n.startsWith(".")) return t("Projektname darf nicht mit einem Punkt beginnen");
-  if (n.endsWith(".")) return t("Projektname darf nicht mit einem Punkt enden");
-  if (RESERVIERT.has(n.split(".")[0].toLowerCase())) return t("Projektname ist unter Windows reserviert");
+  if (/[<>:"|?*\u0000-\u001f\u007f]/.test(n)) return t("Name darf keines der Zeichen < > : \" | ? * enthalten");
+  if (n.startsWith(".")) return t("Name darf nicht mit einem Punkt beginnen");
+  if (n.endsWith(".")) return t("Name darf nicht mit einem Punkt enden");
+  if (RESERVIERT.has(n.split(".")[0].toLowerCase())) return t("Name ist unter Windows reserviert");
   return null;
 }
 

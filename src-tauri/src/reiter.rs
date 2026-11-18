@@ -191,7 +191,7 @@ pub fn datei_aktivieren(datei: String, zustand: State<'_, Zustand>) -> Result<Da
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let haupt = s
         .projekt
         .haupt()
@@ -228,7 +228,7 @@ pub fn datei_schliessen(
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let wurzel = s.projekt.wurzel.clone();
     let Some(i) = s
         .geparkt
@@ -260,7 +260,7 @@ pub fn kapiteldateien(zustand: State<'_, Zustand>) -> Result<Vec<String>, String
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         (s.projekt.wurzel.clone(), s.projekt.konfig.haupt.clone())
     };
     let mut liste = Vec::new();
@@ -327,7 +327,7 @@ pub fn projekt_texte(zustand: State<'_, Zustand>) -> Result<Vec<DateiTextJs>, St
         let sitzung = zustand.sitzung.lock().unwrap();
         let s = sitzung
             .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+            .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
         let offen: Vec<(PathBuf, String)> = std::iter::once((&s.datei, &s.spiegel))
             .chain(s.geparkt.iter().map(|g| (&g.datei, &g.spiegel)))
             .filter_map(|(d, sp)| Some((d.canonicalize().ok()?, sp.text().to_string())))
@@ -442,7 +442,7 @@ pub fn fehlende_kapitel(zustand: State<'_, Zustand>) -> Result<Vec<String>, Stri
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     Ok(fehlende(&s.projekt.wurzel, &s.datei, s.spiegel.text()))
 }
 
@@ -453,7 +453,7 @@ pub fn kapitel_anlegen(datei: String, zustand: State<'_, Zustand>) -> Result<boo
     let mut sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_mut()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let wurzel = s.projekt.wurzel.clone();
     let falsch = || {
         tr!(
@@ -509,7 +509,7 @@ pub fn kapitel_aufraeumen(
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung
         .as_ref()
-        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        .ok_or_else(|| tr!("kein Dokument geöffnet"))?;
     let eingebunden = eingebunden_offen(s);
     let wurzel = &s.projekt.wurzel;
     let mut weg = Vec::new();

@@ -193,13 +193,13 @@ export class PaketFach {
       teile.push(liste);
     }
     if (s.fehlend.length) {
-      teile.push(el("h4", "", t("Fehlt im Projekt")));
+      teile.push(el("h4", "", t("Fehlt im Dokument")));
       const liste = el("ul", "paket-liste");
       for (const spec of s.fehlend) {
         const li = el("li");
         li.append(
           el("span", "paket-name", spec),
-          this.knopf(t("Holen"), { an: !this.laeuft, titel: t("Paket samt Abhängigkeiten ins Projekt holen (ohne Importzeile)") }, () =>
+          this.knopf(t("Holen"), { an: !this.laeuft, titel: t("Paket samt Abhängigkeiten ins Dokument holen (ohne Importzeile)") }, () =>
             void this.mitLauf(!s.offline, () => this.a.hinzufuegen(spec, false)),
           ),
         );
@@ -225,7 +225,7 @@ export class PaketFach {
       }
       teile.push(liste);
     }
-    teile.push(el("h4", "", t("Im Projekt")));
+    teile.push(el("h4", "", t("Im Dokument")));
     if (s.im_projekt.length === 0) teile.push(el("p", "paket-leer", t("Noch keine Universe-Pakete.")));
     const liste = el("ul", "paket-liste");
     for (const p of s.im_projekt) {
@@ -323,7 +323,7 @@ export class PaketFach {
     const kopf = el("div", "paket-zeile");
     kopf.append(el("span", "paket-name", `${tr.name} ${tr.version}`));
     if (tr.lizenz) kopf.append(el("span", "paket-marke", tr.lizenz));
-    if (tr.im_projekt) kopf.append(el("span", "paket-marke", t("im Projekt")));
+    if (tr.im_projekt) kopf.append(el("span", "paket-marke", t("im Dokument")));
     else if (tr.im_zwischenspeicher) kopf.append(el("span", "paket-marke", t("im Zwischenspeicher")));
     if (tr.helfer) kopf.append(el("span", "paket-marke", t("Helfer")));
     const spec = `@preview/${tr.name}:${tr.version}`;

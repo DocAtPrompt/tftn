@@ -813,7 +813,7 @@ function tastenNeu() {
   document.getElementById("ueber-knopf")!.title = titel("helfer/ueber", t("Über TFTN: Version, Links, Tastenkürzel"));
   document.getElementById("seitenleiste-knopf")!.title = titel("helfer/seitenleiste", t("Seitenleiste: was an der Schreibmarke steht"));
   document.getElementById("schreibansicht-knopf")!.title = titel("helfer/schreibansicht", t("Nur der Text, ohne Ablenkung"));
-  document.getElementById("projektsuche-knopf")!.title = titel("helfer/projektsuche", t("Im Projekt suchen und ersetzen (alle Dateien)"));
+  document.getElementById("projektsuche-knopf")!.title = titel("helfer/projektsuche", t("Im ganzen Dokument suchen und ersetzen (alle Dateien)"));
 }
 
 /** Bausteine mit dem Kürzel, das gerade gilt (für Menü und Palette). */
@@ -1725,7 +1725,7 @@ async function projektWechseln(vorgegeben: string | null = null) {
       await invoke("projekt_wechseln", { ordner });
       location.reload();
     });
-    if (!ok) hinweis(t("Nicht gespeichert – Projekt nicht gewechselt."));
+    if (!ok) hinweis(t("Nicht gespeichert – Dokument nicht gewechselt."));
   } catch (fehler) {
     hinweis(String(fehler));
   }
@@ -1991,7 +1991,7 @@ async function projektOeffnen(): Promise<Geoeffnet> {
     } catch (fehler) {
       await new Promise<void>((weiter) =>
         hinweis(`${fehler}`, {
-          titel: t("Projekt wählen …"),
+          titel: t("Dokument wählen …"),
           aktion: () => {
             hinweis("");
             weiter();
@@ -2097,7 +2097,7 @@ async function start() {
     ordnerWaehlen: async () => {
       let ordner: string | null = null;
       await einzeln(async () => {
-        ordner = await invoke<string | null>("ordner_waehlen_dialog", { aufforderung: t("Ordner für das neue Projekt wählen") });
+        ordner = await invoke<string | null>("ordner_waehlen_dialog", { aufforderung: t("Ordner für das neue Dokument wählen") });
       });
       return ordner;
     },
@@ -2108,7 +2108,7 @@ async function start() {
       const ok = await wechselNachSpeichern(vorWechsel, async () => {
         pfad = await invoke<string>("projekt_anlegen", { typ, eltern, name, schriften });
       });
-      if (!ok) throw new Error(t("Das offene Projekt ließ sich nicht speichern – nichts angelegt."));
+      if (!ok) throw new Error(t("Das offene Dokument ließ sich nicht speichern – nichts angelegt."));
       return pfad;
     },
     wechseln: async () => {
@@ -2132,7 +2132,7 @@ async function start() {
   ]);
   new KnopfMenue(document.getElementById("oeffnen-knopf")!, async () => [
     {
-      text: t("Projekt öffnen …"),
+      text: t("Dokument öffnen …"),
       titel: t("Ordner mit tftn.toml wählen (Cmd/Strg+O)"),
       ikone: "oeffnen",
       aktion: () => void einzeln(projektWechseln),

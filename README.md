@@ -17,7 +17,7 @@ with Typst without handing them to a third party.
 - **Your own text blocks:** standard phrases and paragraphs with gaps to fill in, kept in one file in
   your settings folder (synced to every computer if you like); select text and save it as a block
   with a right-click.
-- **Find and replace across the project:** search all chapter files at once (match case, whole word,
+- **Find and replace across the whole document:** search all chapter files at once (match case, whole word,
   regular expressions), jump to a match, replace in the editor with undo per file.
 - **Change values without code:** markers, a context sidebar, a table grid and an equation palette.
 - **Document types** as Typst packages, with a form for the front matter. TFTN ships a blank
@@ -26,7 +26,7 @@ with Typst without handing them to a third party.
   take a logo and a scanned signature; the invoice knows the Austrian VAT exemptions for medical
   treatment and small businesses.
 - **Any font, the same everywhere:** pick an installed font or a font file; TFTN copies the family
-  into the project, so preview, export and every other computer typeset with the very same files.
+  into the document folder, so preview, export and every other computer typeset with the very same files.
   Missing characters (ß, umlauts, €, …) are flagged when you choose the font and wherever the text
   falls back to another font or an empty box.
 - **Citations** from your BibTeX/BibLaTeX file, or straight from a DOI (Crossref, DataCite).
@@ -39,7 +39,7 @@ with Typst without handing them to a third party.
   pinch zooms around the pointer.
 - **Paste with conversion:** paste Markdown or formatted text from a browser, Word or a chat
   assistant and convert it to Typst with one click (via Pandoc).
-- **Typst Universe packages** vendored into the project with checksums – documents build offline,
+- **Typst Universe packages** vendored into the document folder with checksums – documents build offline,
   on any machine.
 - **Import** from Word, OpenDocument, Markdown, HTML, EPUB and LaTeX, **export** to PDF (incl.
   PDF/A), to Word for proofreading and to an e-book (EPUB, both via Pandoc) and to a
@@ -48,7 +48,7 @@ with Typst without handing them to a third party.
   from old Windows files included), one `.toml` with many records, or a folder of `.toml` files,
   run over the document – one PDF per record, or all in one PDF for a single print run (optionally
   with blank pages for double-sided printing). Each record holds only what changes; sender, bank
-  and the rest come from the project.
+  and the rest come from the document.
 - **Archive package:** one click puts the PDF/A, the source, every font and package used and a
   README with the exact `typst compile` command and the PDF's SHA-256 into a zip. The PDF is built
   from the zip's contents alone, so years later – without TFTN – the same typst version gives the

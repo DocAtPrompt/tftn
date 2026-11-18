@@ -216,7 +216,7 @@ pub fn entfernen(wurzel: &Path, spec: &PaketSpec) -> Result<Vec<PaketSpec>, Pake
     let (pfad, text, mut doc) = tftn_toml(wurzel)?;
     if !paketordner(wurzel, spec).is_dir() {
         return Err(PaketFehler::Projekt(tr!(
-            "{spec} liegt nicht im Projekt",
+            "{spec} liegt nicht im Dokumentordner",
             spec
         )));
     }

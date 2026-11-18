@@ -197,15 +197,15 @@ fn literaturdatei_und_stil() {
     assert_eq!(p(&d, "lit/b.yaml"), Ok(()));
     assert_eq!(
         p(&d, "fehlt.bib"),
-        Err("Datei nicht im Projekt gefunden".into())
+        Err("Datei nicht im Dokumentordner gefunden".into())
     );
     assert_eq!(
         p(&d, "../a.bib"),
-        Err("Datei nicht im Projekt gefunden".into())
+        Err("Datei nicht im Dokumentordner gefunden".into())
     );
     assert_eq!(
         p(&d, "/etc/a.bib"),
-        Err("Datei nicht im Projekt gefunden".into())
+        Err("Datei nicht im Dokumentordner gefunden".into())
     );
     assert_eq!(
         p(&d, "a.txt"),
@@ -216,7 +216,7 @@ fn literaturdatei_und_stil() {
     assert_eq!(p(&s, "stil.csl"), Ok(()));
     assert_eq!(
         p(&s, "fehlt.csl"),
-        Err("Datei nicht im Projekt gefunden".into())
+        Err("Datei nicht im Dokumentordner gefunden".into())
     );
     assert_eq!(p(&s, "erfunden"), Err("unbekannter Zitierstil".into()));
     let _ = std::fs::remove_dir_all(&w);
@@ -240,11 +240,11 @@ fn bild_im_projekt() {
     assert_eq!(p("unterschrift.svg"), Ok(()));
     assert_eq!(
         p("bilder/fehlt.png"),
-        Err("Datei nicht im Projekt gefunden".into())
+        Err("Datei nicht im Dokumentordner gefunden".into())
     );
     assert_eq!(
         p("../logo.png"),
-        Err("Datei nicht im Projekt gefunden".into())
+        Err("Datei nicht im Dokumentordner gefunden".into())
     );
     let falsch = p("notiz.txt").unwrap_err();
     assert!(

@@ -332,7 +332,7 @@ fn projektdatei(s: &str, k: &Kontext) -> Result<(), String> {
     if da {
         Ok(())
     } else {
-        Err(tr!("Datei nicht im Projekt gefunden"))
+        Err(tr!("Datei nicht im Dokumentordner gefunden"))
     }
 }
 

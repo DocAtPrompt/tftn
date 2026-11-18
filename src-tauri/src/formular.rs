@@ -56,7 +56,7 @@ pub struct ProjektJs {
 
 pub fn sensibel_warnung() -> String {
     tr!(
-        "Dieses Formular enthält personenbezogene Felder, und das Projekt liegt in einem Git-Ordner."
+        "Dieses Formular enthält personenbezogene Felder, und der Dokumentordner liegt in einem Git-Ordner."
     )
 }
 

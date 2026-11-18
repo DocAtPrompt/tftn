@@ -29,7 +29,7 @@ export function zuletztPunkte(liste: ZuletztJs[], oeffnen: (pfad: string) => voi
   }));
   punkte.push({
     text: t("Liste leeren"),
-    titel: t("Vergisst die zuletzt geöffneten Projekte (nur auf diesem Rechner); die Projekte selbst bleiben"),
+    titel: t("Vergisst die zuletzt geöffneten Dokumente (nur auf diesem Rechner); die Dokumente selbst bleiben"),
     trennerDavor: true,
     aktion: leeren,
   });

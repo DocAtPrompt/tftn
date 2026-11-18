@@ -426,7 +426,7 @@ fn auch_zeilen(
                 })
                 .ok_or_else(|| {
                     tr!(
-                        "{paket} braucht {name}, das im Projekt fehlt",
+                        "{paket} braucht {name}, das im Dokumentordner fehlt",
                         paket = b.paket,
                         name
                     )

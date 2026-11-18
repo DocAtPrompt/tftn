@@ -29,10 +29,10 @@ const LAEUFT = t("Es wird gerade geholt …");
 
 export function hinzufuegenKnopf(tr: Treffer, offline: boolean, laeuft: boolean): Knopf {
   if (laeuft) return { an: false, titel: LAEUFT };
-  if (tr.im_projekt) return { an: false, titel: t("Schon im Projekt") };
-  if (tr.im_zwischenspeicher) return { an: true, titel: t("Aus dem Zwischenspeicher ins Projekt übernehmen") };
+  if (tr.im_projekt) return { an: false, titel: t("Schon im Dokument") };
+  if (tr.im_zwischenspeicher) return { an: true, titel: t("Aus dem Zwischenspeicher ins Dokument übernehmen") };
   if (offline) return { an: false, titel: t("Ganz offline – nur Pakete im Zwischenspeicher") };
-  return { an: true, titel: t("Von packages.typst.org holen (samt Abhängigkeiten) und ins Projekt übernehmen") };
+  return { an: true, titel: t("Von packages.typst.org holen (samt Abhängigkeiten) und ins Dokument übernehmen") };
 }
 
 export function indexKnopf(index: IndexStand | null, offline: boolean, laeuft: boolean): Knopf & { text: string } {
@@ -57,15 +57,15 @@ export function indexText(index: IndexStand | null): string {
 /** „Holen“ bei einem Paket mit Beschreibung, das im Projekt fehlt (PLAN-M2 AP10). */
 export function holbarKnopf(h: { im_zwischenspeicher: boolean }, offline: boolean, laeuft: boolean): Knopf {
   if (laeuft) return { an: false, titel: LAEUFT };
-  if (h.im_zwischenspeicher) return { an: true, titel: t("Aus dem Zwischenspeicher ins Projekt übernehmen") };
+  if (h.im_zwischenspeicher) return { an: true, titel: t("Aus dem Zwischenspeicher ins Dokument übernehmen") };
   if (offline) return { an: false, titel: t("Ganz offline – nur Pakete im Zwischenspeicher") };
-  return { an: true, titel: t("Von packages.typst.org holen (samt Abhängigkeiten) und ins Projekt übernehmen") };
+  return { an: true, titel: t("Von packages.typst.org holen (samt Abhängigkeiten) und ins Dokument übernehmen") };
 }
 
 export function entfernenKnopf(p: { benutzt: boolean }, laeuft: boolean): Knopf {
   if (laeuft) return { an: false, titel: LAEUFT };
   if (p.benutzt) return { an: false, titel: t("Paket wird noch importiert – erst die Importe entfernen") };
-  return { an: true, titel: t("Aus dem Projekt entfernen, samt Abhängigkeiten, die sonst niemand braucht") };
+  return { an: true, titel: t("Aus dem Dokument entfernen, samt Abhängigkeiten, die sonst niemand braucht") };
 }
 
 export function wechselKnopf(offline: boolean, laeuft: boolean): Knopf {

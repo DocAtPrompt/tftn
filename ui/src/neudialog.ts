@@ -42,7 +42,7 @@ export class NeuDialog {
     this.huelle = el("div", "neu-dialog neu-vorlage");
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
-    this.huelle.setAttribute("aria-label", t("Neues Projekt"));
+    this.huelle.setAttribute("aria-label", t("Neues Dokument"));
     document.body.append(this.huelle);
     this.huelle.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
@@ -52,9 +52,9 @@ export class NeuDialog {
     });
     dialogAnmelden(this, this.huelle, document.getElementById("neu-knopf"));
     this.eltern.type = "text";
-    this.eltern.placeholder = t("Ordner, in dem das Projekt entsteht");
+    this.eltern.placeholder = t("Ordner, in dem das Dokument entsteht");
     this.name.type = "text";
-    this.name.placeholder = t("Projektname, z. B. Artikel Reproduzierbarkeit");
+    this.name.placeholder = t("Name, z. B. Artikel Reproduzierbarkeit");
     for (const f of [this.eltern, this.name]) f.addEventListener("input", () => this.pruefen());
     this.name.addEventListener("keydown", (e) => {
       if (e.key === "Enter") void this.anlegen();
@@ -200,7 +200,7 @@ export class NeuDialog {
     this.meldung.textContent = t("Lege an …");
     try {
       await this.a.anlegen(this.gewaehlt.name, this.eltern.value.trim(), this.name.value.trim(), this.schriften.checked);
-      this.meldung.textContent = t("Angelegt; öffne das neue Projekt …");
+      this.meldung.textContent = t("Angelegt; öffne das neue Dokument …");
       await this.a.wechseln();
     } catch (fehler) {
       this.laeuft = false;

@@ -14,7 +14,7 @@ const treffer = (t: Partial<Treffer> = {}): Treffer => ({
 
 describe("Fach „Pakete“ (PLAN-M2 AP9)", () => {
   it("hinzufuegen_knopf", () => {
-    expect(hinzufuegenKnopf(treffer({ im_projekt: true }), false, false)).toEqual({ an: false, titel: "Schon im Projekt" });
+    expect(hinzufuegenKnopf(treffer({ im_projekt: true }), false, false)).toEqual({ an: false, titel: "Schon im Dokument" });
     const offline = hinzufuegenKnopf(treffer(), true, false);
     expect(offline.an).toBe(false);
     expect(offline.titel).toBe("Ganz offline – nur Pakete im Zwischenspeicher");

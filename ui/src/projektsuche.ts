@@ -276,8 +276,8 @@ export class ProjektSuche {
   constructor(private a: ProjektSucheAktionen) {
     this.huelle.hidden = true;
     this.huelle.setAttribute("role", "dialog");
-    this.huelle.setAttribute("aria-label", t("Im Projekt suchen"));
-    const kopf = dialogKopf(t("Im Projekt suchen"), () => this.schliessen());
+    this.huelle.setAttribute("aria-label", t("Im ganzen Dokument suchen"));
+    const kopf = dialogKopf(t("Im ganzen Dokument suchen"), () => this.schliessen());
     this.suche.type = "search";
     this.suche.placeholder = t("Suchen");
     this.suche.setAttribute("aria-label", t("Suchen"));

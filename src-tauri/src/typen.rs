@@ -84,12 +84,12 @@ impl Namensfehler {
     /// Meldung im Dialog „Neues Projekt“.
     fn projektname(self) -> String {
         match self {
-            Self::Fehlt => tr!("Projektname fehlt"),
-            Self::Trenner => tr!("Projektname darf kein / oder \\ enthalten"),
-            Self::Zeichen => tr!("Projektname darf keines der Zeichen < > : \" | ? * enthalten"),
-            Self::PunktVorn => tr!("Projektname darf nicht mit einem Punkt beginnen"),
-            Self::PunktHinten => tr!("Projektname darf nicht mit einem Punkt enden"),
-            Self::Reserviert => tr!("Projektname ist unter Windows reserviert"),
+            Self::Fehlt => tr!("Name fehlt"),
+            Self::Trenner => tr!("Name darf kein / oder \\ enthalten"),
+            Self::Zeichen => tr!("Name darf keines der Zeichen < > : \" | ? * enthalten"),
+            Self::PunktVorn => tr!("Name darf nicht mit einem Punkt beginnen"),
+            Self::PunktHinten => tr!("Name darf nicht mit einem Punkt enden"),
+            Self::Reserviert => tr!("Name ist unter Windows reserviert"),
         }
     }
 
@@ -130,7 +130,7 @@ fn namensfehler(name: &str) -> Option<Namensfehler> {
 pub fn wechsel_pruefen(ordner: &Path) -> Result<PathBuf, String> {
     if !ordner.join("tftn.toml").is_file() {
         return Err(tr!(
-            "{ordner} ist kein TFTN-Projekt (keine tftn.toml).",
+            "{ordner} ist kein TFTN-Dokument (keine tftn.toml).",
             ordner = ordner.display()
         ));
     }
@@ -823,7 +823,7 @@ mod tests {
     fn name_pruefen_faelle() {
         for schlecht in ["", "a/b", "a\\b", "..", ".x", "  "] {
             let e = name_pruefen(schlecht).unwrap_err();
-            assert!(e.starts_with("Projektname"), "{schlecht:?}: {e}");
+            assert!(e.starts_with("Name"), "{schlecht:?}: {e}");
         }
         assert_eq!(name_pruefen("Mein Artikel 2026"), Ok(()));
         // Abschlussprüfung: unter Windows unzulässig bzw. laufwerksrelativ.
@@ -842,7 +842,7 @@ mod tests {
             "x\u{7}",
         ] {
             let e = name_pruefen(schlecht).unwrap_err();
-            assert!(e.starts_with("Projektname"), "{schlecht:?}: {e}");
+            assert!(e.starts_with("Name"), "{schlecht:?}: {e}");
         }
     }
 

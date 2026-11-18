@@ -52,7 +52,7 @@
         "email": { "type": "string", "title": "E-Mail", "format": "email" }
       }
     },
-    "logo": { "type": "string", "title": "Logo", "description": "Bilddatei im Projekt (PNG, JPG, SVG …), steht im Kopf links neben dem Namen der Ordination; „Bild wählen …“ legt sie unter bilder/ ab", "format": "bild", "x-tftn-gruppe": "Ordination" },
+    "logo": { "type": "string", "title": "Logo", "description": "Bilddatei im Dokumentordner (PNG, JPG, SVG …), steht im Kopf links neben dem Namen der Ordination; „Bild wählen …“ legt sie unter bilder/ ab", "format": "bild", "x-tftn-gruppe": "Ordination" },
     "logo_hoehe": { "type": "number", "title": "Höhe des Logos in cm", "default": 1.5, "minimum": 0.5, "maximum": 4, "x-tftn-gruppe": "Ordination" },
     "unterschrift_bild": { "type": "string", "title": "Unterschrift als Bild", "description": "Bild der Unterschrift über dem Namen, am besten ein Scan mit durchsichtigem Hintergrund (PNG); leer: Platz zum Unterschreiben von Hand", "format": "bild", "x-tftn-gruppe": "Ordination" },
     "gruss": { "type": "string", "title": "Grußformel", "default": "Mit freundlichen Grüßen" },
