@@ -376,8 +376,19 @@ pub fn ersatzzeichen(doc: &PagedDocument, formel: &dyn Fn(Span) -> bool) -> Vec<
     aus
 }
 
+/// Ein Lauf gehört zu einer Formel, wenn seine Stelle in `$…$` liegt. Bei Akzenten wie `hat(beta)`
+/// setzt Typst die Basis ohne Stelle (losgelöste Spanne); dann zählt ein Lauf in einer Formelschrift
+/// ebenfalls als Formel. Ohne Stelle in einer gewöhnlichen Schrift bleibt es Text.
 fn in_formel(t: &typst::text::TextItem, formel: &dyn Fn(Span) -> bool) -> bool {
-    t.glyphs.first().is_some_and(|g| formel(g.span.0))
+    t.glyphs.first().is_some_and(|g| {
+        formel(g.span.0)
+            || (g.span.0.is_detached()
+                && t.font
+                    .font()
+                    .info()
+                    .flags
+                    .contains(typst::text::FontFlags::MATH))
+    })
 }
 
 fn rahmen_pruefen(

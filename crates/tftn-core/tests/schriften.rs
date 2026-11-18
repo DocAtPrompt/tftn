@@ -153,6 +153,28 @@ fn ersatz_und_leere_kaestchen_werden_gemeldet() {
 }
 
 #[test]
+fn griechisch_unter_akzenten_in_formeln_ist_kein_ersatz() {
+    // `hat(beta)` setzt die Basis ohne Stelle im Quelltext; sie kommt trotzdem absichtlich aus der
+    // Formelschrift und darf keine Warnung auslösen.
+    let p = projekt(
+        "schriften-akzent",
+        "#set text(font: \"Libertinus Serif\")\nDer Schätzer $hat(beta)_1$ und $ hat(bold(beta)) = tilde(alpha) $\n",
+    );
+    for datei in ["LibertinusSerif-Regular.otf", "NewCMMath-Regular.otf"] {
+        for f in dateifamilien(&typschriften(datei)) {
+            familie_einbinden(&p, &f).unwrap();
+        }
+    }
+    let k = kompilieren(&ProjektWorld::neu(&p).unwrap());
+    assert!(k.dokument.is_some(), "{:?}", k.meldungen);
+    assert!(
+        k.meldungen.is_empty(),
+        "{:?}",
+        k.meldungen.iter().map(|m| &m.text).collect::<Vec<_>>()
+    );
+}
+
+#[test]
 fn ohne_schriften_gibt_es_eine_klare_meldung() {
     let p = projekt("schriften-keine", "Hallo\n");
     let k = kompilieren(&ProjektWorld::neu(&p).unwrap());
