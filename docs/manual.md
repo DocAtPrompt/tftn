@@ -98,7 +98,11 @@ sync it and keep working on another computer without a network.
   “Page” and, as icons, sidebar and focus view.
 - **Tabs** above the editor: the main file and further chapter files (`.typ`, included for example
   with `#include "chapters/one.typ"`). “+” opens a chapter file of the project; clicking text from a
-  chapter in the preview opens its tab by itself and jumps to the spot. Each tab has its own undo; a
+  chapter in the preview opens its tab by itself and jumps to the spot. If you write
+  `#include "chapters/new.typ"` for a file that does not exist yet, the message band offers “Create
+  and open”: the file is created with a heading from its name and opens as a tab. A chapter does not
+  see the imports of the main file; if it needs something from the template, it gets it with its
+  own `#import` line. Each tab has its own undo; a
   dot shows that it is not saved yet, × closes it (the file stays in the project, the main file is
   always open). The preview always shows the whole document, including unsaved chapters. All tabs
   are saved together (Cmd/Ctrl+S, or by themselves after a second). Outline, the Here panel,

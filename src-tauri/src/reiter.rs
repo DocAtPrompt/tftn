@@ -295,9 +295,152 @@ fn sammeln(wurzel: &Path, ordner: &Path, tiefe: usize, aus: &mut Vec<String>) {
     }
 }
 
+/// Ziel einer Einbindung als Pfad im Projekt, rein nach Text (die Datei muss es nicht geben):
+/// `/…` vom Projekt aus, sonst vom Ordner der einbindenden Datei. `None`, wenn es hinausführt.
+fn ziel_im_projekt(wurzel: &Path, von: &Path, ziel: &str) -> Option<PathBuf> {
+    use std::path::Component;
+    let basis = match ziel.strip_prefix('/') {
+        Some(_) => wurzel.to_path_buf(),
+        None => von.parent()?.to_path_buf(),
+    };
+    let mut p = basis;
+    for teil in Path::new(ziel.trim_start_matches('/')).components() {
+        match teil {
+            Component::Normal(n) => p.push(n),
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if !p.pop() {
+                    return None;
+                }
+            }
+            _ => return None,
+        }
+    }
+    p.starts_with(wurzel).then_some(p)
+}
+
+/// `#include "…"` im Text der Datei `von`, deren Ziel (eine `.typ`-Datei im Projekt) es noch nicht
+/// gibt; relativ zum Projekt, ohne doppelte.
+pub fn fehlende(wurzel: &Path, von: &Path, text: &str) -> Vec<String> {
+    let mut aus: Vec<String> = Vec::new();
+    for (_, ziel) in crate::projektdateien::eingebunden(text) {
+        let Some(p) = ziel_im_projekt(wurzel, von, &ziel) else {
+            continue;
+        };
+        let r = relativ(wurzel, &p);
+        if p.extension().is_some_and(|e| e == "typ")
+            && !p.exists()
+            && !aus.contains(&r)
+            && erlaubt(&r)
+        {
+            aus.push(r);
+        }
+    }
+    aus
+}
+
+/// Nicht in Ordnern, die TFTN verwaltet oder die versteckt sind.
+fn erlaubt(relativ: &str) -> bool {
+    !relativ
+        .split('/')
+        .any(|t| t.starts_with('.') || ["packages", "_lokal", "_renders", "export"].contains(&t))
+}
+
+/// Erste Zeile einer neuen Kapiteldatei: eine Überschrift aus dem Dateinamen („ausblick.typ“ →
+/// „= Ausblick“, „02-methode.typ“ → „= Methode“).
+pub fn ueberschrift(datei: &str) -> String {
+    let stamm = Path::new(datei)
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let ohne_nummer =
+        stamm.trim_start_matches(|c: char| c.is_ascii_digit() || c == '-' || c == '_' || c == ' ');
+    let woerter = ohne_nummer.replace(['-', '_'], " ");
+    let mut z = woerter.trim().chars();
+    match z.next() {
+        Some(erstes) => format!("= {}{}\n", erstes.to_uppercase(), z.as_str()),
+        None => String::new(),
+    }
+}
+
+/// Eingebundene Kapitel des aktiven Reiters, die es noch nicht gibt (für „Anlegen und öffnen“).
+#[tauri::command]
+pub fn fehlende_kapitel(zustand: State<'_, Zustand>) -> Result<Vec<String>, String> {
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung
+        .as_ref()
+        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    Ok(fehlende(&s.projekt.wurzel, &s.datei, s.spiegel.text()))
+}
+
+/// Legt eine eingebundene Kapiteldatei an (mit einer Überschrift aus dem Namen); danach öffnet die
+/// Oberfläche ihren Reiter. Eine vorhandene Datei bleibt unberührt.
+#[tauri::command]
+pub fn kapitel_anlegen(datei: String, zustand: State<'_, Zustand>) -> Result<(), String> {
+    let wurzel = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        let s = sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+        s.projekt.wurzel.clone()
+    };
+    let falsch = || {
+        tr!(
+            "{datei} lässt sich hier nicht anlegen.",
+            datei = datei.as_str()
+        )
+    };
+    let pfad = ziel_im_projekt(&wurzel, &wurzel.join("x"), &datei).ok_or_else(falsch)?;
+    if pfad.extension().is_none_or(|e| e != "typ") || !erlaubt(&relativ(&wurzel, &pfad)) {
+        return Err(falsch());
+    }
+    if pfad.exists() {
+        return Ok(());
+    }
+    if let Some(ordner) = pfad.parent() {
+        std::fs::create_dir_all(ordner).map_err(|e| format!("{}: {e}", ordner.display()))?;
+    }
+    std::fs::write(&pfad, ueberschrift(&datei)).map_err(|e| format!("{}: {e}", pfad.display()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fehlende_einbindungen() {
+        let o = ordner("fehlend");
+        let haupt = o.join("main.typ");
+        let text = "#include \"kapitel/eins.typ\"\n#include \"kapitel/neu.typ\"\n#include \"/anhang/a.typ\"\n\
+                    #include \"../weg.typ\"\n#include \"bild.svg\"\n#include \"kapitel/neu.typ\"\n\
+                    #include \"packages/x.typ\"\n";
+        assert_eq!(
+            fehlende(&o, &haupt, text),
+            vec!["kapitel/neu.typ", "anhang/a.typ"]
+        );
+        // Aus einem Kapitel heraus: relativ zu dessen Ordner.
+        let kapitel = o.join("kapitel/eins.typ");
+        assert_eq!(
+            fehlende(
+                &o,
+                &kapitel,
+                "#include \"unter.typ\"\n#include \"../main.typ\"\n"
+            ),
+            vec!["kapitel/unter.typ"]
+        );
+        let _ = std::fs::remove_dir_all(&o);
+    }
+
+    #[test]
+    fn ueberschrift_aus_dem_namen() {
+        assert_eq!(ueberschrift("kapitel/ausblick.typ"), "= Ausblick\n");
+        assert_eq!(
+            ueberschrift("02-methode_und_material.typ"),
+            "= Methode und material\n"
+        );
+        assert_eq!(ueberschrift("über.typ"), "= Über\n");
+        assert_eq!(ueberschrift("01.typ"), "");
+    }
 
     fn ordner(name: &str) -> PathBuf {
         let o = std::env::temp_dir().join(format!("tftn-reiter-{name}-{}", std::process::id()));

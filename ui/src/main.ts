@@ -1212,6 +1212,43 @@ function vorschauVerarbeiten(lauf: VorschauEreignis) {
   letzterLauf = lauf;
   markierungenSetzen(lauf);
   rechtschreibungSpaeter();
+  void fehlendeKapitelAnbieten(lauf);
+}
+
+/** Das Kapitel, für das gerade „Anlegen und öffnen“ angeboten wird. */
+let kapitelAngebot: string | null = null;
+
+/**
+ * Bindet der aktive Reiter mit `#include` eine Datei ein, die es noch nicht gibt, bietet das
+ * Hinweisband an, sie anzulegen und als Reiter zu öffnen. Gelingt der Lauf wieder, verschwindet es.
+ */
+async function fehlendeKapitelAnbieten(lauf: VorschauEreignis) {
+  if ((lauf.datei ?? aktiveDatei) !== aktiveDatei) return;
+  const fehlt = lauf.gelungen ? [] : await invoke<string[]>("fehlende_kapitel").catch(() => []);
+  const datei = fehlt[0] ?? null;
+  if (datei === kapitelAngebot) return;
+  if (datei === null) {
+    kapitelAngebot = null;
+    hinweis("");
+    return;
+  }
+  kapitelAngebot = datei;
+  hinweis(t("„{datei}“ gibt es noch nicht.", { datei }), {
+    titel: t("Anlegen und öffnen"),
+    aktion: () => void kapitelAnlegen(datei),
+  });
+}
+
+async function kapitelAnlegen(datei: string) {
+  try {
+    await invoke("kapitel_anlegen", { datei });
+  } catch (fehler) {
+    hinweis(String(fehler));
+    return;
+  }
+  kapitelAngebot = null;
+  hinweis("");
+  await reiterWaehlen(datei);
 }
 
 /** Der zuletzt gezeigte Lauf: Beim Öffnen kommt er, bevor es den Editor gibt. */

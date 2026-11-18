@@ -4005,6 +4005,8 @@ pub fn run() {
             reiter::datei_aktivieren,
             reiter::datei_schliessen,
             reiter::kapiteldateien,
+            reiter::fehlende_kapitel,
+            reiter::kapitel_anlegen,
             zuletzt_liste,
             zuletzt_leeren,
             typ_vergleichen,
