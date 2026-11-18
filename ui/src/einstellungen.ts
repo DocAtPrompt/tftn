@@ -10,6 +10,7 @@ import { type McpJs, mcpBefehl } from "./mcp";
 import { type SkinsJs, skinOptionen } from "./skin";
 import type { TypenJs } from "./neuprojekt";
 import { t } from "./sprache";
+import type { UeberJs } from "./ueber";
 
 export interface EinstellungenJs {
   ordner: string;
@@ -58,6 +59,9 @@ export interface EinstellAktionen {
   mcpLesen(): Promise<McpJs>;
   mcpSetzen(an: boolean): Promise<McpJs>;
   mcpBeimWechsel(aus: boolean): Promise<McpJs>;
+  ueberLesen(): Promise<UeberJs>;
+  /** Ko-fi-Link in „Über TFTN“ aus- (`true`) oder einblenden. */
+  kofiAusblenden(aus: boolean): Promise<UeberJs>;
   geschlossen(): void;
 }
 
@@ -138,6 +142,7 @@ export class EinstellDialog {
   private pfadGezeigt = "";
   private typName: HTMLInputElement;
   private offline: HTMLInputElement;
+  private kofi: HTMLInputElement;
   private sprache: HTMLSelectElement;
   private spracheText: HTMLSpanElement;
   private skin: HTMLSelectElement;
@@ -166,6 +171,7 @@ export class EinstellDialog {
           <option value="90">${t("Klein")}</option><option value="100">${t("Normal")}</option><option value="115">${t("Groß")}</option><option value="130">${t("Sehr groß")}</option>
         </select></label></div>
         <label class="einst-offline"><input type="checkbox" /> ${t("Ganz offline (nur dieser Rechner): TFTN holt keine Pakete aus dem Netz")}</label>
+        <label class="einst-kofi" hidden><input type="checkbox" /> ${t("Link „TFTN unterstützen (Ko-fi)“ in „Über TFTN“ zeigen")}</label>
         <div class="einst-mcp">
           <label><input type="checkbox" class="einst-mcp-an" /> ${t("MCP: KI-Assistenten (lokal oder in der Cloud) dürfen im offenen Dokument lesen und schreiben")}</label>
           <label><input type="checkbox" class="einst-mcp-wechsel" /> ${t("MCP ausschalten, wenn ein anderes Dokument geöffnet wird (öffnet MCP es selbst, fragt TFTN nach)")}</label>
@@ -308,6 +314,8 @@ export class EinstellDialog {
     q(".einst-zuruecksetzen").addEventListener("click", () => void this.a.ordnerSetzen(null, false));
     q(".einst-zeigen").addEventListener("click", () => void this.a.ordnerZeigen());
     this.offline.addEventListener("change", () => void this.a.offlineSetzen(this.offline.checked));
+    this.kofi = q(".einst-kofi input");
+    this.kofi.addEventListener("change", () => void this.a.kofiAusblenden(!this.kofi.checked).then((u) => this.kofiZeigen(u), () => {}));
     this.liste.addEventListener("click", (e) => {
       const ziel = e.target as HTMLElement;
       const tr = ziel.closest("tr[data-id]") as HTMLElement | null;
@@ -336,7 +344,17 @@ export class EinstellDialog {
     return !this.huelle.hidden;
   }
 
+  /** Der Schalter erscheint nur, wenn es ein Ko-fi-Konto gibt. */
+  private kofiZeigen(u: UeberJs) {
+    (this.kofi.parentElement as HTMLElement).hidden = !u.kofi_vorhanden;
+    this.kofi.checked = !u.kofi_ausblenden;
+  }
+
   oeffnen() {
+    void this.a.ueberLesen().then(
+      (u) => this.kofiZeigen(u),
+      () => {},
+    );
     this.huelle.hidden = false;
     this.aufnahme = null;
     this.suche.value = "";

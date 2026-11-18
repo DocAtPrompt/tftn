@@ -39,6 +39,8 @@
     ],
     "resources": {
       "../_lokal/typst-cli/0.15.1/LICENSE": "lizenzen/typst-LICENSE.txt",
+      "../LICENSE-MIT": "lizenzen/TFTN-LICENSE-MIT.txt",
+      "../LICENSE-APACHE": "lizenzen/TFTN-LICENSE-APACHE.txt",
       "../types/": "types/",
       "../package-descriptions/": "package-descriptions/",
       "../dictionaries/": "dictionaries/",

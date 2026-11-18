@@ -23,7 +23,7 @@ use tftn_sprachen::tr;
 pub const EINTRAEGE_MAX: usize = 500;
 
 /// Zeilen der Sitzung auf dem Blatt; mehr passen nicht auf eine Seite.
-const BLATT_ZEILEN_MAX: usize = 12;
+const BLATT_ZEILEN_MAX: usize = 10;
 
 /// Wozu der Holer gestartet wurde; aus seinen Argumenten gelesen.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,6 +32,8 @@ pub enum Zweck {
     Paket(String),
     Versionen,
     Doi(String),
+    /// Eine feste Adresse aus „Über TFTN“ im Standardbrowser; ins Netz geht der Browser, nicht TFTN.
+    Browser(String),
     Anderes(String),
 }
 
@@ -53,6 +55,7 @@ impl Zweck {
             Zweck::Paket(spec) => tr!("Paket {paket} samt Abhängigkeiten holen", paket = spec),
             Zweck::Versionen => tr!("Neueste Versionen von TFTN und typst abfragen"),
             Zweck::Doi(doi) => tr!("Literaturangabe zur DOI {doi} holen", doi),
+            Zweck::Browser(url) => tr!("{adresse} im Browser öffnen", adresse = url),
             Zweck::Anderes(b) => b.clone(),
         }
     }
@@ -63,7 +66,7 @@ impl Zweck {
             Zweck::Index | Zweck::Paket(_) => &["packages.typst.org"],
             Zweck::Versionen => &["api.github.com"],
             Zweck::Doi(_) => &["api.crossref.org", "api.datacite.org"],
-            Zweck::Anderes(_) => &[],
+            Zweck::Browser(_) | Zweck::Anderes(_) => &[],
         }
     }
 }
@@ -76,6 +79,7 @@ pub enum Ausloeser {
     IndexHolen,
     Updates,
     Doi,
+    Link,
 }
 
 impl Ausloeser {
@@ -86,6 +90,7 @@ impl Ausloeser {
             Ausloeser::IndexHolen => tr!("Klick: Paketverzeichnis holen"),
             Ausloeser::Updates => tr!("Klick: Nach Updates suchen"),
             Ausloeser::Doi => tr!("Klick: Literatur aus DOI"),
+            Ausloeser::Link => tr!("Klick: Link in „Über TFTN“"),
         }
     }
 }
@@ -123,9 +128,10 @@ pub struct NetzEintrag {
 impl NetzEintrag {
     /// Angesprochene Rechner: gemeldete, sonst die für den Zweck erlaubten.
     pub fn hosts(&self) -> Vec<String> {
-        let mut h: Vec<String> = match &self.abrufe {
-            Some(a) => a.iter().map(|a| host(&a.url)).collect(),
-            None => self
+        let mut h: Vec<String> = match (&self.abrufe, &self.zweck) {
+            (_, Zweck::Browser(url)) => vec![host(url)],
+            (Some(a), _) => a.iter().map(|a| host(&a.url)).collect(),
+            (None, _) => self
                 .zweck
                 .gegenstellen()
                 .iter()
@@ -139,6 +145,12 @@ impl NetzEintrag {
 
     fn ergebnis(&self) -> String {
         let n = self.abrufe.as_ref().map_or(0, Vec::len);
+        if let Zweck::Browser(_) = self.zweck {
+            return match &self.fehler {
+                None => tr!("an den Standardbrowser übergeben"),
+                Some(f) => f.clone(),
+            };
+        }
         match (&self.fehler, &self.abrufe) {
             (_, Some(a)) if a.is_empty() => tr!("keine Verbindung aufgebaut"),
             (None, _) => tr!("erfolgreich, {anzahl} Verbindung(en)", anzahl = n),
@@ -360,6 +372,19 @@ pub fn holer_eintragen(
     aendern(|p| p.netz_eintragen(e));
 }
 
+/// Eine feste Adresse wurde dem Standardbrowser übergeben (oder das scheiterte).
+pub fn browser_eintragen(url: &str, fehler: Option<String>) {
+    let e = NetzEintrag {
+        beginn_ms: jetzt_ms(),
+        dauer_ms: 0,
+        zweck: Zweck::Browser(url.to_string()),
+        ausloeser: Ausloeser::Link,
+        abrufe: None,
+        fehler,
+    };
+    aendern(|p| p.netz_eintragen(e));
+}
+
 /// Ein Werkzeugaufruf über MCP; `None`: abgewiesen.
 pub fn mcp_eintragen(werkzeug: Option<&str>) {
     let jetzt = jetzt_ms();
@@ -443,7 +468,7 @@ pub fn blatt_daten(p: &Protokoll, a: &BlattAngaben) -> Value {
             "Der Export (PDF, PDF/A, Archivpaket, Serie) läuft mit der mitgelieferten typst-CLI; vorher prüft TFTN, dass alle Pakete lokal vorliegen, sonst bricht es ab. Word-Export und -Import laufen mit pandoc auf diesem Rechner, beim Export im abgeschotteten Modus (--sandbox)."
         ),
         tr!(
-            "Die Oberfläche lädt nichts von außen (Content-Security-Policy nur für eigene Inhalte). Schriften und Wörterbücher liegen auf dem Rechner. TFTN öffnet keine Webseiten."
+            "Die Oberfläche lädt nichts von außen (Content-Security-Policy nur für eigene Inhalte). Schriften und Wörterbücher liegen auf dem Rechner. Webseiten öffnet TFTN nur auf Klick auf einen Link in „Über TFTN“, und zwar im Standardbrowser."
         ),
         tr!(
             "Die App selbst enthält keinen Netzwerk-Client; das prüft jeder Build automatisch. Ins Netz geht nur das Hilfsprogramm tftn-holer, und nur auf Klick."
@@ -469,6 +494,12 @@ pub fn blatt_daten(p: &Protokoll, a: &BlattAngaben) -> Value {
             tr!("die eingegebene DOI")
         ]),
         json!([
+            tr!("Link in „Über TFTN“"),
+            crate::ueber::GEGENSTELLEN.join(", "),
+            tr!("Klick auf den Link"),
+            tr!("nur der Seitenaufruf durch den Standardbrowser")
+        ]),
+        json!([
             tr!("KI-Assistent über MCP"),
             tr!("127.0.0.1 (nur dieser Rechner)"),
             tr!("Benutzer schaltet MCP ein; das KI-Programm ruft Werkzeuge auf"),
@@ -478,7 +509,7 @@ pub fn blatt_daten(p: &Protokoll, a: &BlattAngaben) -> Value {
         ]),
     ];
     let wege_hinweis = tr!(
-        "Jede Anfrage des Holers geht verschlüsselt (HTTPS) an genau diese festen Adressen, ohne Weiterleitung und ohne Proxy. Mit jeder Anfrage sieht die Gegenstelle die IP-Adresse und die Programmversion. „Ganz offline“ sperrt den Holer vollständig."
+        "Jede Anfrage des Holers geht verschlüsselt (HTTPS) an genau diese festen Adressen, ohne Weiterleitung und ohne Proxy. Mit jeder Anfrage sieht die Gegenstelle die IP-Adresse und die Programmversion. „Ganz offline“ sperrt den Holer und die Links vollständig."
     );
     let mut sitzung: Vec<Value> = p
         .netz
@@ -681,6 +712,16 @@ pub fn blatt_setzen(
 
 /// Öffnet eine Datei mit dem Standardprogramm des Systems (für das Blatt: PDF-Betrachter).
 pub fn mit_system_oeffnen(pfad: &Path) -> Result<(), String> {
+    system_oeffnen(pfad.as_os_str())
+}
+
+/// Wie [`mit_system_oeffnen`], aber für eine Adresse; nur [`crate::ueber`] ruft das, mit festen
+/// Adressen.
+pub fn adresse_oeffnen(url: &str) -> Result<(), String> {
+    system_oeffnen(std::ffi::OsStr::new(url))
+}
+
+fn system_oeffnen(ziel: &std::ffi::OsStr) -> Result<(), String> {
     let mut befehl = if cfg!(target_os = "macos") {
         std::process::Command::new("open")
     } else if cfg!(windows) {
@@ -689,7 +730,7 @@ pub fn mit_system_oeffnen(pfad: &Path) -> Result<(), String> {
         std::process::Command::new("xdg-open")
     };
     befehl
-        .arg(pfad)
+        .arg(ziel)
         .spawn()
         .map(|_| ())
         .map_err(|e| e.to_string())
@@ -779,6 +820,26 @@ mod tests {
     }
 
     #[test]
+    fn link_im_browser_mit_rechner_und_ergebnis() {
+        let mut p = Protokoll::neu(0);
+        let mut e = eintrag(&["versionen"], None, None);
+        e.zweck = Zweck::Browser("https://github.com/DocAtPrompt/tftn/issues".into());
+        e.ausloeser = Ausloeser::Link;
+        assert_eq!(e.hosts(), ["github.com"]);
+        assert!(e.ergebnis().contains("rowser"), "{}", e.ergebnis());
+        assert!(e.zweck.text().contains("/issues"));
+        p.netz_eintragen(e.clone());
+        e.fehler = Some("kein Browser".into());
+        assert_eq!(e.ergebnis(), "kein Browser");
+        p.netz_eintragen(e);
+        let js = p.js(false, false);
+        assert_eq!(js.netz.len(), 2);
+        assert!(js.netz[0].ok && !js.netz[1].ok);
+        let d = blatt_daten(&p, &angaben());
+        assert_eq!(d["sitzung"][0][2], "github.com");
+    }
+
+    #[test]
     fn begrenzt_und_mcp_gezaehlt() {
         let mut p = Protokoll::neu(0);
         for _ in 0..EINTRAEGE_MAX + 3 {
@@ -839,7 +900,9 @@ mod tests {
             d["sitzung_leer"].as_str().unwrap().contains("15:30:00"),
             "{d}"
         );
-        assert_eq!(d["wege"].as_array().unwrap().len(), 4);
+        let wege = d["wege"].as_array().unwrap();
+        assert_eq!(wege.len(), 5);
+        assert!(wege.iter().any(|w| w[1] == "github.com, ko-fi.com"), "{d}");
         assert_eq!(d["papier"], "a4");
     }
 

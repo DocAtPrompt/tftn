@@ -55,6 +55,7 @@ import { ikonenSetzen } from "./ikonen";
 import { KnopfMenue } from "./knopfmenue";
 import { ReiterLeiste, nachSchliessen } from "./reiter";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
+import { UeberDialog, type UeberJs } from "./ueber";
 import { EinstellDialog, einstellHinweise, type EinstellungenJs, type SprachenJs, type UpdatesJs } from "./einstellungen";
 import { dezimalzeichen, t, texteUebersetzen } from "./sprache";
 import { auszeichnungEntfernen } from "./auszeichnung";
@@ -668,6 +669,7 @@ let profile: ProfilJs[] = [];
 let einstellungen: EinstellungenJs | null = null;
 let belegung: Belegung | null = null;
 let einstellDialog: EinstellDialog;
+let ueberDialog: UeberDialog;
 let netzDialog: NetzprotokollDialog;
 /** Statusleiste `#netz`: Text, solange der Holer läuft, sonst die Zahl der Netzzugriffe. */
 let netzLaeuft = "";
@@ -712,6 +714,7 @@ function tastenNeu() {
   document.getElementById("baustein-knopf")!.title = titel("helfer/baustein", t("Baustein einfügen; in einer Leerzeile auch „/“"));
   document.getElementById("zitat-knopf")!.title = titel("helfer/zitat", t("Zitat einfügen"));
   document.getElementById("einstellungen-knopf")!.title = titel("helfer/einstellungen", t("Einstellungen und Tastenkürzel"));
+  document.getElementById("ueber-knopf")!.title = titel("helfer/ueber", t("Über TFTN: Version, Links, Tastenkürzel"));
   document.getElementById("seitenleiste-knopf")!.title = titel("helfer/seitenleiste", t("Seitenleiste: was an der Schreibmarke steht"));
   document.getElementById("schreibansicht-knopf")!.title = titel("helfer/schreibansicht", t("Nur der Text, ohne Ablenkung"));
 }
@@ -743,6 +746,9 @@ function ausfuehren(id: string): boolean {
       return ideRufen(view);
     case "helfer/einstellungen":
       einstellDialog.oeffnen();
+      return true;
+    case "helfer/ueber":
+      void ueberDialog.zeigen();
       return true;
     case "app/speichern":
       void (entwurf ? entwurfBenennen(true) : speichern());
@@ -2181,9 +2187,25 @@ async function start() {
     mcpLesen: () => invoke<McpJs>("mcp_stand"),
     mcpSetzen: (an) => invoke<McpJs>("mcp_setzen", { an }),
     mcpBeimWechsel: (aus) => invoke<McpJs>("mcp_beim_wechsel_aus", { aus }),
+    ueberLesen: () => invoke<UeberJs>("ueber_stand"),
+    kofiAusblenden: (aus) => invoke<UeberJs>("kofi_ausblenden", { aus }),
     geschlossen: () => view?.focus(),
   });
   document.getElementById("einstellungen-knopf")!.addEventListener("click", () => einstellDialog.oeffnen());
+  const ueberKnopf = document.getElementById("ueber-knopf")!;
+  ueberDialog = new UeberDialog(
+    {
+      lesen: () => invoke<UeberJs>("ueber_stand"),
+      oeffnen: (name) => invoke<void>("link_oeffnen", { name }),
+      lizenzenZeigen: () => invoke<void>("lizenzen_zeigen"),
+      zeilen: () => belegung?.zeilen ?? [],
+      plattform: PLATTFORM,
+      einstellungen: () => einstellDialog.oeffnen(),
+      netzprotokoll: () => void netzDialog.zeigen(),
+    },
+    [ueberKnopf],
+  );
+  ueberKnopf.addEventListener("click", () => void ueberDialog.zeigen());
   // Nach den Einstellungen anmelden: Aus ihnen geöffnet, liegt es oben (Esc, Klick daneben).
   const netzElement = document.getElementById("netz")!;
   netzDialog = new NetzprotokollDialog(

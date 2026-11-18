@@ -2354,6 +2354,91 @@ button:hover .ikone {
   overflow-wrap: anywhere;
 }
 
+/* Über TFTN (ueber.ts): Version, Links, Kürzel, Lizenzen */
+.neu-dialog.ueber-dialog {
+  inset: auto;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(620px, 92vw);
+  max-height: 84vh;
+}
+.ueber-kopf p {
+  margin: 0 0 2px;
+}
+.ueber-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+.ueber-version {
+  font-variant-numeric: tabular-nums;
+}
+.ueber-teil h3 {
+  margin: 6px 0 4px;
+  font-size: 13px;
+}
+.ueber-teil p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ueber-links,
+.ueber-beilagen {
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.ueber-beilagen li {
+  margin: 0 0 3px;
+  line-height: 1.4;
+  color: var(--leise);
+}
+.ueber-links li {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin: 0 0 4px;
+}
+.ueber-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--akzent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ueber-link:disabled {
+  color: var(--text);
+  text-decoration: none;
+  cursor: default;
+}
+.ueber-adresse {
+  color: var(--leise);
+  font-size: 11px;
+  user-select: text;
+  overflow-wrap: anywhere;
+}
+/* Ko-fi bewusst still: wie die anderen Links, nur leiser */
+.ueber-kofi .ueber-link:not(:disabled) {
+  color: var(--leise);
+}
+.ueber-kuerzel {
+  max-height: 34vh;
+  overflow: auto;
+}
+.ueber-gruppe th {
+  padding-top: 8px;
+}
+.netz-tabelle td.ueber-taste {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Menü „Öffnen“ (zuletzt.ts): Linie zwischen den Abschnitten, Ordner gleichnamiger Projekte leise. */
 .menue-trenner {
   height: 1px;

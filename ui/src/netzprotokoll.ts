@@ -148,7 +148,7 @@ export class NetzprotokollDialog {
       "p",
       "netz-hilfe",
       t(
-        "TFTN selbst enthält keinen Netzwerk-Client. Ins Netz geht nur das Hilfsprogramm tftn-holer, und nur auf Klick: Pakete holen, Nach Updates suchen, Literatur aus DOI. Das Protokoll lebt nur im Speicher und endet mit dem Programm.",
+        "TFTN selbst enthält keinen Netzwerk-Client. Ins Netz geht nur das Hilfsprogramm tftn-holer, und nur auf Klick: Pakete holen, Nach Updates suchen, Literatur aus DOI. Ein Link in „Über TFTN“ öffnet auf Klick den Standardbrowser; auch das steht hier. Das Protokoll lebt nur im Speicher und endet mit dem Programm.",
       ),
     );
     this.knopf.title = t("Eine Seite für Verarbeitungsverzeichnis oder Datenschutzbeauftragte: was TFTN lokal macht, welche Netzzugriffe es geben kann und welche es in dieser Sitzung gab. Öffnet sich im PDF-Betrachter zum Drucken oder Sichern.");
@@ -189,7 +189,7 @@ export class NetzprotokollDialog {
     this.kopf.textContent = k.text;
     this.kopf.classList.toggle("ruhig", k.ruhig);
     this.zustand.textContent = p.ganz_offline
-      ? t("„Ganz offline“ ist eingeschaltet: Der Holer startet nicht.")
+      ? t("„Ganz offline“ ist eingeschaltet: Der Holer startet nicht, Links öffnen sich nicht.")
       : t("„Ganz offline“ ist ausgeschaltet.");
     if (p.netz.length === 0) {
       this.liste.replaceChildren();

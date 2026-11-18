@@ -78,8 +78,12 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
 ## 2. Die Oberfläche
 
 - **Kopf:** links das Projekt (der volle Pfad erscheint beim Darüberfahren), rechts „Neu“ (leeres
-  Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“ und das Zahnrad
-  (Einstellungen). In einem schmalen Fenster bleiben nur die Symbole.
+  Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“, das Zahnrad
+  (Einstellungen) und „?“ (Über TFTN, F1). In einem schmalen Fenster bleiben nur die Symbole.
+- **Über TFTN** („?“ oder F1) zeigt Version und typst-Version, die Links zu Projektseite, Handbuch und
+  „Fehler melden“, alle geltenden Tastenkürzel zum Nachschlagen („Kürzel ändern …“ führt in die
+  Einstellungen) und die Lizenzen samt mitgelieferten Beilagen; „Lizenztexte zeigen“ öffnet ihren
+  Ordner. Ein Link öffnet die Seite nur auf Klick im Standardbrowser (Abschnitt 11).
 - **Öffnen** ist ein Menü: „Projekt öffnen …“ wählt einen Ordner mit `tftn.toml` (Cmd/Strg+O geht
   gleich dorthin), darunter stehen die zuletzt geöffneten Projekte, bis zu zehn, das neueste oben. Der
   volle Pfad erscheint beim Darüberfahren; heißen zwei Projekte gleich, steht der Ordner darüber leise
@@ -394,6 +398,7 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Zitat einfügen | Mod+Umschalt+L |
 | Vervollständigen | Strg+Leertaste, am Mac auch ⌥` |
 | Einstellungen | Mod+, |
+| Über TFTN und Tastenkürzel | F1 |
 | Werte an dieser Stelle (Marken) | Mod+Umschalt+M oder ⌥ bzw. Alt halten |
 | Seitenleiste | Mod+Umschalt+P |
 | Seitenleiste: Dokument / Pakete / Formel | Mod+Umschalt+O / +Y / +X |
@@ -436,7 +441,14 @@ TFTN liest und schreibt nur Ihre Dateien. Ins Netz geht nur das beigelegte Hilfs
 | Nach Updates suchen | `api.github.com` (neueste Version von TFTN und typst) |
 
 Solange eine Anfrage läuft, steht sie in der Statuszeile. **„Ganz offline“** in den Einstellungen
-sperrt jeden Netzzugriff. TFTN installiert nie etwas von selbst: Eine neue Version laden Sie von der
+sperrt jeden Netzzugriff, auch die Links.
+
+**Links in „Über TFTN“** (Projektseite, Handbuch, Fehler melden auf `github.com`) öffnen die Seite auf
+Klick im Standardbrowser. Ins Netz geht dann der Browser, nicht TFTN; TFTN gibt ihm nur die feste
+Adresse und überträgt nichts. Jeder Klick steht im Netzprotokoll. Gibt es eine Seite zum Unterstützen
+von TFTN (Ko-fi, `ko-fi.com`), steht sie still als letzter Link dabei; ein Schalter in den Einstellungen
+blendet ihn aus. Bei „Ganz offline“ öffnen sich die Links nicht, die Adressen
+stehen zum Abschreiben da. TFTN installiert nie etwas von selbst: Eine neue Version laden Sie von der
 Release-Seite.
 
 Mit **MCP** (Abschnitt 13) liest ein KI-Assistent das offene Dokument. TFTN selbst geht dabei nicht ins
@@ -454,6 +466,7 @@ Statuszeile die Zahl („1 Netzzugriff“); ein Klick darauf oder **Einstellunge
 - je Zugriff Uhrzeit, Zweck (etwa „Paket @preview/cetz:0.3.4 samt Abhängigkeiten holen“),
   Gegenstelle, Auslöser (welcher Klick) und Ergebnis, darunter jede einzelne Verbindung mit Adresse,
   Antwort und Datenmenge, wie sie der Holer selbst meldet;
+- Klicks auf einen Link in „Über TFTN“, mit Adresse und Auslöser „Klick: Link in ‚Über TFTN‘“;
 - ob „Ganz offline“ an ist, und wie oft KI-Programme über MCP zugegriffen haben (je Werkzeug gezählt,
   dazu abgewiesene Versuche). MCP ist kein Netzzugriff von TFTN – die Verbindung bleibt auf dem Rechner
   (`127.0.0.1`) –, gibt aber Text an ein anderes Programm weiter; deshalb steht es dabei. War

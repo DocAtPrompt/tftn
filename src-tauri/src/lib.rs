@@ -53,6 +53,7 @@ mod schriftwahl;
 mod skins;
 mod sprachen;
 mod typen;
+mod ueber;
 mod webseite;
 mod word;
 mod zuletzt;
@@ -3734,6 +3735,57 @@ fn offline_setzen(app: tauri::AppHandle, an: bool) -> Result<EinstellungenJs, St
     Ok(einstellungen_js(&konfig))
 }
 
+// --- Über TFTN ------------------------------------------------------------------------------
+
+/// Ob die Oberfläche englisch ist (dann das englische Handbuch).
+fn englisch() -> bool {
+    tftn_sprachen::aktuell().is_some_and(|k| k.kennung == "en" || k.kennung.starts_with("en-"))
+}
+
+/// Version, Links und Schalter für „Über TFTN“.
+#[tauri::command]
+fn ueber_stand(app: tauri::AppHandle) -> Result<ueber::UeberJs, String> {
+    let rechner = tftn_einstellungen::Rechner::laden(&app_konfig(&app)?);
+    Ok(ueber::stand(englisch(), ueber::KOFI_NAME, &rechner))
+}
+
+/// Öffnet einen der festen Links im Standardbrowser, nur auf Klick; steht im Netzprotokoll.
+#[tauri::command]
+fn link_oeffnen(app: tauri::AppHandle, name: String) -> Result<(), String> {
+    let rechner = tftn_einstellungen::Rechner::laden(&app_konfig(&app)?);
+    let adresse = ueber::ziel(&name, englisch(), ueber::KOFI_NAME, &rechner)?;
+    let ergebnis = netzprotokoll::adresse_oeffnen(&adresse);
+    netzprotokoll::browser_eintragen(&adresse, ergebnis.clone().err());
+    ergebnis
+}
+
+/// Den Ko-fi-Link in „Über TFTN“ aus- oder wieder einblenden.
+#[tauri::command]
+fn kofi_ausblenden(app: tauri::AppHandle, aus: bool) -> Result<ueber::UeberJs, String> {
+    let konfig = app_konfig(&app)?;
+    rechner_aendern(&konfig, |r| r.kofi_ausblenden = aus)?;
+    ueber_stand(app)
+}
+
+/// Zeigt die mitgelieferten Lizenztexte (`lizenzen/` im Bündel) im Finder bzw. Explorer.
+#[tauri::command]
+fn lizenzen_zeigen(app: tauri::AppHandle) -> Result<(), String> {
+    let ordner = app
+        .path()
+        .resource_dir()
+        .map_err(|e| e.to_string())?
+        .join("lizenzen");
+    let erste = std::fs::read_dir(&ordner)
+        .ok()
+        .and_then(|mut d| d.find_map(|e| e.ok()).map(|e| e.path()))
+        .ok_or_else(|| {
+            tr!(
+                "Die Lizenztexte liegen nicht bei (Entwicklungsfassung?). Sie stehen auch auf der Projektseite."
+            )
+        })?;
+    word::im_ordner_zeigen(&erste)
+}
+
 // --- MCP ------------------------------------------------------------------------------------
 
 /// `tftn-app --mcp`: Brücke für KI-Assistenten (startet keine Oberfläche).
@@ -3957,6 +4009,10 @@ pub fn run() {
             einstellungsordner_setzen,
             einstellungsordner_zeigen,
             offline_setzen,
+            ueber_stand,
+            link_oeffnen,
+            kofi_ausblenden,
+            lizenzen_zeigen,
             markup_aktion,
             zitat_aendern,
             neues_dokument,

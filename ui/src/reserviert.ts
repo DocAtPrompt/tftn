@@ -99,7 +99,7 @@ export const RESERVIERT: Reserviert[] = [
   w("Ctrl-Escape", t("Startmenü")),
   w("Ctrl-Shift-Escape", t("Task-Manager")),
   w("Ctrl-F4", t("Fenster schließen")),
-  w("F1", t("Hilfe")),
+  w("F1", t("Hilfe"), { entspricht: "helfer/ueber" }),
   w("F5", t("Neu laden")),
   w("F7", t("Caret-Browsing")),
   w("F11", t("Vollbild")),

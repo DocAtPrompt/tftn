@@ -82,8 +82,13 @@ sync it and keep working on another computer without a network.
 ## 2. The window
 
 - **Header:** the project on the left (hover for the full path); on the right “New” (blank document,
-  from template, import), “Open”, “Versions”, “Export” and the gear (settings). In a narrow window
-  only the icons remain.
+  from template, import), “Open”, “Versions”, “Export”, the gear (settings) and “?” (About TFTN,
+  F1). In a narrow window only the icons remain.
+- **About TFTN** (“?” or F1) shows the version and the typst version, links to the project page, the
+  manual and “Report a bug”, all shortcuts currently in effect for reference (“Change shortcuts …”
+  leads to the settings) and the licenses including the bundled components; “Show license texts”
+  opens their folder. A link opens the page in the default browser only when you click it
+  (section 11).
 - **Open** is a menu: “Open project …” chooses a folder with `tftn.toml` (Cmd/Ctrl+O goes straight
   there); below it are the recently opened projects, up to ten, newest first. Hover for the full
   path; if two projects share a name, the folder above follows quietly. A project that is out of
@@ -393,6 +398,7 @@ shortcuts are shown for Mac **and** Windows.
 | Insert citation | Mod+Shift+L |
 | Complete | Ctrl+Space, on the Mac also ⌥` |
 | Settings | Mod+, |
+| About TFTN and keyboard shortcuts | F1 |
 | Values at this position (markers) | Mod+Shift+M or hold ⌥/Alt |
 | Sidebar | Mod+Shift+P |
 | Sidebar: Document / Packages / Equation | Mod+Shift+O / +Y / +X |
@@ -435,7 +441,14 @@ you click, and only to fixed addresses:
 | Check for updates | `api.github.com` (latest version of TFTN and typst) |
 
 While a request runs, the status bar shows it. **“Fully offline”** in the settings blocks all
-network access. TFTN never installs anything by itself: you download a new version from the release
+network access, the links included.
+
+**Links in “About TFTN”** (project page, manual, report a bug on `github.com`) open the page in the
+default browser when clicked. It is the browser that goes online, not TFTN; TFTN only hands it the
+fixed address and transmits nothing. Every click is recorded in the network log. If there is a page
+for supporting TFTN (Ko-fi, `ko-fi.com`), it appears quietly as the last link; a switch in the
+settings hides it. With “Fully offline” the links do not open, and the addresses are shown for
+copying. TFTN never installs anything by itself: you download a new version from the release
 page.
 
 With **MCP** (section 13) an AI assistant reads the open document. TFTN itself does not go online for
@@ -452,6 +465,7 @@ Normally there is none. If TFTN did go online after a click, the status bar show
 - for each access the time, purpose (for example “Fetch package @preview/cetz:0.3.4 with its
   dependencies”), remote host, trigger (which click) and result, and below it every single connection
   with address, response and amount of data, as reported by the downloader itself;
+- clicks on a link in “About TFTN”, with the address and the trigger “Click: link in ‘About TFTN’”;
 - whether “Fully offline” is on, and how often AI programs accessed TFTN via MCP (counted per tool,
   plus rejected attempts). MCP is not a network access by TFTN – the connection stays on the computer
   (`127.0.0.1`) – but it passes text to another program, so it is listed as well. If incognito was on,

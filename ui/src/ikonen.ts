@@ -38,6 +38,8 @@ export const IKONEN: Record<string, string> = {
   dokument: "M9 3h6v3H9z M9 4.5H6.5a1.5 1.5 0 0 0-1.5 1.5v13.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H15 M8.5 11h7 M8.5 14.5h7 M8.5 18h4",
   pakete: "M12 3l8 4.5v9L12 21l-8-4.5v-9z M4 7.5l8 4.5 8-4.5 M12 12v9 M8 5.25l8 4.5",
   pfeil: "M6 9l6 6 6-6",
+  // Kreis mit Fragezeichen (Über TFTN, Hilfe)
+  hilfe: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18 M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6 M12 16.8v.01",
   schliessen: "M6 6l12 12 M18 6L6 18",
 };
 

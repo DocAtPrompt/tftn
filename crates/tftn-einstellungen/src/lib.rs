@@ -48,6 +48,9 @@ pub struct Rechner {
     /// Größe der Oberfläche in Prozent (Leisten, Knöpfe, Dialoge); fehlt sie, 100.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub oberflaeche: Option<u16>,
+    /// Den Ko-fi-Link in „Über TFTN“ nicht zeigen.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub kofi_ausblenden: bool,
 }
 
 /// Stufen der Oberflächengröße in Prozent.
