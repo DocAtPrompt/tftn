@@ -14,7 +14,7 @@ use std::time::Instant;
 
 use typst::introspection::PagedPosition;
 use typst::layout::{Abs, Frame, FrameItem, Point};
-use typst::syntax::{LinkedNode, Side, Source, Span, VirtualRoot};
+use typst::syntax::{FileId, LinkedNode, Side, Source, Span, VirtualRoot};
 use typst::utils::{Scalar, hash128};
 use typst_ide::Jump;
 use typst_layout::PagedDocument;
@@ -77,6 +77,8 @@ pub struct Vorschau {
     world: ProjektWorld,
     gut: Option<GuterStand>,
     quelle_rev: u64,
+    /// Datei, zu der `quelle_rev` gehört (die aktive des letzten Laufs).
+    quelle_datei: Option<FileId>,
 }
 
 impl Vorschau {
@@ -85,6 +87,7 @@ impl Vorschau {
             world: ProjektWorld::neu(projekt)?,
             gut: None,
             quelle_rev: 0,
+            quelle_datei: None,
         })
     }
 
@@ -104,12 +107,27 @@ impl Vorschau {
 
     /// Kompiliert Revision `rev`; `haupt` ist die Quelle aus dem Editor (sonst die Platte).
     pub fn lauf(&mut self, rev: u64, haupt: Option<Source>) -> Lauf {
-        let start = Instant::now();
-        self.quelle_rev = rev;
         self.world.zuruecksetzen();
         if let Some(q) = haupt {
+            self.quelle_datei = Some(q.id());
             self.world.quelle_setzen(q);
         }
+        self.setzen(rev)
+    }
+
+    /// Wie `lauf`, mit mehreren offenen Dateien: `aktiv` (Revision `rev`) und die übrigen offenen,
+    /// alle ungespeichert aus dem Editor. Was nicht darunter ist, kommt von der Platte.
+    pub fn lauf_offen(&mut self, rev: u64, aktiv: Source, weitere: Vec<Source>) -> Lauf {
+        self.world.zuruecksetzen();
+        self.quelle_datei = Some(aktiv.id());
+        self.world
+            .quellen_setzen(std::iter::once(aktiv).chain(weitere));
+        self.setzen(rev)
+    }
+
+    fn setzen(&mut self, rev: u64) -> Lauf {
+        let start = Instant::now();
+        self.quelle_rev = rev;
         let ergebnis = kompilieren(&self.world);
         let gelungen = ergebnis.dokument.is_some();
         let mut geaendert = Vec::new();
@@ -160,6 +178,11 @@ impl Vorschau {
     /// Revision der Hauptquelle, die die World gerade kennt (Bezug für `Sprung::Haupt`).
     pub fn quelle_rev(&self) -> u64 {
         self.quelle_rev
+    }
+
+    /// Die Datei, zu der `quelle_rev` gehört (die aktive des letzten Laufs).
+    pub fn quelle_datei(&self) -> Option<FileId> {
+        self.quelle_datei
     }
 
     /// Vorschau → Quelle: Klick auf Seite `seite` (0-basiert) am Punkt (`x`, `y`) in pt.

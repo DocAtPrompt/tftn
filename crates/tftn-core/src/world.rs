@@ -115,6 +115,23 @@ impl ProjektWorld {
         self.ueberlagert.insert(quelle.id(), quelle);
     }
 
+    /// Genau diese Quellen liegen über der Platte (alle offenen Dateien des Editors); andere, etwa
+    /// ein ohne Speichern geschlossenes Kapitel, kommen wieder von der Platte.
+    pub fn quellen_setzen(&mut self, quellen: impl IntoIterator<Item = Source>) {
+        self.ueberlagert.clear();
+        for q in quellen {
+            self.ueberlagert.insert(q.id(), q);
+        }
+    }
+
+    /// Kennung einer Datei im Projekt (absoluter Pfad); `None` außerhalb des Projekts.
+    pub fn datei_id(&self, pfad: &std::path::Path) -> Option<FileId> {
+        let wurzel = self.dateien.loader().projekt.path().to_path_buf();
+        let pfad = pfad.canonicalize().ok()?;
+        let vpath = VirtualPath::virtualize(&wurzel, &pfad).ok()?;
+        Some(RootedPath::new(VirtualRoot::Project, vpath).intern())
+    }
+
     /// Pakete, die beim letzten Kompilieren im Projekt fehlten.
     pub fn fehlende_pakete(&self) -> Vec<PackageSpec> {
         self.dateien.loader().fehlende.lock().unwrap().clone()
