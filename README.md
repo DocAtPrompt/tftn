@@ -1,4 +1,4 @@
-# TFTN – Typst for the Noobs
+# TFTN – Typst for the Noobs (like me)
 
 <img src="docs/images/logo.png" alt="TFTN logo: a large T flanked by a small f and n" width="128" align="right">
 
