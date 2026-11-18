@@ -131,7 +131,16 @@ project). `npm run buendel` builds `target/release/bundle/macos/TFTN.app` (relea
 
 ### Building on Linux
 
-Until there is a ready-made download, Linux users build TFTN themselves. The CI builds and tests the
+**Why there is no Linux download yet:** TFTN is written for texts that have to be right – reports,
+letters, invoices. The macOS app is used every day, and the Windows installer runs on a real PC and
+passes an automated install check. For Linux we have neither yet: nobody on the project works on
+Linux, and a package that merely builds can still fail on some distributions (WebKitGTK versions,
+graphics drivers, FUSE for AppImages). We would rather not hand out something we have never seen
+running. Building it yourself takes a few commands and produces a package for the system you
+actually use. A ready-made AppImage will follow once the self-build has been tried by hand – reports
+from Linux users (even an issue saying “works on Fedora 41”) bring that closer.
+
+Until then, Linux users build TFTN themselves. The CI builds and tests the
 app on Ubuntu 24.04 with every push; other distributions should work the same way. The first build
 takes 15–30 minutes.
 
