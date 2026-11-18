@@ -52,6 +52,7 @@ mod skins;
 mod sprachen;
 mod typen;
 mod word;
+mod zuletzt;
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -324,7 +325,7 @@ struct Antwort {
     ungespeichert: bool,
 }
 
-/// Merkt sich das zuletzt geöffnete Projekt (eine Zeile im Konfigurationsordner der App).
+/// Die zuletzt geöffneten Projekte, eines je Zeile, das neueste oben (`zuletzt.rs`).
 fn zuletzt_datei(app: &tauri::AppHandle) -> Option<PathBuf> {
     app.path()
         .app_config_dir()
@@ -476,7 +477,9 @@ fn startordner(app: &tauri::AppHandle, waehlen: bool) -> Result<PathBuf, String>
         .or_else(|| std::env::var_os("TFTN_PROJEKT").map(PathBuf::from))
         .or_else(|| {
             let text = std::fs::read_to_string(zuletzt_datei(app)?).ok()?;
-            Some(PathBuf::from(text.trim())).filter(|p| p.join("tftn.toml").is_file())
+            zuletzt::aus_text(&text)
+                .into_iter()
+                .find(|p| p.join("tftn.toml").is_file())
         })
         .filter(|_| !waehlen);
     if let Some(p) = gewaehlt {
@@ -546,8 +549,10 @@ fn oeffnen(
     };
     let projekt = Projekt::oeffnen(&ordner).map_err(|e| e.to_string())?;
     if let Some(datei) = zuletzt_datei(&app) {
+        let bisher = std::fs::read_to_string(&datei).unwrap_or_default();
+        let liste = zuletzt::vorn(&zuletzt::aus_text(&bisher), &projekt.wurzel);
         let _ = std::fs::create_dir_all(datei.parent().unwrap());
-        let _ = std::fs::write(&datei, projekt.wurzel.to_string_lossy().as_bytes());
+        let _ = std::fs::write(&datei, zuletzt::als_text(&liste));
     }
     let datei = projekt.haupt();
     let roh = std::fs::read_to_string(&datei).map_err(|e| format!("{}: {e}", datei.display()))?;
@@ -1215,6 +1220,52 @@ fn entwurf_benennen(
     *zustand.naechstes.lock().unwrap() = Some(ziel.clone());
     *zustand.wechsel.lock().unwrap() = mcp::Wechsel::Umbenannt;
     Ok(ziel.display().to_string())
+}
+
+/// Menü „Öffnen“: die zuletzt geöffneten Projekte, die es noch gibt, ohne das offene und den Entwurf.
+#[tauri::command(async)]
+fn zuletzt_liste(app: tauri::AppHandle, zustand: State<'_, Zustand>) -> Vec<zuletzt::ZuletztJs> {
+    let Some(datei) = zuletzt_datei(&app) else {
+        return Vec::new();
+    };
+    let liste = zuletzt::aus_text(&std::fs::read_to_string(datei).unwrap_or_default());
+    let offen = zustand
+        .sitzung
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|s| s.projekt.wurzel.clone());
+    let entwurf = entwurf_ordner(&app)
+        .ok()
+        .and_then(|o| o.canonicalize().ok());
+    zuletzt::fuer_menue(&liste, offen.as_deref(), entwurf.as_deref(), |p| {
+        p.join("tftn.toml").is_file()
+    })
+}
+
+/// „Liste leeren“: Nur das offene Projekt bleibt gemerkt, damit TFTN wieder mit ihm startet.
+#[tauri::command]
+fn zuletzt_leeren(app: tauri::AppHandle, zustand: State<'_, Zustand>) -> Result<(), String> {
+    let Some(datei) = zuletzt_datei(&app) else {
+        return Ok(());
+    };
+    let offen = zustand
+        .sitzung
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|s| s.projekt.wurzel.clone());
+    match offen {
+        Some(o) => std::fs::write(&datei, zuletzt::als_text(&[o])),
+        None => std::fs::remove_file(&datei).or_else(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                Ok(())
+            } else {
+                Err(e)
+            }
+        }),
+    }
+    .map_err(|e| e.to_string())
 }
 
 /// Merkt ein anderes Projekt für den Wechsel; ohne `ordner` über die Ordnerwahl.
@@ -3845,6 +3896,8 @@ pub fn run() {
             ordner_waehlen_dialog,
             projekt_anlegen,
             projekt_wechseln,
+            zuletzt_liste,
+            zuletzt_leeren,
             typ_vergleichen,
             typ_uebernehmen,
             pakete_stand,

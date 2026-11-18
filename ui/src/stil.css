@@ -2324,3 +2324,15 @@ button:hover .ikone {
 .netz-meldung {
   overflow-wrap: anywhere;
 }
+
+/* Menü „Öffnen“ (zuletzt.ts): Linie zwischen den Abschnitten, Ordner gleichnamiger Projekte leise. */
+.menue-trenner {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--linie);
+}
+.menue-zusatz {
+  margin-left: 0.6em;
+  color: var(--leise);
+  font-size: 0.9em;
+}

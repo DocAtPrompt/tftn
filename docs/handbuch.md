@@ -35,7 +35,7 @@ nicht notarisiert: Beim ersten Start Rechtsklick → „Öffnen“. Die passende
 für den aktuellen Benutzer, ohne Administratorrechte. Der Installer ist nicht signiert: Warnt
 SmartScreen, „Weitere Informationen“ → „Trotzdem ausführen“.
 
-**Ausprobieren:** Mit „Öffnen“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
+**Ausprobieren:** Mit „Öffnen“ → „Projekt öffnen …“ den Ordner `demo/` aus dem Quelltext wählen. Der Beispielartikel
 zeigt Formeln, eine Abbildung, eine Tabelle, Fußnoten, Querverweise und Zitate. Ändern ist
 ausdrücklich erwünscht.
 
@@ -72,6 +72,12 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
 - **Kopf:** links das Projekt (der volle Pfad erscheint beim Darüberfahren), rechts „Neu“ (leeres
   Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“ und das Zahnrad
   (Einstellungen). In einem schmalen Fenster bleiben nur die Symbole.
+- **Öffnen** ist ein Menü: „Projekt öffnen …“ wählt einen Ordner mit `tftn.toml` (Cmd/Strg+O geht
+  gleich dorthin), darunter stehen die zuletzt geöffneten Projekte, bis zu zehn, das neueste oben. Der
+  volle Pfad erscheint beim Darüberfahren; heißen zwei Projekte gleich, steht der Ordner darüber leise
+  dahinter. Ein Projekt, das gerade nicht erreichbar ist (etwa ein nicht eingebundener Tresor), fehlt
+  im Menü, bleibt aber gemerkt. „Liste leeren“ vergisst die Liste; die Projekte selbst bleiben. Die
+  Liste gilt je Rechner.
 - **Hinweise** erscheinen in einem Band unter dem Kopf. Kurze Meldungen verschwinden von selbst;
   Fehler und Fragen bleiben, bis man sie mit × schließt oder beantwortet.
 - **Fenster wie Export, Neu oder Fassungen** schließen mit ×, Esc oder einem Klick daneben. Hat man

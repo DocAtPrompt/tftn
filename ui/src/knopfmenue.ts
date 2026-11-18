@@ -10,6 +10,10 @@ export interface MenuePunkt {
   text: string;
   titel?: string;
   ikone?: string;
+  /** Leiser Zusatz hinter dem Text (etwa der Ordner eines Projekts). */
+  zusatz?: string;
+  /** Eine Linie trennt den Punkt von den vorigen. */
+  trennerDavor?: boolean;
   aktion: () => void;
 }
 
@@ -36,7 +40,8 @@ export class KnopfMenue {
 
   constructor(
     private knopf: HTMLElement,
-    private punkte: () => MenuePunkt[],
+    /** Darf warten (etwa auf die zuletzt geöffneten Projekte). */
+    private punkte: () => MenuePunkt[] | Promise<MenuePunkt[]>,
   ) {
     this.huelle.className = "knopf-menue";
     this.huelle.setAttribute("role", "menu");
@@ -44,7 +49,7 @@ export class KnopfMenue {
     document.body.append(this.huelle);
     knopf.setAttribute("aria-haspopup", "menu");
     knopf.setAttribute("aria-expanded", "false");
-    knopf.addEventListener("click", () => (this.offen ? this.schliessen() : this.oeffnen()));
+    knopf.addEventListener("click", () => (this.offen ? this.schliessen() : void this.oeffnen()));
     this.huelle.addEventListener("keydown", (e) => this.taste(e));
     dialogAnmelden(this, this.huelle, this.knopf);
   }
@@ -73,19 +78,30 @@ export class KnopfMenue {
     }
   }
 
-  private oeffnen() {
+  private async oeffnen() {
+    const punkte = await this.punkte();
     this.huelle.replaceChildren(
-      ...this.punkte().map((p) => {
+      ...punkte.flatMap((p) => {
         const b = document.createElement("button");
         b.setAttribute("role", "menuitem");
         b.innerHTML = ikoneSvg(p.ikone ?? "");
         b.append(p.text);
+        if (p.zusatz) {
+          const z = document.createElement("span");
+          z.className = "menue-zusatz";
+          z.textContent = p.zusatz;
+          b.append(z);
+        }
         if (p.titel) b.title = p.titel;
         b.addEventListener("click", () => {
           this.schliessen();
           p.aktion();
         });
-        return b;
+        if (!p.trennerDavor) return [b];
+        const linie = document.createElement("div");
+        linie.className = "menue-trenner";
+        linie.setAttribute("role", "separator");
+        return [linie, b];
       }),
     );
     this.huelle.hidden = false;

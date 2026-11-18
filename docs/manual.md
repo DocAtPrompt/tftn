@@ -39,7 +39,7 @@ notarized: on first launch, right-click → “Open”. The matching typst CLI i
 current user without admin rights. The installer is not signed: if SmartScreen warns, choose
 “More info” → “Run anyway”.
 
-**Try it:** use “Open” and choose the `demo/` folder from the source. The sample article shows
+**Try it:** use “Open” → “Open project …” and choose the `demo/` folder from the source. The sample article shows
 equations, a figure, a table, footnotes, cross-references and citations. Feel free to change
 anything.
 
@@ -75,6 +75,12 @@ sync it and keep working on another computer without a network.
 - **Header:** the project on the left (hover for the full path); on the right “New” (blank document,
   from template, import), “Open”, “Versions”, “Export” and the gear (settings). In a narrow window
   only the icons remain.
+- **Open** is a menu: “Open project …” chooses a folder with `tftn.toml` (Cmd/Ctrl+O goes straight
+  there); below it are the recently opened projects, up to ten, newest first. Hover for the full
+  path; if two projects share a name, the folder above follows quietly. A project that is out of
+  reach for the moment (say, a vault that is not mounted) is left out of the menu but stays
+  remembered. “Clear list” forgets the list; the projects themselves stay. The list applies per
+  computer.
 - **Messages** appear in a band below the header. Short notices disappear by themselves; errors and
   questions stay until you close them with × or answer them.
 - **Panels such as Export, New or Versions** close with ×, Esc or a click outside. Once you have

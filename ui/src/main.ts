@@ -25,6 +25,7 @@ import { listen } from "@tauri-apps/api/event";
 import { type Aenderung, PRUEFSUMME_ALLE, aenderungenAus, pruefsumme } from "./protokoll";
 import { type Stelle, Vorschau, type VorschauEreignis } from "./vorschau";
 import { ZitatPalette, type ZitatSuche } from "./zitat";
+import { type ZuletztJs, zuletztPunkte } from "./zuletzt";
 import { LiteraturDialog } from "./literaturdialog";
 import type { LitDateiJs } from "./literatur";
 import type { DoiJs } from "./doi";
@@ -1368,11 +1369,14 @@ const einzeln = sperre(() =>
 
 let pfadDialog: PfadDialog | undefined;
 
-/** Speichern, ein anderes Projekt wählen (Systemdialog am Mac, Pfad unter Windows), dann neu laden. */
-async function projektWechseln() {
+/**
+ * Speichern, ein anderes Projekt wählen (Systemdialog am Mac, Pfad unter Windows), dann neu laden.
+ * `vorgegeben`: ein Projekt aus „zuletzt geöffnet“, ohne Auswahl.
+ */
+async function projektWechseln(vorgegeben: string | null = null) {
   try {
-    let ordner: string | null = null;
-    if (oeffnenArt(PLATTFORM) === "pfad") {
+    let ordner: string | null = vorgegeben;
+    if (ordner === null && oeffnenArt(PLATTFORM) === "pfad") {
       pfadDialog ??= new PfadDialog();
       ordner = await pfadDialog.fragen(t("Projekt öffnen (Ordner mit tftn.toml)"));
       if (ordner === null) return;
@@ -1760,7 +1764,19 @@ async function start() {
       aktion: () => void einzeln(importieren),
     },
   ]);
-  document.getElementById("oeffnen-knopf")!.addEventListener("click", () => void einzeln(projektWechseln));
+  new KnopfMenue(document.getElementById("oeffnen-knopf")!, async () => [
+    {
+      text: t("Projekt öffnen …"),
+      titel: t("Ordner mit tftn.toml wählen (Cmd/Strg+O)"),
+      ikone: "oeffnen",
+      aktion: () => void einzeln(projektWechseln),
+    },
+    ...zuletztPunkte(
+      await invoke<ZuletztJs[]>("zuletzt_liste").catch(() => []),
+      (pfad) => void einzeln(() => projektWechseln(pfad)),
+      () => void invoke("zuletzt_leeren").catch((fehler) => hinweis(String(fehler))),
+    ),
+  ]);
   const fassungen = new FassungenDialog({
     liste: async () => {
       await kette;
