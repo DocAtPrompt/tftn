@@ -15,4 +15,5 @@ email = "practice@example.org"
 
 [patient]
 name = "Erika Sample"
+geschlecht = "weiblich"
 geburtsdatum = 1970-02-01

@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc eca32becba2151e36e5de4ac69f6b82960ab174ef1dc3131a8c8b128ab0956f4 # shrinks to teile = ["Erika Musterfrau", "Erika Musterfrau"]
+cc ec12fa2a1b2d3cdb0173fd80dfdeb9660f6716e644f0c226e07ee5a4ab471ce2 # shrinks to teile = ["ö", "MUSTERFRAU"]

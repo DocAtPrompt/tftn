@@ -381,7 +381,8 @@ pub fn aus_manifest(text: &str) -> Vec<String> {
     aus
 }
 
-/// Sichtbare Texte eines Formular-Schemas: `title`, `description` und `x-tftn-gruppe` in jeder Tiefe.
+/// Sichtbare Texte eines Formular-Schemas: `title`, `description`, `x-tftn-gruppe` und die
+/// Ersatztexte für KI-Assistenten (`x-tftn-ersatz`, auch `je` und `sonst`) in jeder Tiefe.
 pub fn aus_schema(text: &str) -> Vec<String> {
     fn gang(wert: &serde_json::Value, aus: &mut Vec<String>) {
         match wert {
@@ -389,9 +390,18 @@ pub fn aus_schema(text: &str) -> Vec<String> {
                 for (k, v) in o {
                     match (k.as_str(), v) {
                         (
-                            "title" | "description" | "x-tftn-gruppe",
+                            "title" | "description" | "x-tftn-gruppe" | "x-tftn-ersatz",
                             serde_json::Value::String(s),
                         ) => aus.push(s.clone()),
+                        ("x-tftn-ersatz", serde_json::Value::Object(e)) => {
+                            let je = e.get("je").and_then(|j| j.as_object());
+                            aus.extend(
+                                je.into_iter()
+                                    .flat_map(|j| j.values())
+                                    .chain(e.get("sonst"))
+                                    .filter_map(|x| x.as_str().map(str::to_string)),
+                            );
+                        }
                         _ => gang(v, aus),
                     }
                 }

@@ -1,6 +1,7 @@
 // MCP (KI-Assistenten): Der Benutzer schaltet es selbst ein. Die Statusleiste zeigt, ob es an oder
 // pausiert ist; nach einem Wechsel durch MCP fragt TFTN, ob es aktiv bleiben soll.
 
+import { type InkognitoJs, inkognitoAnzeige } from "./inkognito";
 import { t } from "./sprache";
 
 export interface McpJs {
@@ -73,9 +74,22 @@ function zugriffWort(werkzeug: string): string {
 
 /**
  * Text und Erklärung für die Statusleiste; leer, wenn MCP aus ist. `aktiv`: Der Assistent hat eben
- * zugegriffen – dann steht da, was er tut; danach nennt der Tooltip den letzten Zugriff.
+ * zugegriffen – dann steht da, was er tut; danach nennt der Tooltip den letzten Zugriff. Sind Felder
+ * inkognito, steht das dabei.
  */
-export function mcpAnzeige(m: McpJs | null, zuletzt: McpZugriff | null = null, aktiv = false): { text: string; titel: string } {
+export function mcpAnzeige(
+  m: McpJs | null,
+  zuletzt: McpZugriff | null = null,
+  aktiv = false,
+  inkognito: InkognitoJs | null = null,
+): { text: string; titel: string } {
+  const a = mcpAnzeigeOhne(m, zuletzt, aktiv);
+  const i = inkognitoAnzeige(inkognito);
+  if (!a.text || !i.zusatz || m?.wartet) return a;
+  return { text: `${a.text} · ${i.zusatz}`, titel: `${a.titel}\n${i.titel}` };
+}
+
+function mcpAnzeigeOhne(m: McpJs | null, zuletzt: McpZugriff | null, aktiv: boolean): { text: string; titel: string } {
   if (!m?.an) return { text: "", titel: "" };
   if (m.wartet)
     return {

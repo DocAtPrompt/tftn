@@ -427,7 +427,8 @@ Release-Seite.
 Mit **MCP** (Abschnitt 13) liest ein KI-Assistent das offene Dokument. TFTN selbst geht dabei nicht ins
 Netz. Wohin das Gelesene geht, hängt am Assistenten: Ein lokales Modell (etwa in LM Studio) behält alles
 auf dem Rechner, ein Cloud-Assistent schickt es an seinen Anbieter. MCP bleibt aus, bis Sie es
-einschalten.
+einschalten. Mit **Inkognito** (Abschnitt 13) gehen Personendaten aus dem Formular dabei nur als
+Ersatztext hinaus, etwa „[Patientin]“ statt des Namens.
 
 **Netzprotokoll – nachweisbar offline.** TFTN führt Buch über jeden Netzzugriff seit dem Start. Im
 Normalfall gibt es keinen. Hat TFTN auf einen Klick hin doch ins Netz gegriffen, steht unten in der
@@ -440,7 +441,9 @@ Statuszeile die Zahl („1 Netzzugriff“); ein Klick darauf oder **Einstellunge
   Antwort und Datenmenge, wie sie der Holer selbst meldet;
 - ob „Ganz offline“ an ist, und wie oft KI-Programme über MCP zugegriffen haben (je Werkzeug gezählt,
   dazu abgewiesene Versuche). MCP ist kein Netzzugriff von TFTN – die Verbindung bleibt auf dem Rechner
-  (`127.0.0.1`) –, gibt aber Text an ein anderes Programm weiter; deshalb steht es dabei.
+  (`127.0.0.1`) –, gibt aber Text an ein anderes Programm weiter; deshalb steht es dabei. War
+  Inkognito an, steht dabei, wie viele Zugriffe pseudonymisiert waren und welche Felder ersetzt wurden
+  (nur die Feldnamen, nie die Werte); so steht es auch auf dem Blatt für den Datenschutz.
 
 Das Protokoll lebt nur im Speicher und endet mit dem Programm; es wird nirgends gespeichert.
 
@@ -529,3 +532,53 @@ oder `packages/`. Schreiben darf er nur Textdateien; die Hauptdatei ändert er �
 Rückgängig), die Formulardaten über das Formular. Ändert er eine andere Datei, etwa ein Kapitel, greift
 Rückgängig im Editor nicht – TFTN legt den alten Inhalt deshalb vorher unter `.fassungen/dateien/` ab (auch bei Literatur).
 Löschen kann der Assistent weder Dateien noch Literatureinträge.
+
+### Inkognito: Personendaten nur als Ersatztext
+
+Soll ein Assistent etwa einen Befund prüfen, mit Studien untermauern oder Fehler suchen, braucht er den
+Namen der Patientin nicht. Mit **Inkognito** ersetzt TFTN Personendaten aus dem Formular durch
+Ersatztexte, bevor irgendetwas an den Assistenten geht, und setzt die echten Werte wieder ein, wenn
+er zurückschreibt.
+
+- **Welche Felder:** Felder, die der Dokumenttyp als Personendaten kennzeichnet, sind von Haus aus
+  inkognito – beim Befund Name, Geburtsdatum und Sozialversicherungsnummer. Im Fach „Dokument“ steht
+  unter jedem Feld das Kreuz **„Inkognito für KI“**: Ankreuzen nimmt ein Feld dazu (etwa die
+  Empfängerin eines Briefs), das Kreuz wegnehmen nimmt es heraus. Das gilt für dieses Dokument und
+  steht in `tftn.toml` – dort nur der Feldname und gegebenenfalls Ihr Ersatztext, nie ein Wert.
+- **Ersatztexte:** Die Vorlage schlägt sie vor, beim Befund „[Patientin]“, „[Patient]“ oder
+  „[Patient/in]“ je nach dem Feld **Geschlecht** und „[geb. 1970]“ für das Geburtsdatum: Geschlecht
+  und Geburtsjahr braucht eine medizinische Kontrolle, und beide gehen deshalb mit. Neben dem Kreuz
+  können Sie für jedes Feld einen eigenen Ersatztext eintragen (ohne Klammern; leer: der Vorschlag der
+  Vorlage). Gibt es mehrere Personen (eine Serie im Projekt), heißen sie „[Patientin]“, „[Patientin 2]“
+  usw.
+- **Was ersetzt wird:** die Werte aus der Datendatei (`dokument.toml`) und aus Datensätzen einer Serie,
+  die im Projektordner liegen – überall, wo der Assistent sie zu sehen bekäme: im Quelltext, in
+  Kapiteln und anderen Dateien, im Formular, in Dateinamen und im Pfad des Projekts, in Meldungen.
+  Erkannt werden der ganze Wert, die Teile eines Namens („Frau Musterfrau“ allein, auch
+  „Musterfraus“), Datumswerte in den üblichen Schreibweisen (1970-02-01, 01.02.1970, 1. Februar 1970 …)
+  und Nummern mit oder ohne Leerzeichen; Groß- und Kleinschreibung spielt keine Rolle. Jede
+  Schreibweise bekommt ihren eigenen Ersatztext (etwa „[Patientin, Teil 2]“), damit TFTN beim
+  Zurückschreiben genau das wieder einsetzt, was dastand.
+- **Zurückschreiben:** Der Assistent lässt die Ersatztexte stehen oder verwendet sie im neuen Text;
+  TFTN setzt die echten Werte ein, bevor etwas geschrieben wird. Einen Ersatztext, den TFTN nicht
+  vergeben hat (etwa „[Patientin 7]“), lehnt es ab – er landet nie im Dokument.
+- **Seitenbild und Meldungen:** Für `seite_ansehen` setzt TFTN die Seite eigens aus den Ersatztexten;
+  der Assistent sieht also auch im Bild keinen Namen. Gelingt das nicht, bekommt er kein Bild. Bilder
+  anderer Herkunft gibt TFTN bei Inkognito nicht heraus. Auch die Typst-Meldungen, die der Assistent
+  bekommt, stammen aus einem solchen Lauf, nicht aus dem echten.
+- **Über Dokumente hinweg:** Werte, die TFTN seit dem Start in einem Dokument ersetzt hat, ersetzt es
+  bis zum Beenden auch in jedem anderen (etwa in einem Ordnernamen); ein Ersatztext behält so lange
+  seine Bedeutung.
+- **Sichtbar:** In der Statusleiste steht dann „MCP an · inkognito“, der Tooltip nennt die Felder.
+  **„Was die KI sieht …“** im Fach „Dokument“ zeigt die Tabelle Ersatztext → echter Wert; sie bleibt auf
+  dem Rechner.
+- **Gesperrt statt halb:** Lässt sich die Datendatei oder ein Datensatz nicht lesen, kennt TFTN die
+  Werte nicht sicher und gibt über MCP gar nichts heraus, bis der Fehler behoben ist („MCP an ·
+  inkognito – gesperrt“).
+
+**Grenzen von Inkognito:** Ersetzt wird nur, was TFTN als Wert eines Felds kennt. Ein Name, der nur im
+Fließtext steht, eine andere Beugung als das Genitiv-s, ein Spitzname, ein Tippfehler oder ein Name,
+der ohne Zwischenraum an einem anderen Wort klebt, wird nicht erkannt. Eingebundene Bilder und PDFs
+(Scans, Unterschrift) kann TFTN nicht prüfen; die Antwort zum Seitenbild nennt sie. Lesen Sie deshalb
+bei heiklen Dokumenten unter „Was die KI sieht …“ und im Quelltext nach, bevor Sie einen Cloud-Dienst
+arbeiten lassen.

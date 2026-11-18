@@ -29,11 +29,29 @@ pub struct Feld {
     pub pflicht: bool,
     /// `x-tftn-gruppe`
     pub gruppe: Option<String>,
-    /// `x-tftn-sensibel`
+    /// `x-tftn-sensibel`: Personendaten; von Haus aus inkognito für KI-Assistenten (MCP).
     pub sensibel: bool,
+    /// `x-tftn-ersatz`: Ersatztext für KI-Assistenten, wenn das Feld inkognito ist.
+    pub ersatz: Option<Ersatz>,
     /// `x-tftn-pandoc`
     pub pandoc: Option<String>,
     pub art: Art,
+}
+
+/// Ersatztext eines Felds, das inkognito ist (`x-tftn-ersatz`). Die eckigen Klammern setzt TFTN;
+/// bei Datumswerten stehen `{jahr}` und `{monat}` für Jahr und Monat des echten Werts.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum Ersatz {
+    /// fester Text, z. B. `"geb. {jahr}"`
+    Text(String),
+    /// je nach dem Wert eines anderen Felds, z. B. `{"nach": "patient.geschlecht", "je":
+    /// {"weiblich": "Patientin"}, "sonst": "Patient/in"}`
+    Nach {
+        nach: String,
+        je: Vec<(String, String)>,
+        sonst: String,
+    },
 }
 
 /// Wie ein Feld bearbeitet wird.
@@ -106,7 +124,7 @@ pub struct ProfilFehler {
 }
 
 /// Erlaubte Schlüsselwörter (KONZEPT 6).
-const ERLAUBT: [&str; 24] = [
+const ERLAUBT: [&str; 25] = [
     "$schema",
     "title",
     "description",
@@ -130,6 +148,7 @@ const ERLAUBT: [&str; 24] = [
     "x-tftn-gruppe",
     "x-tftn-pandoc",
     "x-tftn-sensibel",
+    "x-tftn-ersatz",
     "x-tftn-rechnen",
 ];
 
@@ -305,6 +324,9 @@ impl Leser<'_> {
         if obj.get("x-tftn-sensibel").is_some_and(|v| !v.is_boolean()) {
             self.fehler(ort, tr!("x-tftn-sensibel muss true oder false sein"));
         }
+        let ersatz = obj
+            .get("x-tftn-ersatz")
+            .and_then(|e| self.ersatz(e, ort, &art));
         Some(Feld {
             name: name.to_string(),
             titel: text("title").unwrap_or_else(|| name.to_string()),
@@ -315,9 +337,61 @@ impl Leser<'_> {
                 .get("x-tftn-sensibel")
                 .and_then(Value::as_bool)
                 .unwrap_or(false),
+            ersatz,
             pandoc: text("x-tftn-pandoc"),
             art,
         })
+    }
+
+    /// `x-tftn-ersatz`: Text oder `{nach, je, sonst}`; nur bei Feldern mit einem Wert.
+    fn ersatz(&mut self, wert: &Value, ort: &str, art: &Art) -> Option<Ersatz> {
+        if matches!(art, Art::Gruppe { .. } | Art::Eintraege { .. }) {
+            self.fehler(
+                ort,
+                tr!("x-tftn-ersatz gilt nur für Felder mit einem Wert, nicht für Gruppen und Einträge"),
+            );
+            return None;
+        }
+        let gut = |t: &str| !t.trim().is_empty() && !t.contains(['[', ']']);
+        let falsch = tr!(
+            "x-tftn-ersatz muss ein Text ohne eckige Klammern sein oder ein Objekt mit nach, je und sonst"
+        );
+        match wert {
+            Value::String(t) if gut(t) => Some(Ersatz::Text(t.trim().to_string())),
+            Value::Object(o) => {
+                let nach = o.get("nach").and_then(Value::as_str);
+                let sonst = o.get("sonst").and_then(Value::as_str);
+                let je = o.get("je").and_then(Value::as_object);
+                let paare: Option<Vec<(String, String)>> = je.and_then(|je| {
+                    je.iter()
+                        .map(|(k, v)| {
+                            v.as_str()
+                                .filter(|v| gut(v))
+                                .map(|v| (k.clone(), v.trim().to_string()))
+                        })
+                        .collect()
+                });
+                match (nach, sonst, paare) {
+                    (Some(nach), Some(sonst), Some(je))
+                        if o.len() == 3 && !nach.trim().is_empty() && gut(sonst) =>
+                    {
+                        Some(Ersatz::Nach {
+                            nach: nach.trim().to_string(),
+                            je,
+                            sonst: sonst.trim().to_string(),
+                        })
+                    }
+                    _ => {
+                        self.fehler(ort, falsch);
+                        None
+                    }
+                }
+            }
+            _ => {
+                self.fehler(ort, falsch);
+                None
+            }
+        }
     }
 
     /// Die Art eines Knotens; `None` nach einem Fehler, der kein Feld zulässt.

@@ -897,6 +897,33 @@ body.trenner-zieht {
 .dok-feld input[type="checkbox"] {
   align-self: flex-start;
 }
+/* Inkognito für KI-Assistenten: Kreuz und Ersatztext unter dem Feld */
+.dok-inkognito {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--leise);
+}
+.dok-inkognito label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.dok-feld .dok-inkognito input.dok-inkognito-ersatz {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  font-size: 12px;
+}
+.dok-feld.dok-inkognito-an {
+  border-left: 2px solid var(--akzent);
+  padding-left: 6px;
+}
+.inkognito-ersatz {
+  font-family: var(--mono, monospace);
+}
 .dok-gruppe-feld,
 .dok-eintraege {
   border: 1px solid var(--linie);

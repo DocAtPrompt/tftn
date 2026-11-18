@@ -26,7 +26,9 @@
 /// Marke für das Fach „Dokument“: Ein Klick in der Vorschau führt zum Formularfeld `name`.
 #let tftn-feld(name, inhalt) = inhalt
 
-#let _kurzdatum(d, sprache) = if sprache == "de" {
+// Ein Datum als Text (etwa der Ersatztext „[geb. 1970]“, den TFTN einem KI-Assistenten zeigt)
+// bleibt, wie es ist.
+#let _kurzdatum(d, sprache) = if type(d) == str { d } else if sprache == "de" {
   d.display("[day].[month].[year]")
 } else { d.display("[day] [month repr:short] [year]") }
 

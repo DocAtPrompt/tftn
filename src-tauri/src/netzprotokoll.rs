@@ -151,6 +151,8 @@ impl NetzEintrag {
 #[derive(Clone, Debug, Default)]
 struct McpZaehler {
     anzahl: u64,
+    /// davon mit Inkognito (Personendaten nur als Ersatztext)
+    inkognito: u64,
     erstes_ms: u64,
     letztes_ms: u64,
 }
@@ -163,6 +165,8 @@ pub struct Protokoll {
     pub verworfen: usize,
     mcp: BTreeMap<String, McpZaehler>,
     mcp_abgewiesen: u64,
+    /// Beschriftungen der Felder, die bei Inkognito ersetzt wurden (nie Werte)
+    inkognito_felder: Vec<String>,
 }
 
 impl Protokoll {
@@ -173,6 +177,7 @@ impl Protokoll {
             verworfen: 0,
             mcp: BTreeMap::new(),
             mcp_abgewiesen: 0,
+            inkognito_felder: Vec::new(),
         }
     }
 
@@ -196,6 +201,20 @@ impl Protokoll {
         }
         z.anzahl += 1;
         z.letztes_ms = jetzt_ms;
+    }
+
+    /// Der Aufruf lief mit Inkognito; `felder`: Beschriftungen der ersetzten Felder.
+    pub fn mcp_inkognito(&mut self, werkzeug: &str, felder: &[String]) {
+        self.mcp.entry(werkzeug.to_string()).or_default().inkognito += 1;
+        for f in felder {
+            if !self.inkognito_felder.contains(f) {
+                self.inkognito_felder.push(f.clone());
+            }
+        }
+    }
+
+    pub fn mcp_inkognito_anzahl(&self) -> u64 {
+        self.mcp.values().map(|z| z.inkognito).sum()
     }
 
     pub fn mcp_anzahl(&self) -> u64 {
@@ -229,11 +248,13 @@ impl Protokoll {
                     werkzeug: w.clone(),
                     schreibt: mcp_schreibt(w),
                     anzahl: z.anzahl,
+                    inkognito: z.inkognito,
                     erstes_ms: z.erstes_ms,
                     letztes_ms: z.letztes_ms,
                 })
                 .collect(),
             mcp_abgewiesen: self.mcp_abgewiesen,
+            inkognito_felder: self.inkognito_felder.clone(),
             ganz_offline,
             mcp_an,
         }
@@ -275,6 +296,7 @@ pub struct McpZeileJs {
     pub werkzeug: String,
     pub schreibt: bool,
     pub anzahl: u64,
+    pub inkognito: u64,
     pub erstes_ms: u64,
     pub letztes_ms: u64,
 }
@@ -286,6 +308,7 @@ pub struct ProtokollJs {
     pub verworfen: usize,
     pub mcp: Vec<McpZeileJs>,
     pub mcp_abgewiesen: u64,
+    pub inkognito_felder: Vec<String>,
     pub ganz_offline: bool,
     pub mcp_an: bool,
 }
@@ -341,6 +364,11 @@ pub fn holer_eintragen(
 pub fn mcp_eintragen(werkzeug: Option<&str>) {
     let jetzt = jetzt_ms();
     aendern(|p| p.mcp_eintragen(werkzeug, jetzt));
+}
+
+/// Ein Aufruf lief mit Inkognito (Personendaten nur als Ersatztext).
+pub fn mcp_inkognito(werkzeug: &str, felder: &[String]) {
+    aendern(|p| p.mcp_inkognito(werkzeug, felder));
 }
 
 pub fn stand() -> Protokoll {
@@ -507,6 +535,16 @@ pub fn blatt_daten(p: &Protokoll, a: &BlattAngaben) -> Value {
             ));
         }
         t.push('.');
+        let inkognito = p.mcp_inkognito_anzahl();
+        if inkognito > 0 {
+            t.push(' ');
+            t.push_str(&tr!(
+                "Pseudonymisiert (Inkognito): {anzahl} von {gesamt} Zugriffen; ersetzt wurden die Felder {felder}. Seitenbilder setzt TFTN dafür eigens aus den Ersatztexten.",
+                anzahl = inkognito,
+                gesamt = p.mcp_anzahl(),
+                felder = p.inkognito_felder.join(", ")
+            ));
+        }
         t
     };
     json!({
@@ -828,6 +866,17 @@ mod tests {
             d["mcp"].as_str().unwrap().contains("quelltext_lesen ×1"),
             "{d}"
         );
+        assert!(!d["mcp"].as_str().unwrap().contains("Inkognito"), "{d}");
+        p.mcp_eintragen(Some("seite_ansehen"), 2);
+        p.mcp_inkognito("seite_ansehen", &["Name".into(), "Geburtsdatum".into()]);
+        p.mcp_inkognito("seite_ansehen", &["Name".into()]);
+        let d = blatt_daten(&p, &angaben());
+        let mcp = d["mcp"].as_str().unwrap();
+        assert!(
+            mcp.contains("Inkognito): 2 von 2") && mcp.contains("Felder Name, Geburtsdatum."),
+            "{mcp}"
+        );
+        assert_eq!(p.js(false, true).mcp[1].inkognito, 2);
     }
 
     /// Setzt das Blatt wirklich mit der typst-CLI (wie der Export; `cargo xtask ci` stellt sie).

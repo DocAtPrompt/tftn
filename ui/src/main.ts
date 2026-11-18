@@ -50,6 +50,7 @@ import { editorKeymaps } from "./reserviert";
 import { type SkinsJs, skinAnwenden } from "./skin";
 import { trennerZiehbar } from "./breite";
 import { type McpAuftrag, type McpJs, type McpZugriff, mcpAnzeige, mcpFragtNoch, mcpWechselAbschliessen } from "./mcp";
+import { InkognitoDialog, type InkognitoJs } from "./inkognito";
 import { ikonenSetzen } from "./ikonen";
 import { KnopfMenue } from "./knopfmenue";
 import { type HinweisArt, ausblendenNach, kopfName } from "./kopf";
@@ -1459,6 +1460,19 @@ function status() {
 type HinweisKnopf = { titel: string; aktion: () => void };
 
 let mcpStand: McpJs | null = null;
+/** Inkognito für KI-Assistenten: welche Felder nur als Ersatztext hinausgehen. */
+let inkognitoStand: InkognitoJs | null = null;
+let inkognitoDialog: InkognitoDialog | undefined;
+
+/** Liest den Inkognito-Stand neu (Projekt geöffnet, Kreuz gesetzt, Daten geändert). */
+function inkognitoNeu() {
+  invoke<InkognitoJs>("inkognito_stand")
+    .then((s) => {
+      inkognitoStand = s;
+      mcpAbzeichen();
+    })
+    .catch(() => {});
+}
 
 let hinweisZeitgeber = 0;
 
@@ -1507,7 +1521,7 @@ let mcpRuhe: ReturnType<typeof setTimeout> | undefined;
 function mcpAbzeichen() {
   const el = document.getElementById("mcp")!;
   const aktiv = mcpRuhe !== undefined;
-  const a = mcpAnzeige(mcpStand, mcpZuletzt, aktiv);
+  const a = mcpAnzeige(mcpStand, mcpZuletzt, aktiv, inkognitoStand);
   el.hidden = a.text === "";
   el.textContent = a.text;
   el.title = a.titel;
@@ -1711,6 +1725,11 @@ async function start() {
       return invoke<VergleichJs>("typ_vergleichen");
     },
     uebernehmen: typUebernehmen,
+    inkognito: (feld, an, ersatz) => invoke<void>("inkognito_setzen", { pfad: feld, an, ersatz }),
+    inkognitoTabelle: () => {
+      inkognitoDialog ??= new InkognitoDialog({ tabelle: () => invoke<[string, string][]>("inkognito_tabelle") });
+      void inkognitoDialog.zeigen();
+    },
   });
   fachVorWechsel = () => dokumentFach.vorWechsel();
   neuDialog = new NeuDialog({
@@ -1783,7 +1802,11 @@ async function start() {
     },
   });
   document.getElementById("fassungen-knopf")!.addEventListener("click", () => void fassungen.zeigen());
-  await listen<string>("dokument-geaendert", (e) => dokumentFach.aussen(e.payload));
+  await listen<string>("dokument-geaendert", (e) => {
+    dokumentFach.aussen(e.payload);
+    inkognitoNeu();
+  });
+  await listen("inkognito-geaendert", () => inkognitoNeu());
   paketFach = new PaketFach({
     stand: () => invoke<PaketeStandJs>("pakete_stand").then(texteUebersetzen),
     indexHolen: () => invoke<{ pakete: number; uebersprungen: number }>("pakete_index_holen"),
@@ -2210,6 +2233,7 @@ async function start() {
   await listen<string>("mcp-zugriff", (e) => mcpZugriff(e.payload));
   document.getElementById("mcp")!.addEventListener("click", () => void mcpKlick());
   mcpZeigen(await invoke<McpJs>("mcp_stand"));
+  inkognitoNeu();
   status();
   if (entwurf) view.dispatch({ selection: { anchor: view.state.doc.length } });
   view.focus();

@@ -2,6 +2,7 @@
 // (`tftn-formular` in kebab-case, die Antworten der App in snake_case). Geprüft wird endgültig in
 // Rust; hier wird nur die Eingabe gelesen (deutsches Zahl- und Datumsformat) und angezeigt.
 
+import type { InkognitoFeld } from "./inkognito";
 import { eingabeZuWert } from "./werte";
 import { t } from "./sprache";
 
@@ -58,6 +59,8 @@ export interface FormularJs {
   dateifehler: string | null;
   profilfehler: { ort: string; text: string }[];
   sensibel: string | null;
+  /** Je Feld mit einem Wert (Pfad ohne Eintragsnummer): inkognito für KI-Assistenten? */
+  inkognito: Record<string, InkognitoFeld>;
   rueck: boolean;
   vor: boolean;
   vorschlaege: Record<string, string[]>;

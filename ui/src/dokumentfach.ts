@@ -26,6 +26,7 @@ import {
   zustandUebertragen,
 } from "./formular";
 import { vergleichTeil } from "./vergleichansicht";
+import { type InkognitoFeld, eigenerErsatz, inkognitoSchluessel } from "./inkognito";
 import { t } from "./sprache";
 
 export interface DokumentAktionen {
@@ -51,6 +52,10 @@ export interface DokumentAktionen {
   meldung(text: string): void;
   /** Literaturverwaltung öffnen. */
   literatur(): void;
+  /** Kreuz „Inkognito für KI“ (tftn.toml); `ersatz` null: der Vorschlag der Vorlage. */
+  inkognito(feld: string, an: boolean, ersatz: string | null): Promise<void>;
+  /** Tabelle „Was die KI sieht“ öffnen. */
+  inkognitoTabelle(): void;
 }
 
 type Eingabe = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -282,6 +287,12 @@ export class DokumentFach {
     alsText.title = t("{datei} direkt als TOML bearbeiten", { datei: js.datei });
     alsText.addEventListener("click", () => void (this.textModus ? this.textSchliessen() : this.textOeffnen()));
     k.append(rueck, vor, alsText);
+    if (Object.values(js.inkognito ?? {}).some((f) => f.an)) {
+      const ki = el("button", "", t("Was die KI sieht …"));
+      ki.title = t("Ersatztexte, die KI-Assistenten über MCP statt der Personendaten sehen");
+      ki.addEventListener("click", () => this.a.inkognitoTabelle());
+      k.append(ki);
+    }
     if (js.sensibel) k.append(el("p", "dok-warnung", js.sensibel));
     if (js.dateifehler) k.append(el("p", "dok-warnung", js.dateifehler));
     if (js.profilfehler.length) {
@@ -442,7 +453,51 @@ export class DokumentFach {
     eingabe.classList.add("dok-eingabe");
     zeile.append(titel, eingabe, meldung);
     if (f.hilfe) zeile.append(el("div", "leiste-hilfe", f.hilfe));
+    const schluessel = inkognitoSchluessel(pfad);
+    const ink = this.js!.inkognito?.[schluessel];
+    if (ink) {
+      zeile.append(this.inkognitoZeile(schluessel, ink));
+      zeile.classList.toggle("dok-inkognito-an", ink.an);
+    }
     return zeile;
+  }
+
+  /** Kreuz „Inkognito für KI“ und, wenn angekreuzt, der Ersatztext. */
+  private inkognitoZeile(schluessel: string, ink: InkognitoFeld): HTMLElement {
+    const z = el("div", "dok-inkognito");
+    const kreuz = el("input");
+    kreuz.type = "checkbox";
+    kreuz.checked = ink.an;
+    const beschriftung = el("label");
+    beschriftung.append(kreuz, document.createTextNode(t("Inkognito für KI")));
+    beschriftung.title = t(
+      "Angekreuzt: KI-Assistenten (MCP) sehen statt des Werts einen Ersatztext; schreiben sie ihn zurück, setzt TFTN den echten Wert ein.",
+    );
+    kreuz.addEventListener("change", () => void this.inkognito(schluessel, kreuz.checked, kreuz.checked ? ink.eigen : null));
+    z.append(beschriftung);
+    if (ink.an) {
+      const ersatz = el("input");
+      ersatz.type = "text";
+      ersatz.className = "dok-inkognito-ersatz";
+      ersatz.value = ink.eigen ?? "";
+      ersatz.placeholder = ink.vorgabe;
+      ersatz.title = t("Ersatztext für KI-Assistenten, ohne Klammern; leer: der Vorschlag der Vorlage ({vorgabe})", {
+        vorgabe: ink.vorgabe,
+      });
+      ersatz.setAttribute("aria-label", t("Ersatztext für KI-Assistenten"));
+      ersatz.addEventListener("change", () => void this.inkognito(schluessel, true, eigenerErsatz(ersatz.value, ink.vorgabe)));
+      z.append(ersatz);
+    }
+    return z;
+  }
+
+  private async inkognito(schluessel: string, an: boolean, ersatz: string | null) {
+    try {
+      await this.a.inkognito(schluessel, an, ersatz);
+    } catch (fehler) {
+      this.a.hinweis(String(fehler));
+    }
+    await this.zeichnen();
   }
 
   private eingabe(f: Feld, art: Art, pfad: Pfad, wert: unknown, meldung: HTMLElement): Eingabe {

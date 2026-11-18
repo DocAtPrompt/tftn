@@ -31,6 +31,8 @@ export interface McpZeileJs {
   werkzeug: string;
   schreibt: boolean;
   anzahl: number;
+  /** davon mit Inkognito (Personendaten nur als Ersatztext) */
+  inkognito: number;
   erstes_ms: number;
   letztes_ms: number;
 }
@@ -41,6 +43,8 @@ export interface NetzprotokollJs {
   verworfen: number;
   mcp: McpZeileJs[];
   mcp_abgewiesen: number;
+  /** Beschriftungen der Felder, die bei Inkognito ersetzt wurden */
+  inkognito_felder: string[];
   ganz_offline: boolean;
   mcp_an: boolean;
 }
@@ -102,6 +106,12 @@ export function mcpZeile(p: NetzprotokollJs): string {
       ? t("Kein Zugriff eines KI-Programms über MCP.")
       : t("{anzahl} Zugriffe von KI-Programmen über MCP (nur auf diesem Rechner, 127.0.0.1).", { anzahl: zahl(anzahl) });
   if (p.mcp_abgewiesen > 0) text += ` ${t("Abgewiesen: {anzahl}.", { anzahl: zahl(p.mcp_abgewiesen) })}`;
+  const inkognito = p.mcp.reduce((s, z) => s + (z.inkognito ?? 0), 0);
+  if (inkognito > 0)
+    text += ` ${t("Davon pseudonymisiert (Inkognito): {anzahl}; ersetzt: {felder}.", {
+      anzahl: zahl(inkognito),
+      felder: (p.inkognito_felder ?? []).join(", "),
+    })}`;
   return `${text} ${zustand}`;
 }
 

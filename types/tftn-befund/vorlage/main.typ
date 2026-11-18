@@ -1,4 +1,4 @@
-#import "@local/tftn-befund:0.1.0": *
+#import "@local/tftn-befund:0.2.0": *
 
 #show: befund.with(daten: toml("dokument.toml"))
 

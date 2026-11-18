@@ -3,7 +3,7 @@
 
 pub mod schema;
 
-pub use schema::{Art, Feld, Formular, ProfilFehler, TextWidget, formular_lesen, sensibel};
+pub use schema::{Art, Ersatz, Feld, Formular, ProfilFehler, TextWidget, formular_lesen, sensibel};
 pub mod pruefen;
 
 pub use pruefen::{Kontext, Meldung, Pfad, Schritt, alles_pruefen, wert_pruefen};
@@ -12,3 +12,4 @@ pub mod historie;
 
 pub use daten::{Daten, EintragAktion, atomar_schreiben, literatur_dateien, stand};
 pub use historie::Historie;
+pub mod inkognito;

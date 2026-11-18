@@ -32,6 +32,8 @@ pub struct FormularJs {
     pub dateifehler: Option<String>,
     pub profilfehler: Vec<ProfilFehler>,
     pub sensibel: Option<String>,
+    /// Je Feld mit einem Wert (Pfad ohne Eintragsnummer): inkognito für KI-Assistenten?
+    pub inkognito: BTreeMap<String, tftn_formular::inkognito::FeldStand>,
     pub rueck: bool,
     pub vor: bool,
     /// Je `format` Vorschläge für das Eingabefeld (`literaturdatei`, `zitierstil`).
@@ -65,15 +67,19 @@ pub struct FormularSitzung {
     /// `None`: Typ ohne `formular`
     formular: Option<Result<Formular, Vec<ProfilFehler>>>,
     historie: Historie,
+    /// Das Projekt nennt einen Dokumenttyp, aber sein Paket oder Manifest fehlt (dann ist auch
+    /// unbekannt, welche Felder Personendaten sind).
+    paket_fehlt: bool,
 }
 
 impl FormularSitzung {
     /// Liest das Schema aus dem vendorten Dokumenttyp (`[tool.tftn].formular`, `daten`).
     pub fn neu(projekt: &Projekt) -> Self {
-        let (daten, formular) = match tftn_manifest::Typpaket::vom_projekt(projekt) {
-            Err(_) => ("dokument.toml".to_string(), None),
+        let fehlt = || ("dokument.toml".to_string(), None, true);
+        let (daten, formular, fehlt) = match tftn_manifest::Typpaket::vom_projekt(projekt) {
+            Err(_) => fehlt(),
             Ok(paket) => match paket.manifest() {
-                Err(_) => ("dokument.toml".to_string(), None),
+                Err(_) => fehlt(),
                 Ok(m) => {
                     let daten = m.daten.clone().unwrap_or_else(|| "dokument.toml".into());
                     let formular = m.formular.as_ref().map(|pfad| {
@@ -86,11 +92,19 @@ impl FormularSitzung {
                             }]),
                         }
                     });
-                    (daten, formular)
+                    (daten, formular, false)
                 }
             },
         };
-        Self::mit(projekt.wurzel.clone(), &daten, formular)
+        let mut f = Self::mit(projekt.wurzel.clone(), &daten, formular);
+        f.paket_fehlt = fehlt && projekt.konfig.typ.is_some();
+        f
+    }
+
+    /// Lässt sich nicht sicher sagen, welche Felder Personendaten sind (Schema fehlerhaft, oder das
+    /// Paket des Dokumenttyps fehlt, obwohl es Formulardaten gibt)? Dann sperrt Inkognito MCP.
+    pub fn unsicher(&self) -> bool {
+        matches!(self.formular, Some(Err(_))) || (self.paket_fehlt && self.datei.exists())
     }
 
     pub fn mit(
@@ -103,6 +117,7 @@ impl FormularSitzung {
             wurzel,
             formular,
             historie: Historie::default(),
+            paket_fehlt: false,
         }
     }
 
@@ -113,6 +128,11 @@ impl FormularSitzung {
 
     fn formular(&self) -> Option<&Formular> {
         self.formular.as_ref().and_then(|f| f.as_ref().ok())
+    }
+
+    /// Das Formular-Schema, wenn der Dokumenttyp eines hat und es gültig ist.
+    pub fn schema(&self) -> Option<&Formular> {
+        self.formular()
     }
 
     /// Text der Datendatei; fehlt sie, ist sie leer (das erste Schreiben legt sie an).
@@ -170,6 +190,15 @@ impl FormularSitzung {
                 .as_ref()
                 .filter(|f| sensibel(f) && im_git(&self.wurzel))
                 .map(|_| sensibel_warnung()),
+            inkognito: formular
+                .as_ref()
+                .map(|f| {
+                    tftn_formular::inkognito::feld_staende(
+                        f,
+                        &crate::inkognito::markierungen(&self.wurzel),
+                    )
+                })
+                .unwrap_or_default(),
             formular,
             werte,
             meldungen,

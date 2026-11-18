@@ -42,6 +42,7 @@ mod formel;
 mod formular;
 mod helfer;
 mod import;
+mod inkognito;
 mod mcp;
 mod netzprotokoll;
 mod pakete;
@@ -3951,6 +3952,9 @@ pub fn run() {
             paket_wechseln,
             mcp_stand,
             netzprotokoll_lesen,
+            inkognito::inkognito_stand,
+            inkognito::inkognito_tabelle,
+            inkognito::inkognito_setzen,
             netzblatt_erzeugen,
             mcp_setzen,
             mcp_beim_wechsel_aus,

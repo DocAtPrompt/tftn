@@ -427,7 +427,8 @@ page.
 With **MCP** (section 13) an AI assistant reads the open document. TFTN itself does not go online for
 this. Where the content goes depends on the assistant: a local model (in LM Studio, for example) keeps
 everything on your computer, a cloud assistant sends it to its provider. MCP stays off until you turn
-it on.
+it on. With **incognito** (section 13), personal data from the form only leaves as stand-in text, for
+example “[Female patient]” instead of the name.
 
 **Network log – provably offline.** TFTN keeps track of every network access since it started.
 Normally there is none. If TFTN did go online after a click, the status bar shows the count
@@ -439,7 +440,9 @@ Normally there is none. If TFTN did go online after a click, the status bar show
   with address, response and amount of data, as reported by the downloader itself;
 - whether “Fully offline” is on, and how often AI programs accessed TFTN via MCP (counted per tool,
   plus rejected attempts). MCP is not a network access by TFTN – the connection stays on the computer
-  (`127.0.0.1`) – but it passes text to another program, so it is listed as well.
+  (`127.0.0.1`) – but it passes text to another program, so it is listed as well. If incognito was on,
+  it also says how many accesses were pseudonymised and which fields were replaced (only the field
+  names, never the values); the privacy sheet says the same.
 
 The log lives in memory only and ends with the program; it is never stored.
 
@@ -528,3 +531,50 @@ or `packages/`. It may only write text files; it changes the main file through t
 undo) and the form data through the form. When it changes another file, such as a chapter, undo in the
 editor does not apply – so TFTN first keeps the old content in `.fassungen/dateien/` (bibliography too). The assistant
 cannot delete files or bibliography entries.
+
+### Incognito: personal data only as stand-in text
+
+When an assistant is to check a medical report, back it up with studies or look for mistakes, it does
+not need the patient's name. With **incognito**, TFTN replaces personal data from the form with
+stand-in texts before anything reaches the assistant, and puts the real values back when it writes.
+
+- **Which fields:** fields that the document type marks as personal data are incognito by default –
+  for the medical report the name, date of birth and social insurance number. In the “Document” pane
+  each field has the checkbox **“Incognito for AI”** below it: ticking it adds a field (such as the
+  recipient of a letter), unticking removes it. This applies to this document and is stored in
+  `tftn.toml` – only the field name and, if any, your stand-in text, never a value.
+- **Stand-in texts:** the template suggests them; for the medical report “[Female patient]”, “[Male
+  patient]” or “[Patient]” depending on the field **Sex**, and “[born 1970]” for the date of birth:
+  a medical check needs sex and year of birth, so both are passed on. Next to the checkbox you can
+  enter your own stand-in text for each field (without brackets; empty: the template's suggestion).
+  With several people (a series in the project) they become “[Female patient]”, “[Female patient 2]”
+  and so on.
+- **What is replaced:** the values from the data file (`dokument.toml`) and from series records inside
+  the project folder – wherever the assistant would see them: in the source, in chapters and other
+  files, in the form, in file names and the project path, in messages. TFTN recognises the whole value,
+  the parts of a name (the surname alone, also with a genitive s), dates in the usual spellings
+  (1970-02-01, 01.02.1970, 1 February 1970 …) and numbers with or without spaces, regardless of
+  upper or lower case. Each spelling gets its own stand-in text (such as “[Female patient, part 2]”),
+  so that TFTN puts back exactly what was there.
+- **Writing back:** the assistant leaves the stand-in texts as they are or uses them in new text; TFTN
+  puts the real values in before anything is written. A stand-in text that TFTN did not hand out (such
+  as “[Female patient 7]”) is rejected – it never ends up in the document.
+- **Page image and messages:** for `seite_ansehen` TFTN typesets the page separately from the stand-in
+  texts, so the assistant sees no name in the image either. If that fails, it gets no image. Images
+  from anywhere else are not given out while incognito is on. The Typst messages the assistant gets
+  also come from such a run, not from the real one.
+- **Across documents:** values TFTN has replaced in any document since it started are replaced in
+  every other document too until you quit (in a folder name, for example); a stand-in text keeps its
+  meaning that long.
+- **Visible:** the status bar then says “MCP on · incognito”, the tooltip names the fields. **“What
+  the AI sees …”** in the “Document” pane shows the table stand-in text → real value; it stays on your
+  computer.
+- **Blocked rather than half:** if the data file or a series record cannot be read, TFTN does not know
+  the values for sure and gives out nothing over MCP until the error is fixed (“MCP on · incognito –
+  blocked”).
+
+**Limits of incognito:** only what TFTN knows as the value of a field is replaced. A name that only
+appears in the running text, an inflection other than the genitive s, a nickname, a typo, or a name
+glued to another word without a space is not recognised. TFTN cannot check embedded images and PDFs
+(scans, signature); the answer to the page image names them. For sensitive documents, check “What the
+AI sees …” and the source before letting a cloud service work on them.

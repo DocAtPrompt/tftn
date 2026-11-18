@@ -8,7 +8,10 @@ pub fn werkzeuge() -> Vec<Value> {
         json!({
             "name": "status",
             "description": "Zustand des offenen Dokuments: Projektordner, Hauptdatei, Revision, ob \
-                ungespeichert, Seitenzahl und die Meldungen (Fehler, Warnungen) des letzten Typst-Laufs.",
+                ungespeichert, Seitenzahl und die Meldungen (Fehler, Warnungen) des letzten Typst-Laufs. \
+                Sagt auch, ob Inkognito an ist: Dann stehen Personendaten in allen Antworten als \
+                Ersatztext in eckigen Klammern (etwa [Patientin]); beim Schreiben setzt TFTN die \
+                echten Werte wieder ein.",
             "inputSchema": leer,
         }),
         json!({
@@ -45,7 +48,8 @@ pub fn werkzeuge() -> Vec<Value> {
         }),
         json!({
             "name": "seite_ansehen",
-            "description": "Bild (PNG) einer Seite der Vorschau, um Satz und Layout zu prüfen.",
+            "description": "Bild (PNG) einer Seite der Vorschau, um Satz und Layout zu prüfen. Bei \
+                Inkognito setzt TFTN die Seite eigens aus den Ersatztexten.",
             "inputSchema": {
                 "type": "object",
                 "properties": {

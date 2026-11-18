@@ -308,7 +308,10 @@ fn bedienen(app: &AppHandle, strom: TcpStream, schluessel: &str) {
             } else {
                 // Statusleiste: Der Assistent arbeitet gerade (zeigt, was er tut).
                 let _ = app.emit("mcp-zugriff", &a.werkzeug);
-                ausfuehren(app, &a.werkzeug, &a.argumente).unwrap_or_else(Ergebnis::fehler)
+                // Inkognito: Personendaten nur als Ersatztext hinaus, echte Werte herein.
+                crate::inkognito::ausfuehren(app, &a.werkzeug, &a.argumente, |argumente| {
+                    ausfuehren(app, &a.werkzeug, argumente)
+                })
             }
         }
     };
@@ -325,7 +328,7 @@ fn ausfuehren(app: &AppHandle, werkzeug: &str, a: &Value) -> Result<Ergebnis, St
         "text_ersetzen" => {
             let (alt, neu) = (pflicht("alt")?, pflicht("neu")?);
             let alle = a.get("alle").and_then(Value::as_bool).unwrap_or(false);
-            aendern(app, |t| tftn_mcp::ersetzen(t, &alt, &neu, alle))
+            aendern(app, |t| crate::inkognito::ersetzen(t, &alt, &neu, alle))
         }
         "quelltext_setzen" => {
             let neu = pflicht("text")?;
@@ -351,7 +354,7 @@ fn ausfuehren(app: &AppHandle, werkzeug: &str, a: &Value) -> Result<Ergebnis, St
             let (pfad, alt, neu) = (pflicht("pfad")?, pflicht("alt")?, pflicht("neu")?);
             let alle = a.get("alle").and_then(Value::as_bool).unwrap_or(false);
             datei_aendern(app, &pfad, |t| {
-                tftn_mcp::ersetzen(t.ok_or("Die Datei gibt es nicht.")?, &alt, &neu, alle)
+                crate::inkognito::ersetzen(t.ok_or("Die Datei gibt es nicht.")?, &alt, &neu, alle)
             })
         }
         "literatur_lesen" => literatur_lesen(app),
@@ -428,6 +431,7 @@ fn lauf_text(lauf: Option<&LaufStand>, rev: u64) -> String {
 fn status(app: &AppHandle) -> Result<Ergebnis, String> {
     let zustand = app.state::<Zustand>();
     let lauf = zustand.lauf.lock().unwrap().clone();
+    let lauf = crate::inkognito::lauf(app, lauf);
     let sitzung = zustand.sitzung.lock().unwrap();
     let s = sitzung.as_ref().ok_or(KEIN_DOKUMENT)?;
     let rev = s.spiegel.rev();
@@ -511,9 +515,12 @@ fn formular_antwort(kopf: String, js: &crate::formular::FormularJs, mit_feldern:
             serde_json::to_string_pretty(&felder_js(&f.felder)).unwrap_or_default()
         ));
     }
+    // Inkognito: die Werte ersetzen, bevor JSON aus ihnen wird.
+    let mut werte = js.werte.clone();
+    crate::inkognito::werte_verbergen(&mut werte);
     t.push_str(&format!(
         "\nWerte:\n{}",
-        serde_json::to_string_pretty(&js.werte).unwrap_or_default()
+        serde_json::to_string_pretty(&werte).unwrap_or_default()
     ));
     if !js.meldungen.is_empty() {
         t.push_str("\nMeldungen:");
@@ -1026,8 +1033,10 @@ fn rechtschreibung_pruefen(app: &AppHandle, pfad: Option<String>) -> Result<Erge
     );
     for r in falsch.iter().take(RECHTSCHREIBUNG_GRENZE) {
         let wort = &quelle.text()[r.clone()];
+        // Inkognito: keine Vorschläge zu ersetzten Wörtern, sie verrieten das Wort.
         let vorschlaege = stand
             .as_ref()
+            .filter(|_| !crate::inkognito::betrifft(wort))
             .map(|st| st.pruefer.vorschlaege(wort))
             .unwrap_or_default();
         t.push_str(&format!(
@@ -1145,6 +1154,7 @@ fn aendern(
             });
         }
         let lauf = zustand.lauf.lock().unwrap().clone();
+        let lauf = crate::inkognito::lauf(app, lauf);
         return Ok(Ergebnis::text(aenderung_text(rev, neu_rev, lauf.as_ref())));
     }
     Err("Der Benutzer schreibt gerade; bitte gleich noch einmal versuchen.".into())
@@ -1254,6 +1264,7 @@ fn wechseln(app: &AppHandle, ziel: PathBuf) -> Result<Ergebnis, String> {
     // Erst antworten, wenn Typst das neue Dokument einmal übersetzt hat (`oeffnen` leert den Lauf).
     warten(WECHSEL_LAUF, || zustand.lauf.lock().unwrap().is_some());
     let lauf = zustand.lauf.lock().unwrap().clone();
+    let lauf = crate::inkognito::lauf(app, lauf);
     let mut t = format!(
         "Geöffnet: {}.\n{}",
         wurzel.display(),

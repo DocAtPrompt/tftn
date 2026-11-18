@@ -19,6 +19,7 @@ const leer: NetzprotokollJs = {
   verworfen: 0,
   mcp: [],
   mcp_abgewiesen: 0,
+  inkognito_felder: [],
   ganz_offline: false,
   mcp_an: false,
 };
@@ -77,8 +78,8 @@ describe("Netzprotokoll", () => {
       mcp_an: true,
       mcp_abgewiesen: 2,
       mcp: [
-        { werkzeug: "quelltext_lesen", schreibt: false, anzahl: 3, erstes_ms: start, letztes_ms: start },
-        { werkzeug: "text_ersetzen", schreibt: true, anzahl: 1, erstes_ms: start, letztes_ms: start },
+        { werkzeug: "quelltext_lesen", schreibt: false, anzahl: 3, inkognito: 0, erstes_ms: start, letztes_ms: start },
+        { werkzeug: "text_ersetzen", schreibt: true, anzahl: 1, inkognito: 0, erstes_ms: start, letztes_ms: start },
       ],
     };
     expect(mcpZeile(mit)).toBe(

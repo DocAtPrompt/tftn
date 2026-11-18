@@ -15,4 +15,5 @@ email = "ordination@example.org"
 
 [patient]
 name = "Erika Musterfrau"
+geschlecht = "weiblich"
 geburtsdatum = 1970-02-01

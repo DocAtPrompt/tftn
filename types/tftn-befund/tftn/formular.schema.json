@@ -12,9 +12,22 @@
       "x-tftn-gruppe": "Patient/in",
       "required": ["name"],
       "properties": {
-        "name": { "type": "string", "title": "Name", "x-tftn-sensibel": true },
-        "geburtsdatum": { "type": "string", "title": "Geburtsdatum", "format": "date", "x-tftn-sensibel": true },
-        "svnr": { "type": "string", "title": "Sozialversicherungsnummer", "format": "sv-nummer", "x-tftn-sensibel": true }
+        "name": {
+          "type": "string", "title": "Name", "x-tftn-sensibel": true,
+          "x-tftn-ersatz": { "nach": "patient.geschlecht", "je": { "weiblich": "Patientin", "männlich": "Patient" }, "sonst": "Patient/in" }
+        },
+        "geschlecht": {
+          "type": "string",
+          "title": "Geschlecht",
+          "description": "Geht im Klartext an KI-Assistenten; bestimmt den Ersatztext für den Namen",
+          "oneOf": [
+            { "const": "weiblich", "title": "weiblich" },
+            { "const": "männlich", "title": "männlich" },
+            { "const": "divers", "title": "divers" }
+          ]
+        },
+        "geburtsdatum": { "type": "string", "title": "Geburtsdatum", "format": "date", "x-tftn-sensibel": true, "x-tftn-ersatz": "geb. {jahr}" },
+        "svnr": { "type": "string", "title": "Sozialversicherungsnummer", "format": "sv-nummer", "x-tftn-sensibel": true, "x-tftn-ersatz": "SV-Nummer" }
       }
     },
     "ort": { "type": "string", "title": "Ort" },
