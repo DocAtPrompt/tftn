@@ -99,8 +99,10 @@ sync it and keep working on another computer without a network.
 - **Tabs** above the editor: the main file and further chapter files (`.typ`, included for example
   with `#include "chapters/one.typ"`). “+” opens a chapter file of the project; clicking text from a
   chapter in the preview opens its tab by itself and jumps to the spot. If you write
-  `#include "chapters/new.typ"` for a file that does not exist yet, the message band offers “Create
-  and open”: the file is created with a heading from its name and opens as a tab. A chapter does not
+  `#include "chapters/new.typ"` for a file that does not exist yet, TFTN creates it shortly after
+  the last keystroke, with a heading from its name (missing folders are created too); “Open” in the
+  message or “+” brings it up as a tab. Intermediate names while typing a path (say `metho.typ` on
+  the way to `methode.typ`) are removed again as long as nobody has written into them. A chapter does not
   see the imports of the main file; if it needs something from the template, it gets it with its
   own `#import` line. Each tab has its own undo; a
   dot shows that it is not saved yet, × closes it (the file stays in the project, the main file is

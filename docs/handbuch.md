@@ -95,9 +95,11 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
 - **Reiter** über dem Editor: die Hauptdatei und weitere Kapiteldateien (`.typ`, etwa mit
   `#include "kapitel/eins.typ"` eingebunden). „+“ öffnet eine Kapiteldatei des Projekts; ein Klick in
   der Vorschau auf Text aus einem Kapitel öffnet dessen Reiter von selbst und springt an die Stelle.
-  Schreibt man `#include "kapitel/neu.typ"` für eine Datei, die es noch nicht gibt, bietet das
-  Hinweisband „Anlegen und öffnen“ an: Die Datei entsteht mit einer Überschrift aus ihrem Namen und
-  geht als Reiter auf. Ein Kapitel sieht die Importe der Hauptdatei nicht; braucht es etwas aus der
+  Schreibt man `#include "kapitel/neu.typ"` für eine Datei, die es noch nicht gibt, legt TFTN sie kurz
+  nach dem letzten Tastendruck an, mit einer Überschrift aus ihrem Namen (fehlende Ordner entstehen
+  mit); „Öffnen“ im Hinweis oder „+“ bringt sie als Reiter. Zwischenstände beim Tippen eines Pfads
+  (etwa `metho.typ` auf dem Weg zu `methode.typ`) räumt TFTN wieder weg, solange niemand hineingeschrieben
+  hat. Ein Kapitel sieht die Importe der Hauptdatei nicht; braucht es etwas aus der
   Vorlage, holt es sich das mit einer eigenen `#import`-Zeile.
   Jeder Reiter hat sein eigenes Rückgängig; ein Punkt zeigt, dass er noch nicht gespeichert ist, ×
   schließt ihn (die Datei bleibt im Projekt, die Hauptdatei bleibt immer offen). Die Vorschau zeigt

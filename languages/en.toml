@@ -983,7 +983,6 @@ name = "English"
 
 # ui/src/main.ts
 "Aktiv lassen" = "Keep active"
-"Anlegen und öffnen" = "Create and open"
 "Aus Vorlage …" = "From template …"
 "Ausschneiden" = "Cut"
 "Baustein einfügen; in einer Leerzeile auch „/“" = "Insert block, or type “/” on an empty line"
@@ -1064,7 +1063,7 @@ name = "English"
 "Word, OpenDocument, Markdown, HTML, EPUB oder LaTeX über Pandoc übernehmen" = "Import Word, OpenDocument, Markdown, HTML, EPUB or LaTeX via Pandoc"
 "Zitat einfügen" = "Insert citation"
 "{pfad} übernommen. Die Unterschrift kommt in die eckigen Klammern." = "{pfad} added. The caption goes in the square brackets."
-"„{datei}“ gibt es noch nicht." = "“{datei}” does not exist yet."
+"„{datei}“ angelegt." = "“{datei}” created."
 "„{titel}“ passt hier nicht ({wo})." = "“{titel}” does not fit here ({wo})."
 
 # ui/src/mcp.ts

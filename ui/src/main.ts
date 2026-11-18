@@ -1212,41 +1212,49 @@ function vorschauVerarbeiten(lauf: VorschauEreignis) {
   letzterLauf = lauf;
   markierungenSetzen(lauf);
   rechtschreibungSpaeter();
-  void fehlendeKapitelAnbieten(lauf);
+  kapitelPruefenSpaeter(lauf);
 }
 
-/** Das Kapitel, für das gerade „Anlegen und öffnen“ angeboten wird. */
-let kapitelAngebot: string | null = null;
+/** Kapitel, die TFTN in dieser Sitzung von selbst angelegt hat (Kandidaten fürs Aufräumen). */
+const kapitelAngelegt = new Set<string>();
+let kapitelZeitgeber: number | undefined;
 
 /**
- * Bindet der aktive Reiter mit `#include` eine Datei ein, die es noch nicht gibt, bietet das
- * Hinweisband an, sie anzulegen und als Reiter zu öffnen. Gelingt der Lauf wieder, verschwindet es.
+ * Bindet der aktive Reiter mit `#include` eine `.typ`-Datei ein, die es noch nicht gibt, legt TFTN
+ * sie kurz nach dem letzten Tastendruck an (sonst bliebe die Vorschau rot). Eben angelegte Dateien,
+ * auf die nichts mehr zeigt und die noch unberührt sind, verschwinden wieder (beim Tippen eines
+ * Pfads entstehen sonst Zwischenstände wie „metho.typ“).
  */
-async function fehlendeKapitelAnbieten(lauf: VorschauEreignis) {
+function kapitelPruefenSpaeter(lauf: VorschauEreignis) {
   if ((lauf.datei ?? aktiveDatei) !== aktiveDatei) return;
-  const fehlt = lauf.gelungen ? [] : await invoke<string[]>("fehlende_kapitel").catch(() => []);
-  const datei = fehlt[0] ?? null;
-  if (datei === kapitelAngebot) return;
-  if (datei === null) {
-    kapitelAngebot = null;
-    hinweis("");
-    return;
-  }
-  kapitelAngebot = datei;
-  hinweis(t("„{datei}“ gibt es noch nicht.", { datei }), {
-    titel: t("Anlegen und öffnen"),
-    aktion: () => void kapitelAnlegen(datei),
-  });
+  if (lauf.gelungen && kapitelAngelegt.size === 0) return;
+  clearTimeout(kapitelZeitgeber);
+  kapitelZeitgeber = window.setTimeout(() => void kapitelPruefen(), 700);
 }
 
-async function kapitelAnlegen(datei: string) {
-  try {
-    await invoke("kapitel_anlegen", { datei });
-  } catch (fehler) {
-    hinweis(String(fehler));
-    return;
+async function kapitelPruefen() {
+  const neu: string[] = [];
+  for (const datei of await invoke<string[]>("fehlende_kapitel").catch(() => [] as string[])) {
+    try {
+      if (await invoke<boolean>("kapitel_anlegen", { datei })) {
+        kapitelAngelegt.add(datei);
+        neu.push(datei);
+      }
+    } catch (fehler) {
+      hinweis(String(fehler));
+    }
   }
-  kapitelAngebot = null;
+  if (kapitelAngelegt.size) {
+    const weg = await invoke<string[]>("kapitel_aufraeumen", { dateien: [...kapitelAngelegt] }).catch(() => [] as string[]);
+    for (const d of weg) kapitelAngelegt.delete(d);
+  }
+  if (neu.length) {
+    const datei = neu[neu.length - 1];
+    hinweis(t("„{datei}“ angelegt.", { datei }), { titel: t("Öffnen"), aktion: () => void kapitelOeffnen(datei) }, "kurz");
+  }
+}
+
+async function kapitelOeffnen(datei: string) {
   hinweis("");
   await reiterWaehlen(datei);
 }

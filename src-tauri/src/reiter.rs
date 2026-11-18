@@ -373,17 +373,15 @@ pub fn fehlende_kapitel(zustand: State<'_, Zustand>) -> Result<Vec<String>, Stri
     Ok(fehlende(&s.projekt.wurzel, &s.datei, s.spiegel.text()))
 }
 
-/// Legt eine eingebundene Kapiteldatei an (mit einer Überschrift aus dem Namen); danach öffnet die
-/// Oberfläche ihren Reiter. Eine vorhandene Datei bleibt unberührt.
+/// Legt eine eingebundene Kapiteldatei an, mit einer Überschrift aus dem Namen, und lässt neu
+/// setzen. `true`, wenn sie neu ist; eine vorhandene Datei bleibt unberührt.
 #[tauri::command]
-pub fn kapitel_anlegen(datei: String, zustand: State<'_, Zustand>) -> Result<(), String> {
-    let wurzel = {
-        let sitzung = zustand.sitzung.lock().unwrap();
-        let s = sitzung
-            .as_ref()
-            .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
-        s.projekt.wurzel.clone()
-    };
+pub fn kapitel_anlegen(datei: String, zustand: State<'_, Zustand>) -> Result<bool, String> {
+    let mut sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung
+        .as_mut()
+        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    let wurzel = s.projekt.wurzel.clone();
     let falsch = || {
         tr!(
             "{datei} lässt sich hier nicht anlegen.",
@@ -395,12 +393,72 @@ pub fn kapitel_anlegen(datei: String, zustand: State<'_, Zustand>) -> Result<(),
         return Err(falsch());
     }
     if pfad.exists() {
-        return Ok(());
+        return Ok(false);
     }
     if let Some(ordner) = pfad.parent() {
         std::fs::create_dir_all(ordner).map_err(|e| format!("{}: {e}", ordner.display()))?;
     }
-    std::fs::write(&pfad, ueberschrift(&datei)).map_err(|e| format!("{}: {e}", pfad.display()))
+    std::fs::write(&pfad, ueberschrift(&datei)).map_err(|e| format!("{}: {e}", pfad.display()))?;
+    kompilieren_lassen(&zustand, s);
+    Ok(true)
+}
+
+/// Alle `#include`-Ziele der offenen Dateien (aktiv und geparkt), relativ zum Projekt.
+fn eingebunden_offen(s: &Sitzung) -> Vec<String> {
+    let wurzel = &s.projekt.wurzel;
+    std::iter::once((&s.datei, s.spiegel.text()))
+        .chain(s.geparkt.iter().map(|g| (&g.datei, g.spiegel.text())))
+        .flat_map(|(von, text)| {
+            crate::projektdateien::eingebunden(text)
+                .into_iter()
+                .filter_map(|(_, ziel)| ziel_im_projekt(wurzel, von, &ziel))
+                .map(|p| relativ(wurzel, &p))
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+/// Ob eine von TFTN angelegte Datei weg darf: nirgends mehr eingebunden, nicht als Reiter offen
+/// und noch genau so, wie TFTN sie angelegt hat.
+pub fn verwaist(datei: &str, eingebunden: &[String], offen: bool, inhalt: Option<&str>) -> bool {
+    !offen
+        && !eingebunden.iter().any(|e| e == datei)
+        && inhalt == Some(ueberschrift(datei).as_str())
+}
+
+/// Von TFTN eben angelegte Kapitel wieder löschen, wenn sie verwaist sind (etwa beim Tippen eines
+/// Pfads entstanden: „metho.typ“ auf dem Weg zu „methode.typ“). Liefert die gelöschten.
+#[tauri::command]
+pub fn kapitel_aufraeumen(
+    dateien: Vec<String>,
+    zustand: State<'_, Zustand>,
+) -> Result<Vec<String>, String> {
+    let sitzung = zustand.sitzung.lock().unwrap();
+    let s = sitzung
+        .as_ref()
+        .ok_or_else(|| tr!("kein Projekt geöffnet"))?;
+    let eingebunden = eingebunden_offen(s);
+    let wurzel = &s.projekt.wurzel;
+    let mut weg = Vec::new();
+    for datei in dateien {
+        let Some(pfad) = ziel_im_projekt(wurzel, &wurzel.join("x"), &datei) else {
+            continue;
+        };
+        let offen = offener_spiegel(s, &pfad).is_some();
+        let inhalt = std::fs::read_to_string(&pfad).ok();
+        if !pfad.exists() {
+            weg.push(datei);
+        } else if verwaist(&datei, &eingebunden, offen, inhalt.as_deref())
+            && std::fs::remove_file(&pfad).is_ok()
+        {
+            // Ein dabei leer gewordener Ordner geht mit (nur, wenn er wirklich leer ist).
+            if let Some(ordner) = pfad.parent().filter(|o| *o != wurzel.as_path()) {
+                let _ = std::fs::remove_dir(ordner);
+            }
+            weg.push(datei);
+        }
+    }
+    Ok(weg)
 }
 
 #[cfg(test)]
@@ -429,6 +487,28 @@ mod tests {
             vec!["kapitel/unter.typ"]
         );
         let _ = std::fs::remove_dir_all(&o);
+    }
+
+    #[test]
+    fn nur_unberuehrte_verwaiste_dateien_weg() {
+        let ein = vec!["kapitel/methode.typ".to_string()];
+        let leer = ueberschrift("kapitel/metho.typ");
+        assert!(verwaist("kapitel/metho.typ", &ein, false, Some(&leer)));
+        assert!(!verwaist(
+            "kapitel/methode.typ",
+            &ein,
+            false,
+            Some(&ueberschrift("kapitel/methode.typ"))
+        ));
+        assert!(
+            !verwaist("kapitel/metho.typ", &ein, true, Some(&leer)),
+            "als Reiter offen"
+        );
+        assert!(
+            !verwaist("kapitel/metho.typ", &ein, false, Some("= Metho\nText")),
+            "schon beschrieben"
+        );
+        assert!(!verwaist("kapitel/metho.typ", &ein, false, None));
     }
 
     #[test]
