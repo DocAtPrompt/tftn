@@ -25,6 +25,7 @@
     gruss: "Mit freundlichen Grüßen",
     heilbehandlung: "Umsatzsteuerfrei gemäß § 6 Abs. 1 Z 19 UStG (Heilbehandlung im Bereich der Humanmedizin).",
     kleinunternehmer: "Umsatzsteuerbefreit – Kleinunternehmer gemäß § 6 Abs. 1 Z 27 UStG.",
+    ohne-pfad: "Bild „{datei}“: main.typ braucht pfad: p => path(p) (Handbuch, Kapitel 1)",
     tausend: ".",
     komma: ",",
   ),
@@ -48,6 +49,7 @@
     gruss: "Kind regards",
     heilbehandlung: "Exempt from VAT under § 6 (1) 19 of the Austrian VAT Act (medical treatment).",
     kleinunternehmer: "Exempt from VAT as a small business under § 6 (1) 27 of the Austrian VAT Act.",
+    ohne-pfad: "Image “{datei}”: main.typ needs pfad: p => path(p) (manual, chapter 1)",
     tausend: ",",
     komma: ".",
   ),
@@ -93,12 +95,32 @@
   if calc.fract(x) == 0 { str(int(x)) } else { str(x).replace(".", wort.komma) }
 }
 
-/// Setzt die Rechnung: `#show: rechnung.with(daten: toml("dokument.toml"))`.
+/// Ein Bild aus dem Projekt, `hoehe` hoch und höchstens `breite` breit. Ein Paket erreicht
+/// Projektdateien nur über einen `path`, den `main.typ` erzeugt (`pfad: p => path(p)`); fehlt
+/// `pfad` (eine `main.typ` von vor 0.3.0), steht statt des Bilds ein sichtbarer Hinweis.
+#let _bild(datei, pfad, hoehe, breite, wort) = if pfad == none {
+  box(width: 45mm, stroke: 0.6pt + red, inset: 2pt, text(
+    size: 7pt,
+    fill: red,
+    wort.ohne-pfad.replace(
+      "{datei}",
+      datei,
+    ),
+  ))
+} else {
+  context {
+    let b = image(pfad(datei), height: hoehe)
+    if measure(b).width > breite { image(pfad(datei), width: breite) } else { b }
+  }
+}
+
+/// Setzt die Rechnung: `#show: rechnung.with(daten: toml("dokument.toml"), pfad: p => path(p))`.
 ///
 /// - daten (dictionary): Inhalt von `dokument.toml` (Schema `tftn/formular.schema.json`)
+/// - pfad (function, none): macht aus einem Pfad im Projekt einen `path`; nötig für das Logo
 /// - body (content): Text vor den Posten aus `main.typ`
 /// -> content
-#let rechnung(daten: (:), body) = {
+#let rechnung(daten: (:), pfad: none, body) = {
   let sprache = daten.at("sprache", default: "de")
   let wort = beschriftungen.at(sprache, default: beschriftungen.en)
   let absender = daten.at("absender", default: (:))
@@ -106,6 +128,7 @@
   let bank = daten.at("bank", default: (:))
   let waehrung = daten.at("waehrung", default: "€")
   let nummer = daten.at("nummer", default: "")
+  let logo = daten.at("logo", default: "")
   set document(title: wort.titel + " " + nummer, author: name)
 
   let fuss = {
@@ -148,13 +171,27 @@
   } else { none })
   set par(leading: 0.65em, spacing: 1.2em)
 
-  // Absender rechts oben
-  place(top + right, align(left, text(size: 9pt)[
-    #tftn-feld("absender")[*#name*]
-    #for z in absender.at("zeilen", default: ()) [ \ #tftn-feld("absender")[#z] ]
-    #if "telefon" in absender [ \ #tftn-feld("absender")[#absender.telefon] ]
-    #if "email" in absender [ \ #tftn-feld("absender")[#absender.email] ]
-  ]))
+  // Absender rechts oben, darüber das Logo
+  place(top + right, stack(
+    spacing: 4mm,
+    ..if logo != "" {
+      (
+        align(right, tftn-feld("logo", _bild(
+          logo,
+          pfad,
+          daten.at("logo_hoehe", default: 1.5) * 1cm,
+          80mm,
+          wort,
+        ))),
+      )
+    },
+    align(left, text(size: 9pt)[
+      #tftn-feld("absender")[*#name*]
+      #for z in absender.at("zeilen", default: ()) [ \ #tftn-feld("absender")[#z] ]
+      #if "telefon" in absender [ \ #tftn-feld("absender")[#absender.telefon] ]
+      #if "email" in absender [ \ #tftn-feld("absender")[#absender.email] ]
+    ]),
+  ))
   // Anschriftfeld wie beim Brief (ÖNORM A 1080 / DIN 5008, Fenster links)
   place(top + left, dy: 20mm, block(width: 80mm, height: 45mm)[
     #text(size: 7pt)[#(
@@ -249,7 +286,10 @@
     text(weight: "bold", wort.gesamt), text(weight: "bold", mit-w(netto + steuer)),
   )))
   if hinweis != none {
-    tftn-feld(if "steuerhinweis" in daten { "steuerhinweis" } else { "befreiung" }, text(size: 9pt, hinweis))
+    tftn-feld(
+      if "steuerhinweis" in daten { "steuerhinweis" } else { "befreiung" },
+      text(size: 9pt, hinweis),
+    )
   }
   if "zahlungsziel" in daten and "datum" in daten {
     let bis = daten.datum + duration(days: daten.zahlungsziel)

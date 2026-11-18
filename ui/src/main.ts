@@ -1965,6 +1965,13 @@ async function start() {
       inkognitoDialog ??= new InkognitoDialog({ tabelle: () => invoke<[string, string][]>("inkognito_tabelle") });
       void inkognitoDialog.zeigen();
     },
+    bildWaehlen: async () => {
+      let pfad: string | null = null;
+      await einzeln(async () => {
+        pfad = await invoke<string | null>("bild_waehlen", { aufforderung: t("Bild wählen (PNG, JPG, SVG …)") });
+      });
+      return pfad;
+    },
   });
   fachVorWechsel = () => dokumentFach.vorWechsel();
   neuDialog = new NeuDialog({

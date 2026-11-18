@@ -3,7 +3,9 @@
 
 pub mod schema;
 
-pub use schema::{Art, Ersatz, Feld, Formular, ProfilFehler, TextWidget, formular_lesen, sensibel};
+pub use schema::{
+    Art, BILD_ENDUNGEN, Ersatz, Feld, Formular, ProfilFehler, TextWidget, formular_lesen, sensibel,
+};
 pub mod pruefen;
 
 pub use pruefen::{Kontext, Meldung, Pfad, Schritt, alles_pruefen, wert_pruefen};

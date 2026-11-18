@@ -3401,6 +3401,36 @@ fn bild_ablegen(
     bilder::ablegen(&wurzel, &name, daten)
 }
 
+/// Fürs Formular (Feld mit `format: "bild"`): Bild im Systemdialog wählen, ins Projekt holen
+/// (`bilder/`, falls es nicht schon darin liegt) und den Pfad relativ zum Projekt liefern;
+/// `None` bei Abbruch.
+#[tauri::command(async)]
+fn bild_waehlen(
+    app: tauri::AppHandle,
+    zustand: State<'_, Zustand>,
+    aufforderung: String,
+) -> Result<Option<String>, String> {
+    let wurzel = {
+        let sitzung = zustand.sitzung.lock().unwrap();
+        sitzung
+            .as_ref()
+            .ok_or_else(|| tr!("kein Projekt geöffnet"))?
+            .projekt
+            .wurzel
+            .clone()
+    };
+    let start = wurzel.join("bilder");
+    let start = if start.is_dir() {
+        start
+    } else {
+        wurzel.clone()
+    };
+    match waehlen_ab(&app, Wahl::Datei, &aufforderung, Some(&start)) {
+        Some(datei) => bilder::uebernehmen(&wurzel, &datei).map(Some),
+        None => Ok(None),
+    }
+}
+
 // --- Frühere Fassungen ----------------------------------------------------------------------
 
 #[tauri::command]
@@ -4057,6 +4087,7 @@ pub fn run() {
             entwurf_benennen,
             fassungen_liste,
             bild_ablegen,
+            bild_waehlen,
             word_exportieren,
             html_exportieren,
             html_oeffnen,

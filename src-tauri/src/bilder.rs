@@ -4,7 +4,7 @@ use std::path::Path;
 
 use tftn_sprachen::tr;
 
-pub const ENDUNGEN: [&str; 7] = ["png", "jpg", "jpeg", "gif", "svg", "webp", "pdf"];
+pub const ENDUNGEN: [&str; 7] = tftn_formular::BILD_ENDUNGEN;
 /// Größer wird kein Bild übernommen.
 pub const HOECHSTENS: usize = 50 * 1024 * 1024;
 
@@ -65,6 +65,46 @@ pub fn ablegen(projekt: &Path, name: &str, daten: &[u8]) -> Result<String, Strin
         }
     }
     unreachable!()
+}
+
+/// Eine gewählte Bilddatei fürs Formular (Feld mit `format: "bild"`): Liegt sie schon im Projekt
+/// (nicht unter `_…` oder `.…`, die nicht gesichert bzw. versteckt sind), zählt ihr Pfad dort;
+/// sonst wird sie wie beim Einfügen unter `bilder/` abgelegt. Liefert den Pfad relativ zum Projekt.
+pub fn uebernehmen(projekt: &Path, datei: &Path) -> Result<String, String> {
+    let name = datei
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    if dateiname(&name).is_none() {
+        return Err(tr!(
+            "„{name}“ ist kein Bild, das Typst setzen kann ({endungen}).",
+            name,
+            endungen = ENDUNGEN.join(", ")
+        ));
+    }
+    if let (Ok(w), Ok(d)) = (projekt.canonicalize(), datei.canonicalize())
+        && let Ok(rel) = d.strip_prefix(&w)
+    {
+        let teile: Vec<String> = rel
+            .components()
+            .map(|c| c.as_os_str().to_string_lossy().into_owned())
+            .collect();
+        if !teile.is_empty()
+            && !teile
+                .iter()
+                .any(|t| t.starts_with('_') || t.starts_with('.'))
+        {
+            return Ok(teile.join("/"));
+        }
+    }
+    let groesse = std::fs::metadata(datei)
+        .map_err(|e| format!("{}: {e}", datei.display()))?
+        .len();
+    if groesse > HOECHSTENS as u64 {
+        return Err(tr!("„{name}“ ist größer als 50 MB.", name));
+    }
+    let daten = std::fs::read(datei).map_err(|e| format!("{}: {e}", datei.display()))?;
+    ablegen(projekt, &name, &daten)
 }
 
 /// `%XX`-Folgen zurück in UTF-8 (Kopfzeilen tragen nur ASCII; die Oberfläche kodiert den Namen).
@@ -131,6 +171,42 @@ mod tests {
         assert!(ablegen(&p, "riesig.png", &vec![0; HOECHSTENS + 1]).is_err());
         assert!(!p.join("bilder").exists());
         let _ = std::fs::remove_dir_all(&p);
+    }
+
+    #[test]
+    fn gewaehltes_bild_uebernehmen() {
+        let p = projekt("uebernehmen");
+        let aussen = projekt("uebernehmen-aussen");
+        std::fs::write(aussen.join("Mein Logo.PNG"), b"logo").unwrap();
+        std::fs::write(aussen.join("brief.docx"), b"x").unwrap();
+        // Von außen: kopiert nach bilder/, Name wie beim Einfügen.
+        assert_eq!(
+            uebernehmen(&p, &aussen.join("Mein Logo.PNG")).unwrap(),
+            "bilder/Mein-Logo.png"
+        );
+        assert_eq!(
+            std::fs::read(p.join("bilder/Mein-Logo.png")).unwrap(),
+            b"logo"
+        );
+        // Schon im Projekt: der Pfad dort, nichts kopiert.
+        std::fs::create_dir_all(p.join("grafik")).unwrap();
+        std::fs::write(p.join("grafik/unterschrift.svg"), b"<svg/>").unwrap();
+        assert_eq!(
+            uebernehmen(&p, &p.join("grafik/unterschrift.svg")).unwrap(),
+            "grafik/unterschrift.svg"
+        );
+        assert!(!p.join("bilder/unterschrift.svg").exists());
+        // Unter _lokal (nicht gesichert): wird nach bilder/ geholt.
+        std::fs::create_dir_all(p.join("_lokal")).unwrap();
+        std::fs::write(p.join("_lokal/scan.png"), b"scan").unwrap();
+        assert_eq!(
+            uebernehmen(&p, &p.join("_lokal/scan.png")).unwrap(),
+            "bilder/scan.png"
+        );
+        assert!(uebernehmen(&p, &aussen.join("brief.docx")).is_err());
+        assert!(uebernehmen(&p, &aussen.join("fehlt.png")).is_err());
+        let _ = std::fs::remove_dir_all(&p);
+        let _ = std::fs::remove_dir_all(&aussen);
     }
 
     #[test]

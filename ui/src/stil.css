@@ -898,6 +898,9 @@ body.trenner-zieht {
 .dok-feld input[type="checkbox"] {
   align-self: flex-start;
 }
+.dok-feld .dok-bildwahl {
+  align-self: flex-start;
+}
 /* Inkognito für KI-Assistenten: Kreuz und Ersatztext unter dem Feld */
 .dok-inkognito {
   display: flex;

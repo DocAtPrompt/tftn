@@ -3,7 +3,7 @@
   "title": "Brief",
   "type": "object",
   "required": ["empfaenger"],
-  "x-tftn-reihenfolge": ["absender", "empfaenger", "ort", "datum", "betreff", "anrede", "gruss", "unterschrift", "sprache"],
+  "x-tftn-reihenfolge": ["absender", "logo", "logo_hoehe", "unterschrift_bild", "empfaenger", "ort", "datum", "betreff", "anrede", "gruss", "unterschrift", "sprache"],
   "properties": {
     "absender": {
       "type": "object",
@@ -17,6 +17,9 @@
         "email": { "type": "string", "title": "E-Mail", "format": "email" }
       }
     },
+    "logo": { "type": "string", "title": "Logo", "description": "Bilddatei im Projekt (PNG, JPG, SVG …), steht im Kopf rechts oben über dem Absender; „Bild wählen …“ legt sie unter bilder/ ab", "format": "bild", "x-tftn-gruppe": "Absender" },
+    "logo_hoehe": { "type": "number", "title": "Höhe des Logos in cm", "default": 1.5, "minimum": 0.5, "maximum": 4, "x-tftn-gruppe": "Absender" },
+    "unterschrift_bild": { "type": "string", "title": "Unterschrift als Bild", "description": "Bild der Unterschrift über dem Namen, am besten ein Scan mit durchsichtigem Hintergrund (PNG); leer: Platz zum Unterschreiben von Hand", "format": "bild", "x-tftn-gruppe": "Absender" },
     "empfaenger": {
       "type": "array",
       "title": "Empfänger",

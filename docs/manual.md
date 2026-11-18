@@ -77,6 +77,18 @@ Austrian VAT Act)” for medical services or “small business (§ 6 (1) 27)”:
 the matching note appears below the total (your own tax note takes precedence). This is not tax
 advice.
 
+**Logo and signature:** letters, medical reports and invoices put a logo in the header (letters
+and invoices at the top right above the sender, medical reports to the left of the practice name);
+letters and medical reports can also show an image of your signature above the name. In the
+“Document” tab (group “Sender” or “Practice”), “Choose image …” brings the file into the project – if
+it is not there yet, a copy goes to `bilder/` – and fills in the path; “Logo height in cm” (default
+1.5) sets the size. For the signature, a scan with a transparent background (PNG) works best.
+Without an image there is space to sign by hand, as before. The document type reaches the images
+through the line `pfad: p => path(p)` in `main.typ` (new documents have it). A document that still
+uses an older version of the type keeps typesetting unchanged; after updating it (“Document” tab,
+see chapter 5) it shows a red note instead of the image until the line is added, for example
+`#show: brief.with(daten: daten, pfad: p => path(p))`.
+
 **What is a project?** A folder with `tftn.toml`, the main file (usually `main.typ`), and for
 templates also `dokument.toml` (front matter), the bibliography file, the fonts (`fonts/`) and the
 packages in use (`packages/`). Everything the document needs lives in the folder – you can copy it,

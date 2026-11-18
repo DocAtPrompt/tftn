@@ -7,6 +7,7 @@ import {
   eingabeLesen,
   eingabeZeigen,
   gruppen,
+  hatBildwahl,
   historieTaste,
   knopfNachEintrag,
   Reihe,
@@ -196,6 +197,18 @@ describe("abschlusspruefung", () => {
     zustandUebertragen(alt, neu);
     expect(neu.value).toBe("Neu");
     expect([neu.selectionStart, neu.selectionEnd]).toEqual([0, 0]);
+  });
+});
+
+describe("hatBildwahl", () => {
+  it("nur einzeilige Textfelder mit format bild", () => {
+    const bild: Art = { ...text, format: "bild" } as Art;
+    expect(hatBildwahl(bild)).toBe(true);
+    expect(hatBildwahl(text)).toBe(false);
+    expect(hatBildwahl({ ...text, format: "literaturdatei" } as Art)).toBe(false);
+    expect(hatBildwahl({ ...text, format: "bild", widget: "mehrzeilig" } as Art)).toBe(false);
+    expect(hatBildwahl({ art: "liste", element: bild, min: null, max: null })).toBe(false);
+    expect(hatBildwahl(zahl())).toBe(false);
   });
 });
 

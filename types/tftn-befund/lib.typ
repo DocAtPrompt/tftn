@@ -12,6 +12,7 @@
     svnr: "SVNR",
     vertraulich: "Vertraulich – enthält Gesundheitsdaten",
     gruss: "Mit freundlichen Grüßen",
+    ohne-pfad: "Bild „{datei}“: main.typ braucht pfad: p => path(p) (Handbuch, Kapitel 1)",
   ),
   en: (
     seite: "Page {n} of {gesamt}",
@@ -20,6 +21,7 @@
     svnr: "Insurance no.",
     vertraulich: "Confidential – contains health data",
     gruss: "Kind regards",
+    ohne-pfad: "Image “{datei}”: main.typ needs pfad: p => path(p) (manual, chapter 1)",
   ),
 )
 
@@ -32,17 +34,40 @@
   d.display("[day].[month].[year]")
 } else { d.display("[day] [month repr:short] [year]") }
 
-/// Setzt den Befund: `#show: befund.with(daten: toml("dokument.toml"))`.
+/// Ein Bild aus dem Projekt, `hoehe` hoch und höchstens `breite` breit. Ein Paket erreicht
+/// Projektdateien nur über einen `path`, den `main.typ` erzeugt (`pfad: p => path(p)`); fehlt
+/// `pfad` (eine `main.typ` von vor 0.3.0), steht statt des Bilds ein sichtbarer Hinweis.
+#let _bild(datei, pfad, hoehe, breite, wort) = if pfad == none {
+  box(width: 45mm, stroke: 0.6pt + red, inset: 2pt, text(
+    size: 7pt,
+    fill: red,
+    wort.ohne-pfad.replace(
+      "{datei}",
+      datei,
+    ),
+  ))
+} else {
+  context {
+    let b = image(pfad(datei), height: hoehe)
+    if measure(b).width > breite { image(pfad(datei), width: breite) } else { b }
+  }
+}
+
+/// Setzt den Befund: `#show: befund.with(daten: toml("dokument.toml"), pfad: p => path(p))`.
 ///
 /// - daten (dictionary): Inhalt von `dokument.toml` (Schema `tftn/formular.schema.json`)
+/// - pfad (function, none): macht aus einem Pfad im Projekt einen `path`; nötig für Logo und
+///   Unterschrift als Bild
 /// - body (content): Diagnosen, Befund, Beurteilung usw. aus `main.typ`
 /// -> content
-#let befund(daten: (:), body) = {
+#let befund(daten: (:), pfad: none, body) = {
   let sprache = daten.at("sprache", default: "de")
   let wort = beschriftungen.at(sprache, default: beschriftungen.en)
   let praxis = daten.at("praxis", default: (:))
   let patient = daten.at("patient", default: (:))
   let pname = patient.at("name", default: "")
+  let logo = daten.at("logo", default: "")
+  let unterschrift-bild = daten.at("unterschrift_bild", default: "")
   let geboren = if "geburtsdatum" in patient {
     wort.geb + " " + _kurzdatum(patient.geburtsdatum, sprache)
   } else { none }
@@ -75,10 +100,21 @@
   set par(leading: 0.6em, spacing: 1em)
   show heading: it => block(above: 1.3em, below: 0.6em, text(size: 10.5pt, weight: "bold", it.body))
 
-  // Ordinationskopf
+  // Ordinationskopf, links davor das Logo
   grid(
-    columns: (1fr, auto),
+    columns: if logo != "" { (auto, 1fr, auto) } else { (1fr, auto) },
     gutter: 6mm,
+    ..if logo != "" {
+      (
+        tftn-feld("logo", _bild(
+          logo,
+          pfad,
+          daten.at("logo_hoehe", default: 1.5) * 1cm,
+          60mm,
+          wort,
+        )),
+      )
+    },
     [
       #tftn-feld("praxis")[#text(size: 14pt, weight: "bold")[#praxis.at("name", default: "")]]
       #if "fach" in praxis [ \ #tftn-feld("praxis")[#praxis.fach]]
@@ -108,6 +144,15 @@
   body
   v(1.2em)
   tftn-feld("gruss")[#daten.at("gruss", default: wort.gruss)]
-  v(12mm)
+  // Platz für die Unterschrift von Hand oder das Bild der Unterschrift
+  if unterschrift-bild != "" {
+    block(above: 2mm, below: 2mm, tftn-feld("unterschrift_bild", _bild(
+      unterschrift-bild,
+      pfad,
+      14mm,
+      70mm,
+      wort,
+    )))
+  } else { v(12mm) }
   tftn-feld("unterschrift")[#daten.at("unterschrift", default: praxis.at("name", default: ""))]
 }

@@ -223,6 +223,41 @@ fn literaturdatei_und_stil() {
 }
 
 #[test]
+fn bild_im_projekt() {
+    let w = std::env::temp_dir().join(format!("tftn-formular-bild-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&w);
+    std::fs::create_dir_all(w.join("bilder")).unwrap();
+    std::fs::write(w.join("bilder/logo.PNG"), "").unwrap();
+    std::fs::write(w.join("unterschrift.svg"), "").unwrap();
+    std::fs::write(w.join("notiz.txt"), "").unwrap();
+    let k = Kontext {
+        wurzel: Some(&w),
+        stile: &[],
+    };
+    let b = feld(r#"{ "type": "string", "format": "bild" }"#, false);
+    let p = |v: &str| wert_pruefen(&b, Some(&json!(v)), &k);
+    assert_eq!(p("bilder/logo.PNG"), Ok(()));
+    assert_eq!(p("unterschrift.svg"), Ok(()));
+    assert_eq!(
+        p("bilder/fehlt.png"),
+        Err("Datei nicht im Projekt gefunden".into())
+    );
+    assert_eq!(
+        p("../logo.png"),
+        Err("Datei nicht im Projekt gefunden".into())
+    );
+    let falsch = p("notiz.txt").unwrap_err();
+    assert!(
+        falsch.starts_with("Bild muss") && falsch.contains("png"),
+        "{falsch}"
+    );
+    assert!(p("ohne-endung").is_err());
+    // Ohne Projektordner nur die Form.
+    assert_eq!(pruefe(&b, json!("bilder/irgendwo.jpg")), Ok(()));
+    let _ = std::fs::remove_dir_all(&w);
+}
+
+#[test]
 fn alles_pruefen_mit_pfaden() {
     let f = formular_lesen(
         r#"{ "type": "object", "required": ["titel", "autoren"], "properties": {

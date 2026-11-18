@@ -73,6 +73,18 @@ Z 19 UStG)“ für ärztliche Leistungen oder „Kleinunternehmer (§ 6 Abs. 1 Z
 es keine Umsatzsteuer, und der passende Hinweis steht unter der Summe (ein eigener Steuerhinweis geht
 vor). Das ist keine Steuerberatung.
 
+**Logo und Unterschrift:** Brief, Befund und Rechnung setzen ein Logo in den Kopf (beim Brief und bei
+der Rechnung rechts oben über dem Absender, beim Befund links neben dem Namen der Ordination), Brief und
+Befund auf Wunsch das Bild der Unterschrift über dem Namen. Im Fach „Dokument“ (Gruppe „Absender“ bzw.
+„Ordination“) holt „Bild wählen …“ die Datei ins Projekt – liegt sie noch nicht darin, landet eine
+Kopie unter `bilder/` – und trägt den Pfad ein; „Höhe des Logos in cm“ (Standard 1,5) bestimmt die
+Größe. Für die Unterschrift eignet sich ein Scan mit durchsichtigem Hintergrund (PNG). Ohne Bild bleibt
+wie bisher Platz zum Unterschreiben von Hand. Die Bilder erreicht der Dokumenttyp über die Zeile
+`pfad: p => path(p)` in `main.typ` (neue Dokumente haben sie). Ein Dokument, das noch eine ältere
+Version des Typs benutzt, setzt unverändert weiter; nach dem Aktualisieren (Fach „Dokument“, siehe
+Kapitel 5) zeigt es statt des Bilds einen roten Hinweis, bis die Zeile ergänzt ist, etwa
+`#show: brief.with(daten: daten, pfad: p => path(p))`.
+
 **Was ist ein Projekt?** Ein Ordner mit `tftn.toml`, der Hauptdatei (meist `main.typ`), bei
 Vorlagen dazu `dokument.toml` (Titelei), der Literaturdatei, den Schriften (`fonts/`) und den
 benutzten Paketen (`packages/`). Alles, was das Dokument braucht, liegt im Ordner – er lässt sich

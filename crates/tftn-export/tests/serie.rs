@@ -165,3 +165,70 @@ fn seiten(pdf: &Path) -> usize {
     }
     n
 }
+
+/// Eine Rechnung mit Logo als Serie: Der Pfad des Logos kommt aus `dokument.toml` des Projekts,
+/// die Datensätze liegen unter `_lokal/serie/`; aufgelöst wird er in `main.typ` (`pfad`), also
+/// relativ zum Projekt, in der Vorprüfung wie in der CLI.
+#[test]
+fn rechnung_mit_logo_als_serie() {
+    let wurzel = std::env::temp_dir().join(format!("tftn-serie-logo-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&wurzel);
+    let projekt = tftn_manifest::anlegen::projekt_anlegen(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../types"),
+        "tftn-rechnung",
+        &wurzel.join("projekt"),
+        Some(1_793_404_800),
+    )
+    .unwrap()
+    .projekt;
+    std::fs::create_dir_all(projekt.wurzel.join("bilder")).unwrap();
+    std::fs::write(
+        projekt.wurzel.join("bilder/logo.svg"),
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="120" height="40" fill="blue"/></svg>"#,
+    )
+    .unwrap();
+    let daten = projekt.wurzel.join("dokument.toml");
+    let alt = std::fs::read_to_string(&daten).unwrap();
+    std::fs::write(&daten, format!("logo = \"bilder/logo.svg\"\n{alt}")).unwrap();
+    let quelle_datei = wurzel.join("daten/logo.toml");
+    std::fs::create_dir_all(quelle_datei.parent().unwrap()).unwrap();
+    std::fs::write(
+        &quelle_datei,
+        "[[serie]]\ndatei = \"mit-logo\"\nnummer = \"2026-201\"\n",
+    )
+    .unwrap();
+    let quelle = serie::lesen(&quelle_datei).unwrap();
+    let cli =
+        TypstCli::finden(&projekt.konfig.typst).expect("typst-CLI in der Projektversion nötig");
+    let ergebnis = serie::erzeugen(
+        &projekt,
+        &cli,
+        &quelle,
+        serie::Optionen::default(),
+        |_, _, _| {},
+    )
+    .unwrap();
+    let s = &ergebnis.stuecke[0];
+    let pdf = s
+        .pdf
+        .as_ref()
+        .unwrap_or_else(|| panic!("{}: {:?}", s.name, s.fehler));
+    let satz = std::fs::read_to_string(projekt.wurzel.join("_lokal/serie/mit-logo.toml")).unwrap();
+    assert!(satz.contains("bilder/logo.svg"), "{satz}");
+    // Mit Logo ist das PDF größer als ohne (gleicher Datensatz, Logo entfernt).
+    let mit = std::fs::metadata(pdf).unwrap().len();
+    std::fs::write(&daten, &alt).unwrap();
+    let ohne = serie::erzeugen(
+        &projekt,
+        &cli,
+        &quelle,
+        serie::Optionen::default(),
+        |_, _, _| {},
+    )
+    .unwrap();
+    let ohne = std::fs::metadata(ohne.stuecke[0].pdf.as_ref().unwrap())
+        .unwrap()
+        .len();
+    assert!(mit > ohne, "mit Logo {mit} B, ohne {ohne} B");
+    let _ = std::fs::remove_dir_all(&wurzel);
+}

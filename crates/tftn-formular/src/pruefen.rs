@@ -9,7 +9,7 @@ use tftn_sprachen::tr;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::schema::{Art, Feld, Formular, TextWidget};
+use crate::schema::{Art, BILD_ENDUNGEN, Feld, Formular, TextWidget};
 
 /// Ein Schritt im Pfad zu einem Wert: Schlüssel oder Index in einer Liste.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -25,7 +25,7 @@ pub type Pfad = Vec<Schritt>;
 /// Was die Prüfung über das Projekt wissen muss.
 #[derive(Debug, Clone, Copy)]
 pub struct Kontext<'a> {
-    /// Projektordner für `literaturdatei` und `.csl`-Stile; ohne ihn wird das Vorhandensein nicht geprüft.
+    /// Projektordner für `literaturdatei`, `bild` und `.csl`-Stile; ohne ihn wird das Vorhandensein nicht geprüft.
     pub wurzel: Option<&'a Path>,
     /// Eingebaute Zitierstile von Typst (`tftn_literatur::eingebaute_stile`).
     pub stile: &'a [&'a str],
@@ -302,6 +302,16 @@ fn format_pruefen(format: &str, s: &str, k: &Kontext) -> Result<(), String> {
             } else {
                 ok(k.stile.contains(&s), tr!("unbekannter Zitierstil"))
             }
+        }
+        "bild" => {
+            let endung = s.rsplit_once('.').map(|(_, e)| e.to_lowercase());
+            if !endung.is_some_and(|e| BILD_ENDUNGEN.contains(&e.as_str())) {
+                return Err(tr!(
+                    "Bild muss eine dieser Endungen haben: {endungen}",
+                    endungen = BILD_ENDUNGEN.join(", ")
+                ));
+            }
+            projektdatei(s, k)
         }
         _ => Ok(()),
     }

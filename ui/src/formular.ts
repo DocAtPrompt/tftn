@@ -224,6 +224,11 @@ export function wertAn(werte: unknown, p: Pfad): unknown {
   return w;
 }
 
+/** Bekommt das Feld den Knopf „Bild wählen …“? Einzeilige Textfelder mit `format: "bild"`. */
+export function hatBildwahl(art: Art): boolean {
+  return art.art === "text" && art.widget === "einzeilig" && art.format === "bild";
+}
+
 /** Gruppen für die Anzeige: Felder ohne `gruppe` unter „Titelei“, die übrigen nach `gruppe`. */
 export function gruppen(f: Formular): { titel: string; felder: Feld[] }[] {
   // Die Titelei erkennt man am Schlüssel; angezeigt wird sie in der Sprache der Oberfläche.

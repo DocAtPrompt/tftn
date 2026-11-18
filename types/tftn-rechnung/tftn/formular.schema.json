@@ -3,7 +3,7 @@
   "title": "Rechnung",
   "type": "object",
   "required": ["nummer", "datum", "empfaenger", "posten"],
-  "x-tftn-reihenfolge": ["nummer", "datum", "leistung", "anrede", "absender", "empfaenger", "posten", "befreiung", "ust", "steuerhinweis", "waehrung", "zahlungsziel", "bank", "gruss", "sprache"],
+  "x-tftn-reihenfolge": ["nummer", "datum", "leistung", "anrede", "absender", "logo", "logo_hoehe", "empfaenger", "posten", "befreiung", "ust", "steuerhinweis", "waehrung", "zahlungsziel", "bank", "gruss", "sprache"],
   "properties": {
     "nummer": { "type": "string", "title": "Rechnungsnummer", "description": "Vergibst du selbst, fortlaufend und ohne Lücken; TFTN zählt nicht mit", "minLength": 1 },
     "datum": { "type": "string", "title": "Rechnungsdatum", "format": "date" },
@@ -22,6 +22,8 @@
         "uid": { "type": "string", "title": "UID-Nummer", "description": "Steht im Fuß; leer: weggelassen" }
       }
     },
+    "logo": { "type": "string", "title": "Logo", "description": "Bilddatei im Projekt (PNG, JPG, SVG …), steht im Kopf rechts oben über dem Absender; „Bild wählen …“ legt sie unter bilder/ ab", "format": "bild", "x-tftn-gruppe": "Absender" },
+    "logo_hoehe": { "type": "number", "title": "Höhe des Logos in cm", "default": 1.5, "minimum": 0.5, "maximum": 4, "x-tftn-gruppe": "Absender" },
     "empfaenger": {
       "type": "array",
       "title": "Empfänger",

@@ -1,6 +1,6 @@
-#import "@local/tftn-befund:0.2.0": *
+#import "@local/tftn-befund:0.3.0": *
 
-#show: befund.with(daten: toml("dokument.toml"))
+#show: befund.with(daten: toml("dokument.toml"), pfad: p => path(p))
 
 // Nur ein Beispiel mit erfundenen Angaben. Echte Befunde nie in ein Git-Repository legen.
 

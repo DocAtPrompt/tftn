@@ -230,3 +230,109 @@ fn rechnung_mit_steuerbefreiung() {
     let o = rechnung("ohne-befreiung", Some(posten), None);
     assert!(o.contains("USt 20 %") && o.contains("180,00 €"), "{o}");
 }
+
+/// Bilder (`FrameItem::Image`) auf allen Seiten, auch in Gruppen.
+fn bilder_zaehlen(dokument: &tftn_core::PagedDocument) -> usize {
+    fn im(frame: &typst::layout::Frame) -> usize {
+        use typst::layout::FrameItem;
+        frame
+            .items()
+            .map(|(_, item)| match item {
+                FrameItem::Image(..) => 1,
+                FrameItem::Group(g) => im(&g.frame),
+                _ => 0,
+            })
+            .sum()
+    }
+    dokument.pages().iter().map(|s| im(&s.frame)).sum()
+}
+
+/// Setzt das Projekt ohne Fehler; Text und Zahl der Bilder.
+fn setzen(projekt: &Projekt) -> (String, usize) {
+    let world = ProjektWorld::neu(projekt).unwrap();
+    let ergebnis = kompilieren(&world);
+    let fehler: Vec<_> = ergebnis.meldungen.iter().filter(|m| m.fehler).collect();
+    assert!(
+        fehler.is_empty(),
+        "{}: {fehler:?}",
+        projekt.wurzel.display()
+    );
+    let dokument = ergebnis.dokument.expect("kompiliert");
+    let text = seitenzeilen(&dokument).concat().join("\n");
+    (text, bilder_zaehlen(&dokument))
+}
+
+#[test]
+fn logo_und_unterschrift_als_bild() {
+    const LOGO: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="120" height="40" fill="blue"/></svg>"#;
+    const UNTERSCHRIFT: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><path d="M5 45 C 30 5, 50 60, 70 30" stroke="black" fill="none"/></svg>"#;
+    // Brief und Befund: Logo und Unterschrift; Rechnung: nur das Logo.
+    for (typ, erwartet) in [("tftn-brief", 2), ("tftn-befund", 2), ("tftn-rechnung", 1)] {
+        for sprache in [None, Some("en")] {
+            let ordner = Path::new(env!("CARGO_TARGET_TMPDIR"))
+                .join(format!("logo-{typ}-{}", sprache.unwrap_or("de")));
+            let _ = std::fs::remove_dir_all(&ordner);
+            let p = projekt_anlegen_sprache(&typen(), typ, &ordner, Some(ZEITSTEMPEL), sprache)
+                .unwrap()
+                .projekt;
+            let (_, ohne) = setzen(&p);
+            assert_eq!(ohne, 0, "{typ}: die Vorlage hat kein Bild");
+
+            std::fs::create_dir_all(p.wurzel.join("bilder")).unwrap();
+            std::fs::write(p.wurzel.join("bilder/logo.svg"), LOGO).unwrap();
+            std::fs::write(p.wurzel.join("bilder/unterschrift.svg"), UNTERSCHRIFT).unwrap();
+            let daten = p.wurzel.join("dokument.toml");
+            let alt = std::fs::read_to_string(&daten).unwrap();
+            std::fs::write(
+                &daten,
+                format!(
+                    "logo = \"bilder/logo.svg\"\nlogo_hoehe = 2\n\
+                     unterschrift_bild = \"bilder/unterschrift.svg\"\n{alt}"
+                ),
+            )
+            .unwrap();
+            let (text, n) = setzen(&p);
+            assert_eq!(n, erwartet, "{typ} {sprache:?}:\n{text}");
+            assert!(!text.contains("path(p)"), "{typ}: kein Hinweis:\n{text}");
+
+            // Das Formular nimmt die Felder an (Format `bild`, Datei im Projekt).
+            let paket = Typpaket::lesen(&typen().join(typ)).unwrap();
+            let manifest = paket.manifest().unwrap();
+            let json =
+                std::fs::read_to_string(paket.ordner.join(manifest.formular.as_ref().unwrap()))
+                    .unwrap();
+            let f = formular_lesen(&json).unwrap();
+            let werte = Daten::lesen(&std::fs::read_to_string(&daten).unwrap())
+                .unwrap()
+                .werte();
+            let k = Kontext {
+                wurzel: Some(&p.wurzel),
+                stile: &[],
+            };
+            let fehler: Vec<_> = alles_pruefen(&f, &werte, &k)
+                .into_iter()
+                .filter(|m| m.fehler)
+                .collect();
+            assert!(fehler.is_empty(), "{typ}: {fehler:?}");
+
+            // Eine main.typ von vor 0.3.0 (ohne `pfad`) setzt weiter, statt der Bilder ein Hinweis.
+            let haupt = p.wurzel.join("main.typ");
+            let main = std::fs::read_to_string(&haupt).unwrap();
+            assert!(main.contains(", pfad: p => path(p))"), "{main}");
+            std::fs::write(&haupt, main.replace(", pfad: p => path(p))", ")")).unwrap();
+            let (text, n) = setzen(&p);
+            assert_eq!(n, 0, "{typ}: ohne pfad kein Bild");
+            // Zeilen aus Spalten mischen sich; je Bild ein Hinweis mit `path(p)`.
+            let wort = if sprache.is_some() {
+                "needs"
+            } else {
+                "braucht"
+            };
+            assert!(
+                text.matches("path(p)").count() == erwartet && text.contains(wort),
+                "{typ}: je Bild ein Hinweis:\n{text}"
+            );
+            let _ = std::fs::remove_dir_all(&ordner);
+        }
+    }
+}

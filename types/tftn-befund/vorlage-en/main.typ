@@ -1,6 +1,6 @@
-#import "@local/tftn-befund:0.2.0": *
+#import "@local/tftn-befund:0.3.0": *
 
-#show: befund.with(daten: toml("dokument.toml"))
+#show: befund.with(daten: toml("dokument.toml"), pfad: p => path(p))
 
 // Example with made-up details only. Never put real reports into a Git repository.
 

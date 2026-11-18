@@ -36,7 +36,7 @@ pub struct FormularJs {
     pub inkognito: BTreeMap<String, tftn_formular::inkognito::FeldStand>,
     pub rueck: bool,
     pub vor: bool,
-    /// Je `format` Vorschläge für das Eingabefeld (`literaturdatei`, `zitierstil`).
+    /// Je `format` Vorschläge für das Eingabefeld (`literaturdatei`, `zitierstil`, `bild`).
     pub vorschlaege: BTreeMap<String, Vec<String>>,
     /// Antwort auf eine Änderung, die ungültig war: nichts geschrieben.
     pub abgelehnt: Option<Meldung>,
@@ -486,8 +486,8 @@ fn im_git(ordner: &Path) -> bool {
     ordner.ancestors().any(|o| o.join(".git").exists())
 }
 
-/// Vorschläge je Format: Literaturdateien und `.csl`-Dateien im Projekt (zwei Ebenen tief, ohne
-/// `packages/` und versteckte bzw. `_`-Ordner), dazu die eingebauten Stile.
+/// Vorschläge je Format: Literaturdateien, `.csl`-Dateien und Bilder im Projekt (zwei Ebenen tief,
+/// ohne `packages/` und versteckte bzw. `_`-Ordner), dazu die eingebauten Stile.
 pub fn vorschlaege(wurzel: &Path, stile: &[&str]) -> BTreeMap<String, Vec<String>> {
     let mut dateien = Vec::new();
     sammeln(wurzel, "", 2, &mut dateien);
@@ -503,9 +503,20 @@ pub fn vorschlaege(wurzel: &Path, stile: &[&str]) -> BTreeMap<String, Vec<String
         .collect();
     let mut stil: Vec<String> = stile.iter().map(|s| s.to_string()).collect();
     stil.extend(dateien.iter().filter(|d| endet(d, &[".csl"])).cloned());
+    let endungen: Vec<String> = tftn_formular::BILD_ENDUNGEN
+        .iter()
+        .map(|e| format!(".{e}"))
+        .collect();
+    let endungen: Vec<&str> = endungen.iter().map(String::as_str).collect();
+    let bilder: Vec<String> = dateien
+        .iter()
+        .filter(|d| endet(d, &endungen))
+        .cloned()
+        .collect();
     BTreeMap::from([
         ("literaturdatei".to_string(), literatur),
         ("zitierstil".to_string(), stil),
+        ("bild".to_string(), bilder),
     ])
 }
 
@@ -872,11 +883,14 @@ mod tests {
             "x.txt",
             "packages/x/p.bib",
             "eigen.csl",
+            "b/logo.PNG",
+            "packages/x/bild.png",
         ] {
             std::fs::write(o.join(d), "").unwrap();
         }
         let v = vorschlaege(&o, STILE);
         assert_eq!(v["literaturdatei"], ["a.bib", "b/c.yaml"]);
+        assert_eq!(v["bild"], ["b/logo.PNG"]);
         assert!(v["zitierstil"].contains(&"ieee".to_string()));
         assert!(v["zitierstil"].contains(&"eigen.csl".to_string()));
         let _ = std::fs::remove_dir_all(&o);

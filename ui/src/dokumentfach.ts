@@ -18,6 +18,7 @@ import {
   eingabeLesen,
   eingabeZeigen,
   gruppen,
+  hatBildwahl,
   historieTaste,
   knopfNachEintrag,
   pfadText,
@@ -56,6 +57,8 @@ export interface DokumentAktionen {
   inkognito(feld: string, an: boolean, ersatz: string | null): Promise<void>;
   /** Tabelle „Was die KI sieht“ öffnen. */
   inkognitoTabelle(): void;
+  /** Bild im Systemdialog wählen und ins Projekt holen; der Pfad relativ zum Projekt, null bei Abbruch. */
+  bildWaehlen(): Promise<string | null>;
 }
 
 type Eingabe = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -451,7 +454,9 @@ export class DokumentFach {
     const eingabe = this.eingabe(f, art, pfad, wertAn(werte, pfad), meldung);
     eingabe.id = id;
     eingabe.classList.add("dok-eingabe");
-    zeile.append(titel, eingabe, meldung);
+    zeile.append(titel, eingabe);
+    if (hatBildwahl(art) && eingabe instanceof HTMLInputElement) zeile.append(this.bildKnopf(f, pfad, eingabe, meldung));
+    zeile.append(meldung);
     if (f.hilfe) zeile.append(el("div", "leiste-hilfe", f.hilfe));
     const schluessel = inkognitoSchluessel(pfad);
     const ink = this.js!.inkognito?.[schluessel];
@@ -460,6 +465,28 @@ export class DokumentFach {
       zeile.classList.toggle("dok-inkognito-an", ink.an);
     }
     return zeile;
+  }
+
+  /** „Bild wählen …“: Systemdialog, das Bild landet im Projekt, sein Pfad im Feld. */
+  private bildKnopf(f: Feld, pfad: Pfad, eingabe: HTMLInputElement, meldung: HTMLElement): HTMLElement {
+    const b = el("button", "dok-bildwahl", t("Bild wählen …"));
+    b.type = "button";
+    b.title = t("Bilddatei wählen; liegt sie nicht im Projekt, wird sie nach bilder/ kopiert");
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try {
+        const gewaehlt = await this.a.bildWaehlen();
+        if (gewaehlt === null) return;
+        eingabe.value = gewaehlt;
+        eingabe.dataset.gezeigt = gewaehlt;
+        this.schreiben(f, pfad, gewaehlt, meldung);
+      } catch (fehler) {
+        this.a.hinweis(String(fehler));
+      } finally {
+        b.disabled = false;
+      }
+    });
+    return b;
   }
 
   /** Kreuz „Inkognito für KI“ und, wenn angekreuzt, der Ersatztext. */

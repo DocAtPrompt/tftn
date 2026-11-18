@@ -152,8 +152,9 @@ const ERLAUBT: [&str; 25] = [
     "x-tftn-rechnen",
 ];
 
-/// Erlaubte Werte von `format`; `literaturdatei` und `zitierstil` seit PLAN-M2 AP7.
-pub const FORMATE: [&str; 9] = [
+/// Erlaubte Werte von `format`; `literaturdatei` und `zitierstil` seit PLAN-M2 AP7, `bild` (eine
+/// Bilddatei im Projekt, etwa ein Logo) seit 2026-11-18.
+pub const FORMATE: [&str; 10] = [
     "date",
     "email",
     "uri",
@@ -163,7 +164,11 @@ pub const FORMATE: [&str; 9] = [
     "sv-nummer",
     "literaturdatei",
     "zitierstil",
+    "bild",
 ];
+
+/// Endungen der Bilder, die Typst setzt (Format `bild`, Bilder einfügen in der App).
+pub const BILD_ENDUNGEN: [&str; 7] = ["png", "jpg", "jpeg", "gif", "svg", "webp", "pdf"];
 
 /// Liest ein Formular-Schema und prüft es gegen das Profil.
 pub fn formular_lesen(json: &str) -> Result<Formular, Vec<ProfilFehler>> {
