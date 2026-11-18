@@ -6,7 +6,7 @@
 //   läuft dann in einer frischen Kopie mit erfundenen Daten, nie im Dokument des Benutzers.
 // - Ein Schritt ohne Ziel zeigt nur den Untertitel.
 // - Ein Schritt mit `kopie` wechselt mitten im Rundgang in eine Kopie eines anderen Dokumenttyps
-//   (die große Vorführung: leeres Blatt → Rechnung → Befund).
+//   (etwa „Vorlagen und Formulare“: Brief → Rechnung).
 // Was mehrere Rundgänge zeigen, steht einmal als Funktion (`tabelleSchritte`, `paketSchritte` …).
 
 import type { Rundgang, Schritt } from "./rundgang";
@@ -98,6 +98,24 @@ function hierSchritt(text: string): Schritt {
   };
 }
 
+/** Formel-Baustein einsetzen, eine Formel tippen, Fach „Formel“ öffnen. */
+function formelSchritt(text: string): Schritt {
+  return {
+    ziel: "#seitenleiste",
+    vorher: async (api) => {
+      await api.schliessen();
+      await api.schreibmarke();
+      await api.tippen("\n\n");
+      await api.bausteinWaehlen("typst/formel");
+      await api.warten(400);
+      await api.tippen("a^2 + b^2 = c^2", 110);
+      await api.fachOeffnen("formel");
+      await api.warten(600);
+    },
+    text,
+  };
+}
+
 function bausteine(): Rundgang {
   return {
     id: "bausteine",
@@ -122,19 +140,7 @@ function bausteine(): Rundgang {
         },
         text: t("Cmd/Strg+Umschalt+M – oder ⌥ bzw. Alt halten – zeigt Marken hinter jedem einstellbaren Wert. Ein Klick öffnet den passenden Editor."),
       },
-      {
-        ziel: "#seitenleiste",
-        vorher: async (api) => {
-          await api.schreibmarke();
-          await api.tippen("\n\n");
-          await api.bausteinWaehlen("typst/formel");
-          await api.warten(400);
-          await api.tippen("a^2 + b^2 = c^2", 110);
-          await api.fachOeffnen("formel");
-          await api.warten(600);
-        },
-        text: t("Für Formeln gibt es das Fach „Formel“: Symbole, Brüche und Matrizen per Klick, mit Vorschau der Formel."),
-      },
+      formelSchritt(t("Für Formeln gibt es das Fach „Formel“: Symbole, Brüche und Matrizen per Klick, mit Vorschau der Formel.")),
       {
         ziel: "#baustein-palette",
         vorher: async (api) => {
@@ -166,7 +172,7 @@ function bausteine(): Rundgang {
 
 // --- Vorlagen und Formulare ------------------------------------------------------------------
 
-/** Rechnung aus der Vorlage: Formular, Menge ändern, Summe, Steuerbefreiung, Logo. Wechselt in eine
+/** Rechnung aus der Vorlage: Formular, Menge ändern, Summe, Logo. Wechselt in eine
  *  Kopie einer Rechnung (`anfang` ist der erste Untertitel dort). */
 function rechnungSchritte(anfang: string): Schritt[] {
   return [
@@ -188,11 +194,6 @@ function rechnungSchritte(anfang: string): Schritt[] {
       text: t("Die Vorschau zeigt sofort die neue Summe."),
     },
     {
-      ziel: '#seitenleiste [data-pfad="befreiung"]',
-      vorher: (api) => api.feldSetzen("befreiung", "heilbehandlung"),
-      text: t("Für ärztliche Leistungen wählt man die Steuerbefreiung. Die Umsatzsteuer entfällt, unter der Summe steht der Hinweis darauf."),
-    },
-    {
       ziel: '#seitenleiste [data-pfad="logo"]',
       vorher: (api) => api.feldZeigen("logo"),
       vorherIn: "beide",
@@ -205,12 +206,12 @@ function vorlagen(): Rundgang {
   return {
     id: "vorlagen",
     titel: t("Vorlagen und Formulare"),
-    beschreibung: t("Brief und Rechnung aus der Vorlage: Formular im Fach „Dokument“, die Summe rechnet sich, Steuerbefreiung, Logo."),
+    beschreibung: t("Brief und Rechnung aus der Vorlage: Formular im Fach „Dokument“, die Summe rechnet sich, Logo."),
     kopie: "tftn-brief",
     schritte: [
       {
         ziel: "#vorschau",
-        text: t("Briefe, Rechnungen, Befunde: Wiederkehrendes beginnt mit einer Vorlage. Der Dokumenttyp bringt Layout und Formular mit."),
+        text: t("Briefe, Rechnungen, Lebensläufe, Poster: Wiederkehrendes beginnt mit einer Vorlage. Der Dokumenttyp bringt Layout und Formular mit."),
       },
       {
         ziel: "#seitenleiste",
@@ -242,6 +243,46 @@ function vorlagen(): Rundgang {
 
 // --- Literatur -------------------------------------------------------------------------------
 
+/** Zitat-Dialog öffnen, einen Eintrag der .bib-Datei mit Seite einsetzen, Vorschau. */
+function zitatSchritte(): Schritt[] {
+  return [
+    {
+      ziel: "#palette",
+      vorher: async (api) => {
+        await api.schliessen();
+        await api.schreibmarke();
+        await api.tippen("\n\n" + t("Schlaf wird seit Langem erforscht") + " ");
+        await api.taste("helfer/zitat");
+        await api.warten(400);
+      },
+      text: t("Cmd/Strg+Umschalt+L öffnet den Zitat-Dialog. Er sucht nach Autor, Jahr, Titel und Schlüssel."),
+    },
+    {
+      ziel: "#palette",
+      vorher: async (api) => {
+        await api.eingeben("#palette .palette-suche", t("Muster"));
+        await api.warten(500);
+        await api.eingeben("#palette .palette-seite", "12");
+      },
+      text: t("Tippen filtert die Einträge; ins Feld „Seite“ kommt auf Wunsch die Seitenzahl."),
+    },
+    {
+      ziel: "#editor",
+      vorher: async (api) => {
+        await api.taste("Enter");
+        await api.warten(400);
+        await api.tippen(".");
+      },
+      text: t("Enter setzt das Zitat ein. Im Text ist es ein kurzer Schlüssel nach einem @."),
+    },
+    {
+      ziel: "#vorschau",
+      vorher: (api) => api.vorschauAbwarten(),
+      text: t("Die Vorschau setzt es im gewählten Zitierstil; das Literaturverzeichnis am Ende entsteht von selbst."),
+    },
+  ];
+}
+
 function literatur(): Rundgang {
   return {
     id: "literatur",
@@ -253,39 +294,7 @@ function literatur(): Rundgang {
         ziel: "#editor",
         text: t("Zitate kommen aus einer .bib-Datei im Dokumentordner, etwa aus Zotero mit Better BibTeX. Dieses Beispiel hat einen erfundenen Eintrag."),
       },
-      {
-        ziel: "#palette",
-        vorher: async (api) => {
-          await api.schreibmarke();
-          await api.tippen("\n\n" + t("Schlaf wird seit Langem erforscht") + " ");
-          await api.taste("helfer/zitat");
-          await api.warten(400);
-        },
-        text: t("Cmd/Strg+Umschalt+L öffnet den Zitat-Dialog. Er sucht nach Autor, Jahr, Titel und Schlüssel."),
-      },
-      {
-        ziel: "#palette",
-        vorher: async (api) => {
-          await api.eingeben("#palette .palette-suche", t("Muster"));
-          await api.warten(500);
-          await api.eingeben("#palette .palette-seite", "12");
-        },
-        text: t("Tippen filtert die Einträge; ins Feld „Seite“ kommt auf Wunsch die Seitenzahl."),
-      },
-      {
-        ziel: "#editor",
-        vorher: async (api) => {
-          await api.taste("Enter");
-          await api.warten(400);
-          await api.tippen(".");
-        },
-        text: t("Enter setzt das Zitat ein. Im Text ist es ein kurzer Schlüssel nach einem @."),
-      },
-      {
-        ziel: "#vorschau",
-        vorher: (api) => api.vorschauAbwarten(),
-        text: t("Die Vorschau setzt es im gewählten Zitierstil; das Literaturverzeichnis am Ende entsteht von selbst."),
-      },
+      ...zitatSchritte(),
       {
         ziel: "#palette .zitat-doi",
         vorher: async (api) => {
@@ -732,21 +741,22 @@ function aussehen(): Rundgang {
 
 // --- Die große Vorführung ------------------------------------------------------------------------
 
-/** TFTN in wenigen Minuten: leeres Blatt → Rechnung → Befund (zwei Wechsel der Kopie). */
+/** TFTN in wenigen Minuten, an einem Fachartikel: schreiben, Tabelle, Formel, Zitat, Paket, Kapitel,
+ *  Export mit PDF/A, Fassungen, Netzprotokoll. Eine Kopie, kein Wechsel. */
 function inMinuten(m: Merker): Rundgang {
   const kapitel = t("kapitel/methoden.typ");
   return {
     id: "in-minuten",
     titel: t("TFTN in wenigen Minuten"),
-    beschreibung: t("Die Vorführung: schreiben mit Vorschau, Bausteine, ein Paket aus Typst Universe, Kapitel, eine Rechnung aus der Vorlage, Export, Netzprotokoll und Inkognito."),
-    kopie: "tftn-leer",
+    beschreibung: t("Die Vorführung an einem Fachartikel: schreiben mit Vorschau, Tabelle und Formel, ein Zitat, ein Paket aus Typst Universe, Kapitel, Export mit PDF/A und das Netzprotokoll."),
+    kopie: "tftn-fachartikel",
     schritte: [
-      { text: t("Das ist TFTN, ein Schreibwerkzeug für Typst. Es läuft ganz auf diesem Rechner – ohne Konto, ohne Cloud.") },
+      { text: t("Das ist TFTN, ein Schreibwerkzeug für Typst – für Artikel, Abschlussarbeiten und Bücher. Es läuft ganz auf diesem Rechner, ohne Konto und ohne Cloud.") },
       {
         ziel: "#editor",
         vorher: async (api) => {
           await api.schreibmarke();
-          await api.tippen("\n\n= " + t("Ein kurzer Bericht") + "\n\n" + t("Typst setzt Text sauber und schnell. Dieses Dokument ist eben erst entstanden."));
+          await api.tippen("\n\n= " + t("Ergebnisse") + "\n\n" + t("Nach acht Wochen schliefen die Teilnehmenden im Mittel 40 Minuten länger."));
         },
         text: t("Links steht gewöhnlicher Typst-Text. Ein „=“ am Zeilenanfang macht eine Überschrift."),
       },
@@ -758,22 +768,26 @@ function inMinuten(m: Merker): Rundgang {
       {
         ziel: "#editor",
         vorher: async (api) => {
-          await api.markieren(t("sauber und schnell"));
+          await api.markieren(t("40 Minuten"));
           await api.warten(500);
           await api.taste("typst/fett");
         },
         text: t("Kürzel helfen beim Auszeichnen: Cmd/Strg+B macht die Markierung fett."),
       },
       ...tabelleSchritte(),
+      hierSchritt(t("Werte ändern geht ohne Code: Steht die Schreibmarke in der Tabelle, zeigt das Fach „Hier“ sie als Raster.")),
+      formelSchritt(t("Formeln ebenso: Das Fach „Formel“ bietet Symbole, Brüche und Matrizen per Klick und zeigt die Formel gleich gesetzt.")),
       {
         ziel: "#vorschau",
         vorher: async (api) => {
+          await api.schliessen();
           await api.vorschauAbwarten();
-          await api.inVorschauKlicken(t("Ein kurzer Bericht"));
+          await api.inVorschauKlicken(t("Ergebnisse"));
         },
         text: t("Ein Klick in die Vorschau setzt die Schreibmarke an die Stelle im Text – und die Vorschau zeigt, wo die Schreibmarke steht."),
       },
-      hierSchritt(t("Werte ändern geht ohne Code: Steht die Schreibmarke in der Tabelle, zeigt das Fach „Hier“ sie als Raster.")),
+      ...zitatSchritte(),
+      { text: t("Steht eine DOI im Zitat-Dialog, holt TFTN den Eintrag auf Wunsch von Crossref oder DataCite in die .bib-Datei.") },
       ...paketSchritte(m, false),
       {
         ziel: "#editor",
@@ -794,14 +808,19 @@ function inMinuten(m: Merker): Rundgang {
         text: t("Jedes Kapitel öffnet sich als Reiter über dem Editor."),
       },
       { ziel: "#projektsuche-knopf", text: t("Suchen und Ersetzen geht über alle Kapiteldateien zugleich.") },
-      ...rechnungSchritte(t("Wiederkehrendes beginnt mit einer Vorlage. Hier eine Rechnung, mit erfundenen Daten.")),
       ...exportSchritte(),
+      {
+        ziel: "#export-menue",
+        text: t("Das Archivpaket ist ein Zip mit PDF/A und allem, was es zum Neusetzen braucht – auch in Jahren und ohne TFTN, Byte für Byte gleich."),
+      },
       fassungenSchritt(),
-      { kopie: "tftn-befund", ziel: "#vorschau", text: t("Zum Schluss der Datenschutz, etwa in einer Arztpraxis. Ein Befund, wieder mit erfundenen Daten.") },
+      { text: t("Unveröffentlichte Ergebnisse, Gutachten, Interviewdaten: Manches soll den Rechner nicht verlassen. TFTN geht nur auf Klick ins Netz.") },
       netzprotokollSchritt(t("Das Netzprotokoll zeigt jeden Netzzugriff seit dem Start: Zeit, Zweck, Gegenstelle und Ergebnis – hier das Holen des Pakets.")),
-      blattSchritt(),
       offlineSchritt(t("„Ganz offline“ in den Einstellungen sperrt auch diese Zugriffe.")),
-      ...inkognitoSchritte(),
+      {
+        ziel: "#einstellungen .einst-mcp",
+        text: t("MCP lässt KI-Assistenten im offenen Dokument lesen und schreiben. Eingeschaltet wird es hier, von Hand."),
+      },
       {
         ziel: "#editor",
         vorher: (api) => api.schliessen(),

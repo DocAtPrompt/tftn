@@ -189,11 +189,11 @@ Die Rundgänge:
 
 | Rundgang | Was er zeigt | Kopie | etwa |
 |---|---|---|---|
-| TFTN in wenigen Minuten | Die Vorführung: leeres Blatt, tippen, Vorschau in beide Richtungen, Tabelle über „/“, Fach „Hier“; ein Paket aus Typst Universe holen und verwenden; ein Kapitel mit `#include`; eine Rechnung aus der Vorlage (Menge, Summe, Steuerbefreiung, Logo); Export mit Probe-PDF; Netzprotokoll, „Ganz offline“, „Inkognito für KI“ an einem Befund; gewöhnliches Typst, Schriften, F1 | Leer, Rechnung, Befund | 5 min |
+| TFTN in wenigen Minuten | Die Vorführung an einem Fachartikel: tippen, Vorschau in beide Richtungen, Tabelle über „/“, Fach „Hier“, Formel mit Fach „Formel“; ein Zitat aus der .bib-Datei; ein Paket aus Typst Universe holen und verwenden; ein Kapitel mit `#include`; Export mit Probe-PDF und Archivpaket (PDF/A); Fassungen; Netzprotokoll, „Ganz offline“, MCP; gewöhnliches Typst, Schriften, F1 | Fachartikel | 5 min |
 | Überblick | Wo was ist | – | 1 min |
 | Schreiben und Vorschau | Tippen, fett, Fußnote über „/“, Klick in die Vorschau | Fachartikel | 1 min |
 | Bausteine und Textbausteine | Tabelle und Formel über „/“, Fach „Hier“ und „Formel“, Marken, Baustein-Liste, eigene Textbausteine (nur erklärt) | Fachartikel | 1½ min |
-| Vorlagen und Formulare | Brief: Betreff im Fach „Dokument“; Rechnung: Menge, Summe, Steuerbefreiung, Logo-Feld | Brief, Rechnung | 1½ min |
+| Vorlagen und Formulare | Brief: Betreff im Fach „Dokument“; Rechnung: Menge, Summe, Logo-Feld | Brief, Rechnung | 1½ min |
 | Literatur und Zitate | Zitat-Dialog mit Seite, Literaturverzeichnis, DOI (nur gezeigt, nicht nachgeschlagen), Literaturverwaltung, Zitierstil | Fachartikel | 1 min |
 | Pakete aus Typst Universe | `showybox` suchen, hinzufügen (ein Netzzugriff), verwenden; Netzprotokoll; „Im Dokument“ mit Prüfsumme | Fachartikel | 1½ min |
 | Lange Dokumente | Kapitel als Reiter, Gliederung, neues Kapitel mit `#include`, im ganzen Dokument suchen | Fachbuch | 1 min |

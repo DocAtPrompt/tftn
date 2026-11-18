@@ -189,11 +189,11 @@ The tours:
 
 | Tour | What it shows | Copy | about |
 |---|---|---|---|
-| TFTN in a few minutes | The demo: blank page, typing, preview in both directions, a table via “/”, the Here pane; downloading and using a package from Typst Universe; a chapter with `#include`; an invoice from a template (quantity, total, tax exemption, logo); export with a test PDF; network log, “Fully offline”, “Incognito for AI” on a medical report; plain Typst, fonts, F1 | Blank, Invoice, Medical report | 5 min |
+| TFTN in a few minutes | The demo, on a journal article: typing, preview in both directions, a table via “/”, the Here pane, an equation with the Equation pane; a citation from the .bib file; downloading and using a package from Typst Universe; a chapter with `#include`; export with a test PDF and the archive package (PDF/A); versions; network log, “Fully offline”, MCP; plain Typst, fonts, F1 | Journal article | 5 min |
 | Overview | Where everything is | – | 1 min |
 | Writing and preview | Typing, bold, a footnote via “/”, a click in the preview | Article | 1 min |
 | Blocks and text blocks | Table and equation via “/”, Here and Equation panes, marks, the block list, your own text blocks (explained only) | Article | 1½ min |
-| Templates and forms | Letter: subject in the Document pane; invoice: quantity, total, tax exemption, logo field | Letter, Invoice | 1½ min |
+| Templates and forms | Letter: subject in the Document pane; invoice: quantity, total, logo field | Letter, Invoice | 1½ min |
 | References and citations | Citation dialog with a page, bibliography, DOI (shown, not looked up), bibliography manager, citation style | Article | 1 min |
 | Packages from Typst Universe | Find, add (one network access) and use `showybox`; network log; “In the document” with checksum | Article | 1½ min |
 | Long documents | Chapters as tabs, outline, a new chapter with `#include`, searching the whole document | Book | 1 min |
