@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { EditorSelection, EditorState, type TransactionSpec } from "@codemirror/state";
 import { history, undo } from "@codemirror/commands";
 import type { EingesetztJs } from "./bausteine";
-import { aktiveFelder, einsetzenSpec, feldWechsel, felder } from "./felder";
+import { aktiveFelder, einsetzenSpec, feldWechsel, felder, markierteFelder } from "./felder";
 
 const ABB_TEXT = '#figure(image("bild.png"), caption: [Text])';
 const abb: EingesetztJs = {
@@ -104,5 +104,31 @@ describe("Felder", () => {
     let s = schritt(neu("Satz\n/"), einsetzenSpec(neu("Satz\n/"), 5, 6, abb, null));
     s = schritt(s, { selection: EditorSelection.cursor(1) });
     expect(aktiveFelder(s)).toBeNull();
+  });
+
+  it("Tippen nimmt dem aktiven Feld die Markierung, Tab markiert das nächste", () => {
+    let s = schritt(neu("/abb"), einsetzenSpec(neu("/abb"), 0, 4, abb, null));
+    expect(markierteFelder(s).map((f) => f.name)).toEqual(["Datei", "Bildunterschrift"]);
+    s = schritt(s, s.replaceSelection("x.png"));
+    expect(markierteFelder(s).map((f) => f.name)).toEqual(["Bildunterschrift"]);
+    expect(aktiveFelder(s)).not.toBeNull();
+    s = schritt(s, feldWechsel(s, 1));
+    expect(markierteFelder(s).map((f) => [f.name, f.aktiv])).toEqual([["Datei", false], ["Bildunterschrift", true]]);
+    s = schritt(s, s.replaceSelection("Ein Bild"));
+    expect(markierteFelder(s).map((f) => f.name)).toEqual(["Datei"]);
+  });
+
+  it("Mausklick beendet die Felder, auch in einem Feld", () => {
+    let s = schritt(neu("/abb"), einsetzenSpec(neu("/abb"), 0, 4, abb, null));
+    const inText = ABB_TEXT.indexOf("Text") + 1;
+    s = schritt(s, { selection: EditorSelection.cursor(inText), userEvent: "select.pointer" });
+    expect(aktiveFelder(s)).toBeNull();
+    expect(markierteFelder(s)).toEqual([]);
+  });
+
+  it("Pfeiltaste im Feld lässt die Felder stehen", () => {
+    let s = schritt(neu("/abb"), einsetzenSpec(neu("/abb"), 0, 4, abb, null));
+    s = schritt(s, { selection: EditorSelection.cursor(ABB_TEXT.indexOf("bild.png") + 2), userEvent: "select" });
+    expect(aktiveFelder(s)).not.toBeNull();
   });
 });

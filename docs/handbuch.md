@@ -135,7 +135,8 @@ kopieren, synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeit
 
 **Bausteine:** In einer leeren Zeile „/“ tippen öffnet die Bausteinliste (weitertippen filtert,
 Enter fügt ein, Esc schließt). Cmd/Strg+Umschalt+B oder „Baustein“ öffnen sie mit Suchfeld; markierter
-Text wandert in den Baustein. Danach springt Tab von Feld zu Feld, Umschalt+Tab zurück, Esc beendet.
+Text wandert in den Baustein. Danach springt Tab von Feld zu Feld, Umschalt+Tab zurück, Esc oder ein Mausklick beendet. Hellblau
+markiert sind die Felder, die noch zu füllen sind; wer in einem Feld tippt, schreibt ohne Markierung weiter.
 Cmd/Strg+Z nimmt den ganzen Baustein in einem Schritt zurück.
 
 **Vervollständigen:** Strg+Leertaste (am Mac auch ⌥`) schlägt Funktionen, Parameter, Marken und

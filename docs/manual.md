@@ -138,7 +138,8 @@ sync it and keep working on another computer without a network.
 
 **Blocks:** typing “/” on an empty line opens the block list (keep typing to filter, Enter inserts,
 Esc closes). Cmd/Ctrl+Shift+B or “Block” open it with a search field; selected text moves into
-the block. Afterwards Tab jumps from field to field, Shift+Tab back, Esc finishes. Cmd/Ctrl+Z undoes
+the block. Afterwards Tab jumps from field to field, Shift+Tab back, Esc or a mouse click finishes. The fields
+still to be filled are tinted light blue; once you type in a field, it is no longer tinted. Cmd/Ctrl+Z undoes
 the whole block in one step.
 
 **Completion:** Ctrl+Space (on the Mac also ⌥`) suggests functions, parameters, labels and citation

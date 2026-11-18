@@ -1,5 +1,6 @@
 // Felder eingefügter Bausteine (PLAN-M2 AP2, Entwurf 4 „A“): Tab springt zum nächsten Feld,
-// Umschalt+Tab zurück, Escape beendet. Eigenes StateField statt der Snippet-Felder von CodeMirror,
+// Umschalt+Tab zurück, Escape oder ein Mausklick beendet. Hellblau markiert sind nur die Felder, die
+// noch zu füllen sind: Wer im aktiven Feld tippt, schreibt ohne Markierung weiter. Eigenes StateField statt der Snippet-Felder von CodeMirror,
 // deren `${…}`/`#{…}`-Syntax mit Typst kollidiert (PLAN-M2, Risiko 1).
 
 import {
@@ -28,6 +29,8 @@ export interface FeldBereich {
 interface Zustand {
   bereiche: FeldBereich[];
   aktiv: number;
+  /** Im aktiven Feld wurde schon getippt (dann ist es nicht mehr markiert). */
+  getippt?: boolean;
   /** Wohin der letzte Tab führt: `${cursor}` oder das Ende des Schnipsels. */
   ende: number;
 }
@@ -56,6 +59,11 @@ const feldZustand = StateField.define<Zustand | null>({
         return ja;
       };
       if (tr.isUserEvent("undo") || tr.isUserEvent("redo") || z.bereiche.some(ueberdeckt)) return null;
+      const aktiv = z.bereiche[z.aktiv];
+      let imAktiven = false;
+      tr.changes.iterChangedRanges((von, bis) => {
+        if (aktiv && von >= aktiv.von && bis <= aktiv.bis) imAktiven = true;
+      });
       // An einer Feldgrenze Getipptes wächst ins Feld hinein.
       z = {
         ...z,
@@ -65,14 +73,16 @@ const feldZustand = StateField.define<Zustand | null>({
           bis: tr.changes.mapPos(b.bis, 1),
         })),
         ende: tr.changes.mapPos(z.ende, 1),
+        getippt: z.getippt || imAktiven,
       };
     }
     for (const e of tr.effects) {
       if (e.is(waehleFeld) && z) {
-        z = { ...z, aktiv: e.value };
+        z = { ...z, aktiv: e.value, getippt: false };
         eigene = true;
       }
     }
+    if (!eigene && z && tr.isUserEvent("select.pointer")) return null;
     if (!eigene && z && (tr.selection || tr.docChanged)) {
       const kopf = tr.state.selection.main.head;
       if (!z.bereiche.some((b) => b.von <= kopf && kopf <= b.bis)) z = null;
@@ -99,11 +109,20 @@ class LeeresFeld extends WidgetType {
   }
 }
 
+/** Die markierten Felder: alle aktiven außer dem, in dem schon getippt wurde. */
+export function markierteFelder(state: EditorState): (FeldBereich & { aktiv: boolean })[] {
+  const z = state.field(feldZustand, false);
+  if (!z) return [];
+  return z.bereiche
+    .map((b, i) => ({ ...b, aktiv: i === z.aktiv }))
+    .filter((b) => !(b.aktiv && z.getippt));
+}
+
 const feldDeko = EditorView.decorations.compute([feldZustand], (state): DecorationSet => {
-  const z = state.field(feldZustand);
-  if (!z) return Decoration.none;
-  const liste: Range<Decoration>[] = z.bereiche.map((b, i) => {
-    const klasse = i === z.aktiv ? "tftn-feld aktiv" : "tftn-feld";
+  const markiert = markierteFelder(state);
+  if (!markiert.length) return Decoration.none;
+  const liste: Range<Decoration>[] = markiert.map((b) => {
+    const klasse = b.aktiv ? "tftn-feld aktiv" : "tftn-feld";
     return b.von === b.bis
       ? Decoration.widget({ widget: new LeeresFeld(b.name), side: 1 }).range(b.von)
       : Decoration.mark({ class: klasse }).range(b.von, b.bis);
