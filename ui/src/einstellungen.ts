@@ -22,6 +22,8 @@ export interface EinstellungenJs {
   fehler: string | null;
   /** einzelne Einträge übersprungen; Umbelegen geht weiter */
   warnung: string | null;
+  /** `textbausteine.toml`: Fehler und übersprungene Einträge in einer Zeile */
+  textbausteine: string | null;
 }
 
 export interface EinstellDaten {
@@ -36,6 +38,8 @@ export interface EinstellAktionen {
   ordnerSetzen(ordner: string | null, waehlen: boolean): Promise<void>;
   /** Zeigt den Ordner für eigene Anpassungen im Finder bzw. Explorer. */
   ordnerZeigen(): Promise<void>;
+  /** Öffnet `textbausteine.toml` im Texteditor (legt sie mit Beispiel an, falls sie fehlt); gibt den Pfad zurück. */
+  textbausteineBearbeiten(): Promise<string>;
   offlineSetzen(an: boolean): Promise<void>;
   updatesPruefen(): Promise<UpdatesJs>;
   /** Öffnet das Netzprotokoll (jeder Netzzugriff seit dem Start). */
@@ -104,6 +108,13 @@ export function updatesText(u: UpdatesJs): string[] {
 }
 
 const HERKUNFT: Record<string, string> = { eigene: t("eigene"), vorschlag: "", standard: "TFTN", keine: "" };
+/** Woher ein vorgeschlagenes Kürzel kommt (aus der Datei des Dokumenttyps, Pakets oder Textbausteins). */
+const VORSCHLAG_VON: Record<Aktion["herkunft"], string> = {
+  tftn: "TFTN",
+  dokumenttyp: t("Dokumenttyp"),
+  paket: t("Paket"),
+  eigene: t("Textbaustein"),
+};
 const PLATTFORM_NAME: Record<Plattform, string> = { mac: "Mac", win: t("Windows und Linux") };
 
 /** Was der Dialog über `tasten.toml` sagt: Nur eine unlesbare Datei sperrt das Umbelegen. */
@@ -114,7 +125,10 @@ export function einstellHinweise(
   return {
     gesperrt: e.fehler !== null,
     fehler: e.fehler,
-    warnungen: e.fehler ? [] : [...(e.warnung ? [e.warnung] : []), ...meldungen],
+    warnungen: [
+      ...(e.fehler ? [] : [...(e.warnung ? [e.warnung] : []), ...meldungen]),
+      ...(e.textbausteine ? [t("Eigene Textbausteine: {meldung}", { meldung: e.textbausteine })] : []),
+    ],
   };
 }
 
@@ -190,7 +204,7 @@ export class EinstellDialog {
         </table>
       </div>
       <div class="einst-ordner einst-anpassungen">
-        <div class="einst-titel">${t("Ordner für eigene Anpassungen (Kürzel, Typen, Skins, Sprachen)")}</div>
+        <div class="einst-titel">${t("Ordner für eigene Anpassungen (Kürzel, Textbausteine, Typen, Skins, Sprachen)")}</div>
         <div class="einst-zustand"></div>
         <div class="einst-zeile">
           <input class="einst-pfad" placeholder="${t("Anderer Ordner (optional), etwa ein Sync-Ordner für mehrere Rechner")}" spellcheck="false" />
@@ -205,6 +219,10 @@ export class EinstellDialog {
           <button class="einst-typ-anlegen" title="${t("Kopiert den gewählten Typ unter diesem Namen in den Ordner typen/; dort Vorgaben (vorlage/dokument.toml) und Layout (lib.typ) ändern")}">${t("Anlegen")}</button>
         </div>
         <span class="einst-typ-text leiste-hilfe"></span>
+        <div class="einst-zeile einst-textbausteine">
+          <button class="einst-textbausteine-knopf" title="${t("Öffnet textbausteine.toml im Texteditor; fehlt sie, entsteht sie mit einem kommentierten Beispiel. Änderungen wirken sofort.")}">${t("Textbausteine bearbeiten …")}</button>
+          <span class="einst-textbausteine-text leiste-hilfe">${t("Eigene Standardsätze für das Menü nach „/“; markierten Text speichert der Rechtsklick „Als Textbaustein speichern …“.")}</span>
+        </div>
       </div>
       <div class="palette-fuss">${t("Zeile anklicken und das neue Kürzel drücken (Esc bricht ab, Entf = keine Belegung) · Esc schließt die Einstellungen")}</div>`;
     document.body.append(this.huelle);
@@ -313,6 +331,15 @@ export class EinstellDialog {
     q(".einst-waehlen").addEventListener("click", () => void this.a.ordnerSetzen(null, true));
     q(".einst-zuruecksetzen").addEventListener("click", () => void this.a.ordnerSetzen(null, false));
     q(".einst-zeigen").addEventListener("click", () => void this.a.ordnerZeigen());
+    const bausteinText = q<HTMLSpanElement>(".einst-textbausteine-text");
+    q(".einst-textbausteine-knopf").addEventListener("click", async () => {
+      try {
+        const pfad = await this.a.textbausteineBearbeiten();
+        bausteinText.textContent = t("Geöffnet: {pfad} – nach dem Sichern wirken die Änderungen sofort.", { pfad });
+      } catch (fehler) {
+        bausteinText.textContent = String(fehler);
+      }
+    });
     this.offline.addEventListener("change", () => void this.a.offlineSetzen(this.offline.checked));
     this.kofi = q(".einst-kofi input");
     this.kofi.addEventListener("change", () => void this.a.kofiAusblenden(!this.kofi.checked).then((u) => this.kofiZeigen(u), () => {}));
@@ -536,7 +563,7 @@ export class EinstellDialog {
       };
       zelle(z.aktion.titel);
       const herkunft =
-        z.quelle === "vorschlag" ? (z.aktion.herkunft === "paket" ? t("Paket") : t("Dokumenttyp")) : HERKUNFT[z.quelle];
+        z.quelle === "vorschlag" ? VORSCHLAG_VON[z.aktion.herkunft] : HERKUNFT[z.quelle];
       zelle(herkunft, "einst-leise");
       zelle(
         this.aufnahme === z.aktion.id

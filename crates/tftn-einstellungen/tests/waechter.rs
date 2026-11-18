@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Duration;
 
-use tftn_einstellungen::{TASTEN, beobachten};
+use tftn_einstellungen::{TASTEN, TEXTBAUSTEINE, beobachten};
 
 struct Tmp(PathBuf);
 
@@ -44,6 +44,14 @@ fn schreiben_wird_gemeldet() {
     let t = Tmp::neu("schreiben");
     let (_w, rx) = starten(&t);
     fs::write(t.0.join(TASTEN), "[kuerzel]\n").unwrap();
+    assert!(rx.recv_timeout(Duration::from_secs(5)).is_ok());
+}
+
+#[test]
+fn textbausteine_werden_gemeldet() {
+    let t = Tmp::neu("textbausteine");
+    let (_w, rx) = starten(&t);
+    fs::write(t.0.join(TEXTBAUSTEINE), "[[baustein]]\n").unwrap();
     assert!(rx.recv_timeout(Duration::from_secs(5)).is_ok());
 }
 

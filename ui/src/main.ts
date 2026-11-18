@@ -69,6 +69,7 @@ import { type Treffer, verbindungText } from "./pakete";
 import { NetzprotokollDialog, type NetzprotokollJs, statusAnzeige } from "./netzprotokoll";
 import type { FormularJs, ProjektJs, VergleichJs } from "./formular";
 import { NeuDialog, PfadDialog } from "./neudialog";
+import { eigeneGruppen, textbausteinFragen, textbausteinHinweis } from "./textbausteine";
 import { einDialogOffen, escAktivieren } from "./dialoge";
 import { kontextmenueBegrenzen } from "./kontextmenue";
 import { dauerText, syncText } from "./statuszeile";
@@ -742,7 +743,11 @@ function katalogAnzeige(): EintragJs[] {
 }
 
 function einstellungenSetzen(e: EinstellungenJs) {
-  const h = fehlerHinweis(einstellungen?.fehler ?? null, e.fehler) ?? (e.warnung && e.warnung !== einstellungen?.warnung ? e.warnung : null);
+  const h =
+    fehlerHinweis(einstellungen?.fehler ?? null, e.fehler) ??
+    (e.warnung && e.warnung !== einstellungen?.warnung ? e.warnung : null) ??
+    // Beim Start meldet der Aufrufer die Warnungen selbst (`einstellHinweise`).
+    (einstellungen ? textbausteinHinweis(einstellungen.textbausteine, e.textbausteine) : null);
   einstellungen = e;
   tastenNeu();
   if (h) hinweis(h);
@@ -756,6 +761,9 @@ function ausfuehren(id: string): boolean {
       return true;
     case "helfer/zitat":
       palette.oeffnen();
+      return true;
+    case "helfer/textbaustein":
+      void textbausteinSpeichern();
       return true;
     case "helfer/vervollstaendigen":
       return ideRufen(view);
@@ -827,6 +835,28 @@ function ausfuehren(id: string): boolean {
   if (!e) return false;
   void bausteinPerKuerzel(e);
   return true;
+}
+
+/** Markierten Text als eigenen Textbaustein speichern: fragt nach Titel und Gruppe, Rust hängt ihn an
+ *  `textbausteine.toml` an; danach steht er im Menü nach „/“, in der Palette und im Fach „Einfügen“. */
+async function textbausteinSpeichern(von = view.state.selection.main.from, bis = view.state.selection.main.to) {
+  const text = view.state.sliceDoc(von, bis);
+  if (text.trim() === "") {
+    hinweis(t("Erst Text markieren, dann als Textbaustein speichern."));
+    return;
+  }
+  pfadDialog ??= new PfadDialog();
+  const antwort = await textbausteinFragen(pfadDialog, text, eigeneGruppen(katalog));
+  view.focus();
+  if (antwort === null) return;
+  try {
+    await invoke<string>("textbaustein_speichern", { titel: antwort.titel, gruppe: antwort.gruppe, text });
+    await katalogNeu();
+    seitenleiste?.nachladen();
+    meldung(t("Textbaustein „{titel}“ gespeichert – im Menü nach „/“, in der Palette und unter „Einfügen“.", { titel: antwort.titel }));
+  } catch (fehler) {
+    hinweis(meldungMit(t("Textbaustein nicht gespeichert"), String(fehler)));
+  }
 }
 
 /** Baustein über sein Kürzel: nur, wenn er an der Stelle passt; die Markierung wandert mit. */
@@ -1400,8 +1430,8 @@ async function umwandelnBereich(a: { doc: Text; von: number; bis: number; quelle
   view.focus();
 }
 
-/** Rechtsklick in eine Auswahl: „In Typst umwandeln“ (Markdown), Ausschneiden, Kopieren. Ohne
- *  Auswahl bleibt das Menü des Systems bzw. der Rechtschreibung. */
+/** Rechtsklick in eine Auswahl: „In Typst umwandeln“ (Markdown), Ausschneiden, Kopieren, „Als
+ *  Textbaustein speichern …“. Ohne Auswahl bleibt das Menü des Systems bzw. der Rechtschreibung. */
 const auswahlMenue = (() => {
   const menue = schwebeMenue();
   // Die Auswahl vor dem Rechtsklick: WebKit markiert dabei oft das Wort unter dem Zeiger, und dann
@@ -1443,6 +1473,9 @@ const auswahlMenue = (() => {
             }),
           ),
           menue.zeile(t("Kopieren"), "menue-eintrag", () => void kopieren().then(() => v.focus())),
+          menue.zeile(t("Als Textbaustein speichern …"), "menue-eintrag", () => {
+            if (v.state.doc === doc) void textbausteinSpeichern(b.von, b.bis);
+          }),
         ],
         { x: e.clientX, oben: e.clientY, unten: e.clientY },
       );
@@ -2189,6 +2222,7 @@ async function start() {
     kuerzelSetzen: (aktion, kuerzel) => mitHinweis(() => invoke("kuerzel_setzen", { aktion, kuerzel })),
     ordnerSetzen: (ordner, waehlen) => mitHinweis(() => invoke("einstellungsordner_setzen", { ordner, waehlen })),
     ordnerZeigen: () => invoke<void>("einstellungsordner_zeigen").catch((fehler) => hinweis(String(fehler))),
+    textbausteineBearbeiten: () => invoke<string>("textbausteine_bearbeiten"),
     offlineSetzen: (an) => mitHinweis(() => invoke("offline_setzen", { an })),
     updatesPruefen: () => invoke<UpdatesJs>("updates_pruefen"),
     sprachenLesen: () => invoke<SprachenJs>("sprachen_lesen"),

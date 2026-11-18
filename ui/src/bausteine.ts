@@ -7,7 +7,7 @@ import type { Completion, CompletionContext, CompletionResult, CompletionSection
 import { t } from "./sprache";
 
 export type Modus = "markup" | "code" | "mathe";
-export type Herkunft = "typst" | "dokumenttyp" | "paket" | "holen";
+export type Herkunft = "typst" | "dokumenttyp" | "paket" | "holen" | "eigene";
 
 export interface EintragJs {
   id: string;
@@ -77,9 +77,10 @@ export function nurSlashFehler(
   );
 }
 
-const REIHENFOLGE: Record<Herkunft, number> = { typst: 0, dokumenttyp: 1, paket: 2, holen: 3 };
+// Eigene Textbausteine zuerst: Es gibt sie nur, wenn der Benutzer sie selbst angelegt hat.
+const REIHENFOLGE: Record<Herkunft, number> = { eigene: 0, typst: 1, dokumenttyp: 2, paket: 3, holen: 4 };
 
-/** Einträge für `modus`, die alle Wörter der Anfrage enthalten; Typst, dann Dokumenttyp, dann Pakete. */
+/** Einträge für `modus`, die alle Wörter der Anfrage enthalten; eigene, Typst, Dokumenttyp, Pakete. */
 export function menue(eintraege: EintragJs[], modus: Modus, anfrage: string): EintragJs[] {
   const woerter = anfrage.toLowerCase().split(/\s+/).filter(Boolean);
   return eintraege
@@ -94,14 +95,22 @@ export function menue(eintraege: EintragJs[], modus: Modus, anfrage: string): Ei
 }
 
 const ABSCHNITTE: Record<Herkunft, CompletionSection & { name: string; rank: number }> = {
-  typst: { name: "Typst", rank: 0 },
-  dokumenttyp: { name: t("Dokumenttyp"), rank: 1 },
-  paket: { name: t("Pakete"), rank: 2 },
-  holen: { name: t("Pakete holen"), rank: 3 },
+  eigene: { name: t("Eigene Textbausteine"), rank: 0 },
+  typst: { name: "Typst", rank: 1 },
+  dokumenttyp: { name: t("Dokumenttyp"), rank: 2 },
+  paket: { name: t("Pakete"), rank: 3 },
+  holen: { name: t("Pakete holen"), rank: 4 },
 };
 
 export function abschnitt(herkunft: Herkunft): { name: string; rank: number } {
   return ABSCHNITTE[herkunft];
+}
+
+/** Überschrift im Fach „Einfügen“ und in der Kürzel-Übersicht: eigene Textbausteine immer als solche
+ *  erkennbar, mit ihrer Gruppe dahinter. */
+export function gruppeVon(e: Pick<EintragJs, "gruppe" | "herkunft">): string | null {
+  if (e.herkunft !== "eigene") return e.gruppe;
+  return e.gruppe ? `${ABSCHNITTE.eigene.name} · ${e.gruppe}` : ABSCHNITTE.eigene.name;
 }
 
 /** `Mod-Shift-t` → `⇧⌘T` (Mac) bzw. `Strg+Umschalt+T`. */

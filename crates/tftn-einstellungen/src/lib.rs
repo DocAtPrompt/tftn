@@ -16,6 +16,8 @@ use serde::{Deserialize, Serialize};
 pub const TASTEN: &str = "tasten.toml";
 /// Helfer-Optionen, synchronisiert (Felder ab AP8/AP10).
 pub const EINSTELLUNGEN: &str = "einstellungen.toml";
+/// Eigene Textbausteine, synchronisiert (gelesen in `tftn_katalog::textbausteine`).
+pub const TEXTBAUSTEINE: &str = "textbausteine.toml";
 /// Unterordner für eigene Paketbeschreibungen (PLAN-M2 AP10).
 pub const BESCHREIBUNGEN: &str = "beschreibungen";
 /// Je Rechner, im Konfigurationsordner der App.
@@ -245,7 +247,7 @@ pub fn kuerzel_setzen(ordner: &Path, aktion: &str, kuerzel: Option<&str>) -> Res
 /// Kopiert die synchronisierten Dateien, die in `nach` fehlen; vorhandene gewinnen.
 pub fn umziehen(von: &Path, nach: &Path) -> io::Result<Vec<String>> {
     let mut kopiert = Vec::new();
-    for name in [TASTEN, EINSTELLUNGEN] {
+    for name in [TASTEN, EINSTELLUNGEN, TEXTBAUSTEINE] {
         let quelle = von.join(name);
         if quelle.is_file() && !nach.join(name).exists() {
             let text = std::fs::read(&quelle)?;
@@ -257,7 +259,7 @@ pub fn umziehen(von: &Path, nach: &Path) -> io::Result<Vec<String>> {
 }
 
 /// Atomar: erst `.<name>.<pid>-<n>.tmp` im selben Ordner, dann umbenennen.
-fn schreiben(pfad: &Path, text: &str) -> io::Result<()> {
+pub fn schreiben(pfad: &Path, text: &str) -> io::Result<()> {
     schreiben_bytes(pfad, text.as_bytes())
 }
 
@@ -284,8 +286,9 @@ fn schreiben_bytes(pfad: &Path, daten: &[u8]) -> io::Result<()> {
     ergebnis
 }
 
-/// Meldet Änderungen an `tasten.toml` und `einstellungen.toml` in `ordner` (nicht rekursiv), auch
-/// wenn ein Sync-Programm die Datei durch Umbenennen ersetzt. Andere Dateien, auch die eigenen
+/// Meldet Änderungen an `tasten.toml`, `einstellungen.toml` und `textbausteine.toml` in `ordner` und
+/// an Paketbeschreibungen in `beschreibungen/`, auch wenn ein Sync-Programm die Datei durch
+/// Umbenennen ersetzt. Andere Dateien, auch die eigenen
 /// temporären `.<name>.<pid>-<n>.tmp`, lösen nichts aus.
 pub fn beobachten(
     ordner: &Path,
@@ -304,7 +307,7 @@ pub fn beobachten(
                     .is_some_and(|n| n == BESCHREIBUNGEN);
             beschreibung
                 || p.file_name()
-                    .is_some_and(|n| n == TASTEN || n == EINSTELLUNGEN)
+                    .is_some_and(|n| n == TASTEN || n == EINSTELLUNGEN || n == TEXTBAUSTEINE)
         });
         if betrifft {
             bei_aenderung();

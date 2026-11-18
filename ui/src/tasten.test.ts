@@ -43,6 +43,34 @@ const taste = (t: Partial<Parameters<typeof kuerzelAusTaste>[0]>) => ({
   ...t,
 });
 
+describe("Eigene Textbausteine", () => {
+  const gruss: EintragJs = {
+    id: "eigene/gruss",
+    titel: "Grußformel",
+    gruppe: "Brief",
+    herkunft: "eigene",
+    modus: ["markup"],
+    kuerzel: "Mod-Alt-g",
+  };
+
+  it("sind belegbar, ihr Kürzel aus der Datei ist ein Vorschlag", () => {
+    const a = aktionen([...katalogAusEingebaut(), gruss], PROFILE);
+    const g = a.find((x) => x.id === "eigene/gruss")!;
+    expect(g).toMatchObject({ herkunft: "eigene", vorschlag: "Mod-Alt-g", gruppe: "Eigene Textbausteine · Brief" });
+    const b = belegen(a, {}, "mac");
+    expect(b.zeilen.find((z) => z.aktion.id === "eigene/gruss")).toMatchObject({ quelle: "vorschlag", kuerzel: ["Mod-Alt-g"] });
+    // Die eigene Belegung in tasten.toml gewinnt.
+    const c = belegen(a, { "eigene/gruss": "Mod-Alt-k" }, "mac");
+    expect(c.zeilen.find((z) => z.aktion.id === "eigene/gruss")).toMatchObject({ quelle: "eigene", kuerzel: ["Mod-Alt-k"] });
+  });
+
+  it("„Auswahl als Textbaustein speichern“ ist belegbar, ohne Standardkürzel", () => {
+    const a = aktionen(katalogAusEingebaut(), PROFILE);
+    expect(a.map((x) => x.id)).toContain("helfer/textbaustein");
+    expect(STANDARD["helfer/textbaustein"]).toBeUndefined();
+  });
+});
+
 describe("Standardbelegung", () => {
   it("standardbelegung ohne konflikt", () => {
     expect(konflikte(aktionen(katalogAusEingebaut(), PROFILE), {})).toEqual([]);

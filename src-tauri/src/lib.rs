@@ -100,6 +100,8 @@ struct Zustand {
     formel_world: Mutex<Option<(PathBuf, tftn_core::ProjektWorld)>>,
     /// Ordner mit Paketbeschreibungen, der erste hat Vorrang (PLAN-M2 AP10).
     beschreibungen: Mutex<Vec<PathBuf>>,
+    /// Ordner für eigene Anpassungen (mit `textbausteine.toml`); gesetzt mit dem Wächter.
+    anpassungen: Mutex<Option<PathBuf>>,
     kompilierer: Mutex<Option<mpsc::Sender<Auftrag>>>,
     vorschau: Mutex<Option<Arc<Mutex<Vorschau>>>>,
     /// Der angezeigte (gute) Stand, aus dem `tftn://` rastert.
@@ -769,13 +771,20 @@ fn hervorheben(
     (s.spiegel.rev() == rev).then(|| s.spiegel.hervorhebung(sichtbar.0..sichtbar.1))
 }
 
-/// Baut den Helfer-Katalog des Projekts (PLAN-M2 AP1); Warnungen ins Protokoll.
+/// Baut den Helfer-Katalog des Projekts (PLAN-M2 AP1) samt eigenen Textbausteinen; Warnungen ins
+/// Protokoll (die zu `textbausteine.toml` zeigen auch die Einstellungen).
 fn katalog_bauen(zustand: &Zustand, projekt: &Projekt) -> tftn_katalog::Katalog {
     let beschreibungen = zustand.beschreibungen.lock().unwrap().clone();
-    let (katalog, warnungen) = tftn_katalog::Katalog::bauen(&tftn_katalog::Quellen {
+    let (mut katalog, mut warnungen) = tftn_katalog::Katalog::bauen(&tftn_katalog::Quellen {
         projekt: Some(projekt),
         beschreibungen: &beschreibungen,
     });
+    if let Some(ordner) = zustand.anpassungen.lock().unwrap().clone() {
+        let eigene = tftn_katalog::textbausteine::im_ordner(&ordner);
+        warnungen.extend(eigene.fehler);
+        warnungen.extend(eigene.warnungen);
+        katalog.eigene_hinzufuegen(eigene.eintraege, &mut warnungen);
+    }
     for w in warnungen {
         protokollieren(projekt, &format!("Katalog: {w}"));
     }
@@ -3487,6 +3496,8 @@ struct EinstellungenJs {
     fehler: Option<String>,
     /// einzelne Einträge in `tasten.toml` übersprungen; Umbelegen geht weiter
     warnung: Option<String>,
+    /// `textbausteine.toml`: Fehler und übersprungene Einträge in einer Zeile
+    textbausteine: Option<String>,
 }
 
 fn einstellungen_js(app_konfig: &Path) -> EinstellungenJs {
@@ -3501,6 +3512,7 @@ fn einstellungen_js(app_konfig: &Path) -> EinstellungenJs {
         kuerzel: tasten.kuerzel,
         fehler: tasten.fehler,
         warnung: tasten.warnung,
+        textbausteine: tftn_katalog::textbausteine::im_ordner(&ort.ordner).meldung(),
     }
 }
 
@@ -3513,6 +3525,7 @@ fn app_konfig(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 /// Eine Paketbeschreibung hat sich geändert: Katalog neu bauen, ohne Neustart (Entwurf 8.3).
 fn katalog_erneuern(app: &tauri::AppHandle, einstellungsordner: &Path) {
     let zustand = app.state::<Zustand>();
+    *zustand.anpassungen.lock().unwrap() = Some(einstellungsordner.to_path_buf());
     *zustand.beschreibungen.lock().unwrap() = pakete::beschreibungs_ordner(
         &pakete::beschreibungen_buendel(app.path().resource_dir().ok()),
         einstellungsordner,
@@ -3533,6 +3546,7 @@ fn einstellungen_beobachten(app: &tauri::AppHandle) -> Result<(), String> {
         &pakete::beschreibungen_buendel(app.path().resource_dir().ok()),
         &ort.ordner,
     );
+    *app.state::<Zustand>().anpassungen.lock().unwrap() = Some(ort.ordner.clone());
     let handle = app.clone();
     let einstellungsordner = ort.ordner.clone();
     let w = tftn_einstellungen::beobachten(&ort.ordner, move || {
@@ -3598,7 +3612,57 @@ fn einstellungsordner_setzen(
     rechner.ordner = neu;
     rechner.speichern(&konfig).map_err(|e| e.to_string())?;
     einstellungen_beobachten(&app)?;
+    // Textbausteine und Beschreibungen aus dem neuen Ordner gelten sofort.
+    katalog_erneuern(&app, &tftn_einstellungen::ort(&konfig, &rechner).ordner);
     Ok(einstellungen_js(&konfig))
+}
+
+/// Hängt `text` als eigenen Textbaustein an `textbausteine.toml` an (Kommentare und Reihenfolge der
+/// Datei bleiben; eine fehlerhafte Datei wird nicht angefasst). Gibt die Id im Katalog zurück.
+#[tauri::command]
+fn textbaustein_speichern(
+    app: tauri::AppHandle,
+    titel: String,
+    gruppe: Option<String>,
+    text: String,
+) -> Result<String, String> {
+    let konfig = app_konfig(&app)?;
+    let ort = tftn_einstellungen::ort(&konfig, &tftn_einstellungen::Rechner::laden(&konfig));
+    let pfad = ort.ordner.join(tftn_katalog::textbausteine::DATEI);
+    let alt = match std::fs::read_to_string(&pfad) {
+        Ok(t) => Some(t),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+        Err(e) => return Err(format!("{}: {e}", pfad.display())),
+    };
+    let (neu, id) =
+        tftn_katalog::textbausteine::anhaengen(alt.as_deref(), &titel, gruppe.as_deref(), &text)?;
+    tftn_einstellungen::schreiben(&pfad, &neu).map_err(|e| format!("{}: {e}", pfad.display()))?;
+    // Sofort im Katalog, auch wenn der Wächter fehlt; er meldet die Änderung ohnehin noch einmal.
+    katalog_erneuern(&app, &ort.ordner);
+    let _ = app.emit("einstellungen-geaendert", einstellungen_js(&konfig));
+    Ok(format!("{}/{id}", tftn_katalog::textbausteine::NAMENSRAUM))
+}
+
+/// Öffnet `textbausteine.toml` im Texteditor des Systems; fehlt sie, entsteht sie mit einem
+/// kommentierten Beispiel (eine vorhandene wird nie überschrieben). Gibt den Pfad zurück.
+#[tauri::command]
+fn textbausteine_bearbeiten(app: tauri::AppHandle) -> Result<String, String> {
+    let konfig = app_konfig(&app)?;
+    let ort = tftn_einstellungen::ort(&konfig, &tftn_einstellungen::Rechner::laden(&konfig));
+    let pfad = ort.ordner.join(tftn_katalog::textbausteine::DATEI);
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&pfad)
+    {
+        Ok(mut f) => f
+            .write_all(tftn_katalog::textbausteine::VORLAGE.as_bytes())
+            .map_err(|e| format!("{}: {e}", pfad.display()))?,
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+        Err(e) => return Err(format!("{}: {e}", pfad.display())),
+    }
+    netzprotokoll::textdatei_oeffnen(&pfad)?;
+    Ok(pfad.display().to_string())
 }
 
 /// Zeigt den Ordner für eigene Anpassungen (gewählt oder Standard) im Finder bzw. Explorer.
@@ -4065,6 +4129,8 @@ pub fn run() {
             kuerzel_setzen,
             einstellungsordner_setzen,
             einstellungsordner_zeigen,
+            textbaustein_speichern,
+            textbausteine_bearbeiten,
             offline_setzen,
             ueber_stand,
             drucken,
@@ -4176,6 +4242,15 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
+    /// Der Wächter (tftn-einstellungen) und der Leser (tftn-katalog) meinen dieselbe Datei.
+    #[test]
+    fn textbausteine_gleicher_dateiname() {
+        assert_eq!(
+            tftn_einstellungen::TEXTBAUSTEINE,
+            tftn_katalog::textbausteine::DATEI
+        );
+    }
+
     #[test]
     fn meldungen_fuer_editor_und_mcp_in_einem_durchgang() {
         let quelle = super::Source::detached("a\nb€ cd");

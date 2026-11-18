@@ -9,6 +9,7 @@ const basis: EinstellungenJs = {
   kuerzel: {},
   fehler: null,
   warnung: null,
+  textbausteine: null,
 };
 
 describe("einstellHinweise", () => {
@@ -18,6 +19,12 @@ describe("einstellHinweise", () => {
     expect(w.gesperrt).toBe(false);
     expect(w.warnungen).toHaveLength(2);
     expect(w.warnungen[1]).toContain("Mod-Strg");
+  });
+
+  it("Textbausteine melden sich auch, wenn tasten.toml gesperrt ist", () => {
+    const w = einstellHinweise({ ...basis, fehler: "tasten.toml, Zeile 2: x", textbausteine: "textbausteine.toml, Zeile 3: y" }, []);
+    expect(w.gesperrt).toBe(true);
+    expect(w.warnungen).toEqual(["Eigene Textbausteine: textbausteine.toml, Zeile 3: y"]);
   });
 
   it("ohne Befund nichts", () => {

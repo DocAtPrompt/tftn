@@ -1105,6 +1105,30 @@ body.trenner-zieht {
   width: min(560px, 90vw);
 }
 
+/* „Als Textbaustein speichern“: Gruppe und der Anfang des Textes unter dem Titel */
+.textbaustein-zusatz {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.textbaustein-zusatz p {
+  margin: 0;
+}
+.textbaustein-auszug {
+  margin: 0;
+  padding: 6px 8px;
+  max-height: 7em;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--editor-schrift);
+  font-size: 12px;
+  color: var(--leise);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+}
+
 /* Fach „Pakete“ (PLAN-M2 AP9): Ziel, solange der Holer läuft */
 #netz {
   color: var(--warn);

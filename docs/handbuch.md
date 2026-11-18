@@ -154,6 +154,31 @@ Text wandert in den Baustein. Danach springt Tab von Feld zu Feld, Umschalt+Tab 
 markiert sind die Felder, die noch zu füllen sind; wer in einem Feld tippt, schreibt ohne Markierung weiter.
 Cmd/Strg+Z nimmt den ganzen Baustein in einem Schritt zurück.
 
+**Eigene Textbausteine:** Standardsätze und -absätze (Procedere, Therapieempfehlung, Befundsätze,
+Grußformel …) stehen in `textbausteine.toml` im Ordner für eigene Anpassungen (Kapitel 10) und
+erscheinen in jedem Dokumenttyp ganz oben im Menü nach „/“, in der Palette und im Fach „Einfügen“,
+unter „Eigene Textbausteine“. Anlegen: Text markieren, Rechtsklick → „Als Textbaustein speichern …“,
+Titel und (optional) Gruppe eingeben. Der Baustein kommt ans Ende der Datei; was dort schon steht,
+bleibt, wie es ist. Bearbeiten: Einstellungen → „Textbausteine bearbeiten …“ öffnet die Datei im
+Texteditor (fehlt sie, entsteht sie mit einem kommentierten Beispiel). Je Baustein ein Block:
+
+```toml
+[[baustein]]
+titel = "Procedere Kontrolle"
+gruppe = "Procedere"
+kuerzel = "Mod-Alt-1"          # optional
+einfuegen = '''
+Kontrolle in ${feld:Wochen:6} Wochen, bei Beschwerden früher.
+${cursor}'''
+```
+
+`${feld:Name}` bzw. `${feld:Name:Vorgabe}` sind Lücken zum Ausfüllen (Tab springt weiter), `${cursor}`
+setzt die Schreibmarke, `${auswahl}` nimmt markierten Text auf. Nach dem Sichern wirken Änderungen
+sofort. Ist die Datei fehlerhaft, nennen Hinweis und Einstellungen Zeile und Grund; ein einzelner
+fehlerhafter Eintrag wird übersprungen, die übrigen bleiben. Kürzel lassen sich auch in den
+Einstellungen vergeben, wie bei anderen Bausteinen. Die Bausteine gelten im Text, nicht in Code oder
+Formeln (dafür `modus = ["code"]` bzw. `["mathe"]` angeben).
+
 **Vervollständigen:** Strg+Leertaste (am Mac auch ⌥`) schlägt Funktionen, Parameter, Marken und
 Zitat-Schlüssel vor. Beim bloßen Tippen erscheint nichts.
 
@@ -420,6 +445,7 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Über TFTN und Tastenkürzel | F1 |
 | Editorschrift größer / kleiner / wie im Skin | Mod++ (auch Mod+=) / Mod+− / Mod+0 |
 | Werte an dieser Stelle (Marken) | Mod+Umschalt+M oder ⌥ bzw. Alt halten |
+| Auswahl als Textbaustein speichern … | keins (belegbar); Rechtsklick in die Markierung |
 | Seitenleiste | Mod+Umschalt+P |
 | Seitenleiste: Dokument / Pakete / Formel | Mod+Umschalt+O / +Y / +X |
 | Schreibansicht ohne Ablenkung | Mod+Umschalt+Eingabe |
@@ -429,7 +455,8 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Überschrift tiefer / höher | Mod+Umschalt+. / Mod+Umschalt+, |
 | Fußnote, Abbildung, Formel | Mod+Umschalt+F, +A, +E |
 
-**Ordner für eigene Anpassungen:** Kürzel (`tasten.toml`), eigenes Wörterbuch, eigene Dokumenttypen
+**Ordner für eigene Anpassungen:** Kürzel (`tasten.toml`), eigene Textbausteine
+(`textbausteine.toml`, Kapitel 3), eigenes Wörterbuch, eigene Dokumenttypen
 (`typen/`), Skins (`skins/`), Sprachdateien (`sprachen/`) und Paketbeschreibungen liegen in einem
 Ordner, unten in den Einstellungen; „Im Ordner zeigen“ öffnet ihn. Ohne Wahl ist es ein Ordner dieses
 Rechners. Wer mehrere Rechner nutzt, kann einen anderen Ordner wählen, etwa in einem Sync-Ordner;

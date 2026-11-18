@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use tftn_einstellungen::{
-    EINSTELLUNGEN, Rechner, TASTEN, kuerzel_setzen, ort, tasten_lesen, umziehen,
+    EINSTELLUNGEN, Rechner, TASTEN, TEXTBAUSTEINE, kuerzel_setzen, ort, tasten_lesen, umziehen,
 };
 
 /// Eigener leerer Ordner unter dem Temp-Verzeichnis; wird beim Verlassen gelöscht.
@@ -180,9 +180,17 @@ fn umzug_kopiert_nur_fehlende() {
     fs::create_dir_all(&nach).unwrap();
     fs::write(von.join(TASTEN), "[kuerzel]\n\"a\" = \"Mod-b\"\n").unwrap();
     fs::write(von.join(EINSTELLUNGEN), "# leer\n").unwrap();
+    fs::write(von.join(TEXTBAUSTEINE), "# Sätze\n").unwrap();
     fs::write(nach.join(TASTEN), "[kuerzel]\n\"a\" = \"Mod-k\"\n").unwrap();
     let kopiert = umziehen(&von, &nach).unwrap();
-    assert_eq!(kopiert, vec![EINSTELLUNGEN.to_string()]);
+    assert_eq!(
+        kopiert,
+        vec![EINSTELLUNGEN.to_string(), TEXTBAUSTEINE.to_string()]
+    );
+    assert_eq!(
+        fs::read_to_string(nach.join(TEXTBAUSTEINE)).unwrap(),
+        "# Sätze\n"
+    );
     assert_eq!(
         fs::read_to_string(nach.join(TASTEN)).unwrap(),
         "[kuerzel]\n\"a\" = \"Mod-k\"\n"

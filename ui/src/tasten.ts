@@ -3,7 +3,7 @@
 // Konflikte es auf Mac und Windows gibt. Reine Funktionen; die Ablage liegt in Rust.
 
 import type { KeyBinding } from "@codemirror/view";
-import type { EintragJs } from "./bausteine";
+import { type EintragJs, gruppeVon } from "./bausteine";
 import type { EinstellungenJs } from "./einstellungen";
 import type { ProfilJs } from "./export";
 import { t } from "./sprache";
@@ -17,8 +17,8 @@ export interface Aktion {
   id: string;
   titel: string;
   gruppe: string;
-  herkunft: "tftn" | "dokumenttyp" | "paket";
-  /** `kuerzel` aus Dokumenttyp oder Paket */
+  herkunft: "tftn" | "dokumenttyp" | "paket" | "eigene";
+  /** `kuerzel` aus Dokumenttyp, Paket oder `textbausteine.toml` */
   vorschlag: string | null;
 }
 
@@ -26,6 +26,7 @@ export interface Aktion {
 export const HELFER: { id: string; titel: string; gruppe: string }[] = [
   { id: "helfer/baustein", titel: t("Baustein einfügen"), gruppe: t("Helfer") },
   { id: "helfer/zitat", titel: t("Zitat einfügen"), gruppe: t("Helfer") },
+  { id: "helfer/textbaustein", titel: t("Auswahl als Textbaustein speichern …"), gruppe: t("Helfer") },
   { id: "helfer/vervollstaendigen", titel: t("Vervollständigen"), gruppe: t("Helfer") },
   { id: "helfer/einstellungen", titel: t("Einstellungen"), gruppe: t("Helfer") },
   { id: "helfer/ueber", titel: t("Über TFTN und Tastenkürzel"), gruppe: t("Helfer") },
@@ -177,7 +178,7 @@ export function aktionen(katalog: EintragJs[], profile: ProfilJs[]): Aktion[] {
   const bausteine: Aktion[] = katalog.filter((e) => e.herkunft !== "holen").map((e) => ({
     id: e.id,
     titel: e.titel,
-    gruppe: e.gruppe ?? t("Bausteine"),
+    gruppe: gruppeVon(e) ?? t("Bausteine"),
     herkunft: e.herkunft === "typst" ? "tftn" : (e.herkunft as Aktion["herkunft"]),
     vorschlag: e.herkunft === "typst" ? null : e.kuerzel,
   }));
@@ -334,6 +335,7 @@ export function einstellungenNotfall(fehler: string): EinstellungenJs {
     ganz_offline: true,
     kuerzel: {},
     warnung: null,
+    textbausteine: null,
     fehler: t("Einstellungen nicht gelesen ({fehler}); es gelten die Standardkürzel, das Netz bleibt aus.", { fehler }),
   };
 }

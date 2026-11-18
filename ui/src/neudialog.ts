@@ -270,13 +270,16 @@ export class PfadDialog {
       this.abbrechen = () => ende(null);
       ok.addEventListener("click", () => ende(feld.value.trim() || null));
       ab.addEventListener("click", () => ende(null));
-      feld.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") ende(feld.value.trim() || null);
-        if (e.key === "Escape") {
-          e.preventDefault();
-          ende(null);
-        }
-      });
+      // Enter schickt ab, auch aus einem weiteren Textfeld im Zusatz (etwa der Gruppe eines Textbausteins).
+      for (const f of [feld, ...(zusatz?.querySelectorAll<HTMLInputElement>('input[type="text"]') ?? [])]) {
+        f.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") ende(feld.value.trim() || null);
+          if (e.key === "Escape") {
+            e.preventDefault();
+            ende(null);
+          }
+        });
+      }
       const knoepfe = el("div", "neu-ordnerzeile");
       knoepfe.append(ok, ab);
       const kopf = dialogKopf(titel, () => ende(null));

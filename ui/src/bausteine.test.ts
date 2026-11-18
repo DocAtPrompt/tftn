@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EditorState } from "@codemirror/state";
 import { type Completion, CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
-import { type EintragJs, type Modus, abschnitt, kuerzelText, menue, nurSlashFehler, slashAnfang, slashQuelle, typstQuelle } from "./bausteine";
+import { type EintragJs, type Modus, abschnitt, gruppeVon, kuerzelText, menue, nurSlashFehler, slashAnfang, slashQuelle, typstQuelle } from "./bausteine";
 
 const eintrag = (id: string, herkunft: EintragJs["herkunft"], modus: Modus[], titel = id): EintragJs => ({
   id,
@@ -145,6 +145,29 @@ describe("Pakete holen im Menü", () => {
     const m = menue([e("holen/x", "holen"), e("p", "paket"), e("t", "typst")], "markup", "");
     expect(m.map((x) => x.id)).toEqual(["t", "p", "holen/x"]);
     expect(abschnitt("holen").name).toBe("Pakete holen");
+  });
+});
+
+describe("Eigene Textbausteine", () => {
+  const e = (id: string, herkunft: EintragJs["herkunft"], gruppe: string | null = null): EintragJs => ({ id, titel: id, gruppe, herkunft, modus: ["markup"], kuerzel: null });
+
+  it("stehen im Menü vor allem anderen, als eigener Abschnitt", () => {
+    const m = menue([e("t", "typst"), e("p", "paket"), e("eigene/a", "eigene"), e("eigene/b", "eigene")], "markup", "");
+    expect(m.map((x) => x.id)).toEqual(["eigene/a", "eigene/b", "t", "p"]);
+    expect(abschnitt("eigene").name).toBe("Eigene Textbausteine");
+    expect(abschnitt("eigene").rank).toBeLessThan(abschnitt("typst").rank);
+  });
+
+  it("die Gruppe findet die Suche", () => {
+    const m = menue([e("eigene/x", "eigene", "Procedere"), e("eigene/y", "eigene", "Brief")], "markup", "proc");
+    expect(m.map((x) => x.id)).toEqual(["eigene/x"]);
+  });
+
+  it("Überschrift im Fach: immer als eigene erkennbar", () => {
+    expect(gruppeVon(e("eigene/x", "eigene", "Procedere"))).toBe("Eigene Textbausteine · Procedere");
+    expect(gruppeVon(e("eigene/x", "eigene"))).toBe("Eigene Textbausteine");
+    expect(gruppeVon(e("typst/x", "typst", "Text"))).toBe("Text");
+    expect(gruppeVon(e("typst/x", "typst"))).toBeNull();
   });
 });
 

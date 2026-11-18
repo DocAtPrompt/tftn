@@ -157,6 +157,31 @@ the block. Afterwards Tab jumps from field to field, Shift+Tab back, Esc or a mo
 still to be filled are tinted light blue; once you type in a field, it is no longer tinted. Cmd/Ctrl+Z undoes
 the whole block in one step.
 
+**Your own text blocks:** standard sentences and paragraphs (follow-up, treatment advice, findings,
+closing formula …) live in `textbausteine.toml` in the folder for your own customisations
+(chapter 10). They appear in every document type at the top of the “/” menu, in the palette and in
+the “Insert” panel, under “Custom text blocks”. To add one: select text, right-click → “Save as text
+block …”, enter a title and (optionally) a group. The block is appended to the end of the file;
+everything already in it stays as it is. To edit: Settings → “Edit text blocks …” opens the file in
+the text editor (if it is missing, it is created with a commented example). One block per entry:
+
+```toml
+[[baustein]]
+titel = "Procedere Kontrolle"
+gruppe = "Procedere"
+kuerzel = "Mod-Alt-1"          # optional
+einfuegen = '''
+Kontrolle in ${feld:Wochen:6} Wochen, bei Beschwerden früher.
+${cursor}'''
+```
+
+`titel` is the title, `einfuegen` the text, `gruppe` the group and `kuerzel` the shortcut.
+`${feld:Name}` or `${feld:Name:Default}` are gaps to fill in (Tab jumps on), `${cursor}` places the
+cursor, `${auswahl}` takes the selected text. Changes take effect as soon as the file is saved. If
+the file is broken, a notice and the settings name line and reason; a single broken entry is
+skipped, the others stay. Shortcuts can also be set in the settings, as for other blocks. The blocks
+apply in text, not in code or equations (for those add `modus = ["code"]` or `["mathe"]`).
+
 **Completion:** Ctrl+Space (on the Mac also ⌥`) suggests functions, parameters, labels and citation
 keys. Nothing pops up while you just type.
 
@@ -420,6 +445,7 @@ shortcuts are shown for Mac **and** Windows.
 | About TFTN and keyboard shortcuts | F1 |
 | Editor font larger / smaller / as in the skin | Mod++ (also Mod+=) / Mod+− / Mod+0 |
 | Values at this position (markers) | Mod+Shift+M or hold ⌥/Alt |
+| Save selection as text block … | none (assignable); right-click into the selection |
 | Sidebar | Mod+Shift+P |
 | Sidebar: Document / Packages / Equation | Mod+Shift+O / +Y / +X |
 | Distraction-free focus view | Mod+Shift+Enter |
@@ -429,7 +455,8 @@ shortcuts are shown for Mac **and** Windows.
 | Heading down / up | Mod+Shift+. / Mod+Shift+, |
 | Footnote, Figure, Equation | Mod+Shift+F, +A, +E |
 
-**Folder for your own customisations:** shortcuts (`tasten.toml`), your dictionary, your own
+**Folder for your own customisations:** shortcuts (`tasten.toml`), your own text blocks
+(`textbausteine.toml`, chapter 3), your dictionary, your own
 document types (`typen/`), skins (`skins/`), language files (`sprachen/`) and package descriptions
 live in one folder, at the bottom of the settings; “Show in folder” opens it. By default it is a
 folder on this computer. If you use several computers, you can choose another folder, for example

@@ -721,6 +721,25 @@ pub fn adresse_oeffnen(url: &str) -> Result<(), String> {
     system_oeffnen(std::ffi::OsStr::new(url))
 }
 
+/// Öffnet eine Textdatei im Texteditor des Systems (TextEdit bzw. der gewählte Standard am Mac,
+/// Editor unter Windows): Für `.toml` gibt es oft kein zugeordnetes Programm.
+pub fn textdatei_oeffnen(pfad: &Path) -> Result<(), String> {
+    let mut befehl = if cfg!(target_os = "macos") {
+        let mut b = std::process::Command::new("open");
+        b.arg("-t");
+        b
+    } else if cfg!(windows) {
+        std::process::Command::new("notepad")
+    } else {
+        std::process::Command::new("xdg-open")
+    };
+    befehl
+        .arg(pfad)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
 fn system_oeffnen(ziel: &std::ffi::OsStr) -> Result<(), String> {
     let mut befehl = if cfg!(target_os = "macos") {
         std::process::Command::new("open")

@@ -8,6 +8,7 @@ pub mod mathe;
 pub mod ort;
 pub mod pruefen;
 pub mod schnipsel;
+pub mod textbausteine;
 
 use std::collections::BTreeMap;
 use tftn_sprachen::tr;
@@ -39,15 +40,18 @@ pub enum Herkunft {
         /// Weitere nötige Importe: Paketname und fertige Zeile
         auch: Vec<(String, String)>,
     },
+    /// Eigene Textbausteine des Benutzers (`textbausteine.toml`)
+    Eigene,
 }
 
 impl Herkunft {
-    /// Kurzname für CLI und Oberfläche: `typst`, `dokumenttyp` oder `paket`.
+    /// Kurzname für CLI und Oberfläche: `typst`, `dokumenttyp`, `paket` oder `eigene`.
     pub fn art(&self) -> &'static str {
         match self {
             Herkunft::Typst => "typst",
             Herkunft::Dokumenttyp { .. } => "dokumenttyp",
             Herkunft::Paket { .. } => "paket",
+            Herkunft::Eigene => "eigene",
         }
     }
 }
@@ -195,6 +199,14 @@ impl Katalog {
 
     pub fn eintraege(&self) -> &[Eintrag] {
         &self.eintraege
+    }
+
+    /// Hängt die eigenen Textbausteine an (in jedem Dokumenttyp gleich); doppelte Ids werden zu
+    /// Warnungen, der erste bleibt.
+    pub fn eigene_hinzufuegen(&mut self, eigene: Vec<Eintrag>, warnungen: &mut Vec<String>) {
+        for e in eigene {
+            hinzufuegen(&mut self.eintraege, e, warnungen);
+        }
     }
 
     /// Pakete mit Beschreibung, die im Projekt ganz fehlen.
@@ -503,6 +515,7 @@ mod tests {
             auch: Vec::new(),
         };
         assert_eq!(p.art(), "paket");
+        assert_eq!(Herkunft::Eigene.art(), "eigene");
     }
 
     #[test]

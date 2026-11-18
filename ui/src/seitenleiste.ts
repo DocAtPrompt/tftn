@@ -4,7 +4,7 @@
 // AP9, `paketfach.ts`). Die Leiste öffnet sich nur auf Knopf oder Kürzel und folgt dem Cursor nur,
 // solange sie offen ist.
 
-import type { EintragJs } from "./bausteine";
+import { type EintragJs, gruppeVon } from "./bausteine";
 import type { DokumentFach } from "./dokumentfach";
 import type { FormelFach } from "./formelfach";
 import type { SeiteFach } from "./seitefach";
@@ -475,8 +475,8 @@ export class Seitenleiste {
     const ul = el("ul", "leiste-bausteine");
     let gruppe: string | null = null;
     for (const e of liste) {
-      if (e.gruppe !== gruppe) {
-        gruppe = e.gruppe;
+      if (gruppeVon(e) !== gruppe) {
+        gruppe = gruppeVon(e);
         if (gruppe) ul.append(el("li", "palette-abschnitt", gruppe));
       }
       const li = el("li", "baustein-zeile", e.titel);
