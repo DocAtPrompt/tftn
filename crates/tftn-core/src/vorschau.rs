@@ -222,11 +222,17 @@ impl Vorschau {
                 VirtualRoot::Project => {
                     Sprung::Datei(id.vpath().get_without_slash().to_string(), byte)
                 }
-                // Im Paket: steht die Stelle in einer Feldmarke, führt sie zum Formularfeld.
-                _ => typst::World::source(&self.world, id)
-                    .ok()
-                    .and_then(|q| feld_an(&q, byte))
-                    .map_or(Sprung::Vorlage, Sprung::Feld),
+                // Im Paket: steht die Stelle in einer Feldmarke, führt sie zum Formularfeld. Das
+                // Literaturverzeichnis setzt zwar die Vorlage, ist aber kein Formularinhalt: Ein
+                // Klick darauf tut nichts, statt das offene Fach zu wechseln.
+                _ => match typst::World::source(&self.world, id) {
+                    Ok(q) => match feld_an(&q, byte) {
+                        Some(feld) => Sprung::Feld(feld),
+                        None if aufruf_an(&q, byte, "bibliography") => Sprung::Nichts,
+                        None => Sprung::Vorlage,
+                    },
+                    Err(_) => Sprung::Vorlage,
+                },
             },
             Some(Jump::Url(url)) => Sprung::Url(url.as_str().to_string()),
             Some(Jump::Position(p)) => {
@@ -451,6 +457,25 @@ pub fn feld_an(quelle: &Source, byte: usize) -> Option<String> {
         }
         knoten = knoten.parent()?.clone();
     }
+}
+
+/// Liegt `byte` in einem Aufruf der Funktion `name` (etwa `bibliography(…)`)?
+fn aufruf_an(quelle: &Source, byte: usize, name: &str) -> bool {
+    use typst::syntax::ast;
+    let wurzel = LinkedNode::new(quelle.root());
+    let mut knoten = wurzel
+        .leaf_at(byte, Side::After)
+        .or_else(|| wurzel.leaf_at(byte, Side::Before));
+    while let Some(k) = knoten {
+        if let Some(aufruf) = k.cast::<ast::FuncCall>()
+            && let ast::Expr::Ident(n) = aufruf.callee()
+            && n.as_str() == name
+        {
+            return true;
+        }
+        knoten = k.parent().cloned();
+    }
+    false
 }
 
 /// Rastert eine Seite als PNG, wie `typst compile --format png --ppi <ppi>`.

@@ -253,3 +253,12 @@ fn testartikel_bleibt_vorlage() {
     let v = vorschau(&projekt);
     assert_eq!(klick(&v, "Reproduzierbarkeit"), Sprung::Vorlage);
 }
+
+#[test]
+fn klick_ins_literaturverzeichnis_oeffnet_kein_formular() {
+    // Die Vorlage setzt das Verzeichnis; ein Klick darauf soll das offene Fach nicht wechseln.
+    let projekt = neues_projekt("ap7-klick-literatur");
+    let v = vorschau(&projekt);
+    assert_eq!(klick(&v, "Beispielverlag"), Sprung::Nichts);
+    assert_eq!(klick(&v, "Einführung"), Sprung::Nichts);
+}
