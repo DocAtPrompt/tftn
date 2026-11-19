@@ -5,7 +5,7 @@
 A native, offline writing app for [Typst](https://typst.app) on macOS, Windows and Linux: write on the
 left, see the finished page on the right as you type. Built with Rust, Tauri 2 and CodeMirror 6.
 
-![TFTN with a journal article: comment overview, Typst source and live preview](docs/images/main.png)
+![TFTN with a thesis: chapters as tabs, Typst source with a table and a chart on the left, the live preview on the right](docs/images/main.png)
 
 **Why offline, when Typst has an excellent web app?** Some texts must not leave your computer:
 reports about patients or clients, legal and HR documents, anything covered by professional
@@ -82,12 +82,13 @@ as plain files. New documents follow the interface language.
 | | |
 |---|---|
 | ![Dark skin](docs/images/dark.png) | ![Blocks menu after typing “/”](docs/images/blocks.png) |
-| Dark skin | Type “/” on an empty line for blocks |
-| ![Invoice with its form](docs/images/invoice.png) | ![Equation pane with palette and live rendering](docs/images/equation.png) |
-| Invoice: fill in the form, the totals are computed | Equations: edit with a palette, rendered as you type |
-
-![Bibliography manager: entries of the .bib file on the left, the selected entry in a form on the right](docs/images/bibliography.png)
-*Bibliography manager: search your `.bib` file, edit an entry in a form, see what you have not cited yet.*
+| Dark skin | Type “/” on an empty line for blocks – even ones from packages you have not downloaded yet |
+| ![Equation pane with palette and live rendering](docs/images/equation.png) | ![Insert citation: search the .bib file by author, year, title, key or DOI](docs/images/citation.png) |
+| Equations: edit with a palette, rendered as you type | Citations: search your `.bib` file; “Manage bibliography” edits entries in a form |
+| ![Packages pane with packages from Typst Universe and the ones in the document](docs/images/packages.png) | ![Export menu: PDF, archive PDF/A, print, archive package, Word, HTML, EPUB, series](docs/images/export.png) |
+| Packages from Typst Universe, kept in the document folder with checksums | Export: test PDF, PDF/A for the archive, Word, HTML, EPUB, one PDF per record |
+| ![Invoice with its form](docs/images/invoice.png) | ![Network log: no network access since the start](docs/images/privacy.png) |
+| Document types with forms: an invoice, the totals are computed | Network log: proof that TFTN stays offline |
 
 **Status:** early but usable day to day on macOS (Apple silicon). The Windows build passes the test
 suite and an automated install check, but has hardly been used by hand yet. On Linux there is no
