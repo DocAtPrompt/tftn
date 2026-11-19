@@ -483,7 +483,12 @@ pub fn holbar_eintraege(k: &tftn_katalog::Katalog) -> Vec<(String, String)> {
         .map(|h| {
             (
                 format!("holen/{}", h.spec),
-                tr!("{titel} (Paket holen)", titel = h.titel),
+                // Titel und Bausteinnamen stehen deutsch in der Beschreibung; übersetzt über
+                // languages/*.toml wie die Bausteine selbst.
+                tr!(
+                    "{titel} (Paket holen)",
+                    titel = tftn_sprachen::uebersetzen(&h.titel)
+                ),
             )
         })
         .collect()
@@ -505,8 +510,12 @@ pub fn holbar_js(k: &tftn_katalog::Katalog, zs: &Zwischenspeicher) -> Vec<Holbar
         .map(|h| HolbarJs {
             paket: h.paket.clone(),
             spec: h.spec.clone(),
-            titel: h.titel.clone(),
-            bausteine: h.bausteine.clone(),
+            titel: tftn_sprachen::uebersetzen(&h.titel),
+            bausteine: h
+                .bausteine
+                .iter()
+                .map(|b| tftn_sprachen::uebersetzen(b))
+                .collect(),
             im_zwischenspeicher: PaketSpec::lesen(&h.spec).is_ok_and(|s| vollstaendig(zs, &s)),
         })
         .collect()
