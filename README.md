@@ -2,6 +2,8 @@
 
 <img src="docs/images/logo.png" alt="TFTN logo: a large T flanked by a small f and n" width="128" align="right">
 
+[![Support TFTN on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20TFTN-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/docatprompt)
+
 A native, offline writing app for [Typst](https://typst.app) on macOS, Windows and Linux: write on the
 left, see the finished page on the right as you type. Built with Rust, Tauri 2 and CodeMirror 6.
 
