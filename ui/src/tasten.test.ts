@@ -313,6 +313,11 @@ describe("Editorschrift und F1", () => {
     expect(aktionDerTaste(mac, taste("0", 48, { metaKey: true }), "mac")).toBe("ansicht/schrift-normal");
     expect(aktionDerTaste(mac, taste("F1", 112), "mac")).toBe("helfer/ueber");
     expect(aktionDerTaste(win, taste("F1", 112), "win")).toBe("helfer/ueber");
+    // ⌘? am Mac: US-Belegung Shift+/, deutsche Belegung Shift+ß
+    expect(aktionDerTaste(mac, taste("?", 191, { metaKey: true, shiftKey: true }), "mac")).toBe("helfer/ueber");
+    expect(aktionDerTaste(mac, taste("?", 189, { metaKey: true, shiftKey: true }), "mac")).toBe("helfer/ueber");
+    // Buchstaben mit Shift bleiben bei der Grundtaste
+    expect(aktionDerTaste(mac, taste("B", 66, { metaKey: true, shiftKey: true }), "mac")).toBe("helfer/baustein");
     expect(aktionDerTaste(mac, taste("p", 80, { metaKey: true }), "mac")).toBe("app/drucken");
     expect(aktionDerTaste(win, taste("p", 80, { ctrlKey: true }), "win")).toBe("app/drucken");
   });

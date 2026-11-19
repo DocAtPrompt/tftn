@@ -39,7 +39,7 @@ describe("Über TFTN", () => {
     const baustein = g.flatMap((x) => x.eintraege).find((e) => e.titel === "Baustein einfügen")!;
     expect(baustein.kuerzel).toBe("⌥⌘B");
     const ueber = g.flatMap((x) => x.eintraege).find((e) => e.titel === "Über TFTN und Tastenkürzel")!;
-    expect(ueber.kuerzel).toBe("F1");
+    expect(ueber.kuerzel).toBe("⌘?");
     // jede Gruppe nur einmal
     const namen = g.map((x) => x.gruppe);
     expect(new Set(namen).size).toBe(namen.length);

@@ -12,6 +12,9 @@
 import type { Rundgang, Schritt } from "./rundgang";
 import { t } from "./sprache";
 
+/** Das Kürzel für „Über TFTN“, wie es die Texte nennen: Am Mac kommt F1 ab Werk nur mit fn an. */
+const HILFE_TASTE = /Mac|iPhone|iPad/.test(globalThis.navigator?.platform ?? "") ? "⌘?" : "F1";
+
 /**
  * Ziele, die nicht in ui/index.html stehen, sondern zur Laufzeit entstehen: ID → Modul, das sie setzt
  * (der Test prüft, dass sie dort vergeben wird). Dazu Klassen von CodeMirror (`.cm-…`) und Klassen
@@ -669,7 +672,7 @@ function aussehen(): Rundgang {
   return {
     id: "aussehen",
     titel: t("Aussehen und Einstellungen"),
-    beschreibung: t("Skins, Größe der Oberfläche, Editorschrift, Schreibansicht, Tastenkürzel und F1; danach ist alles wie vorher."),
+    beschreibung: t("Skins, Größe der Oberfläche, Editorschrift, Schreibansicht, Tastenkürzel und „Über TFTN“; danach ist alles wie vorher."),
     kopie: "tftn-fachartikel",
     schritte: [
       { text: t("TFTN lässt sich einstellen, wie du arbeitest. Was dieser Rundgang ändert, stellt er am Ende zurück.") },
@@ -732,7 +735,7 @@ function aussehen(): Rundgang {
           await api.schliessen();
           await api.taste("helfer/ueber");
         },
-        text: t("F1 öffnet „Über TFTN“: alle Kürzel auf einen Blick, die Links zum Handbuch und diese Rundgänge."),
+        text: t("{taste} öffnet „Über TFTN“: alle Kürzel auf einen Blick, die Links zum Handbuch und diese Rundgänge.", { taste: HILFE_TASTE }),
       },
       zurueck(t("Das waren Aussehen und Einstellungen. Skin, Größe und Schrift sind wieder wie vorher.")),
     ],
@@ -834,7 +837,7 @@ function inMinuten(m: Merker): Rundgang {
       {
         ziel: "#ueber",
         vorher: (api) => api.taste("helfer/ueber"),
-        text: t("F1 öffnet „Über TFTN“: alle Kürzel, das Handbuch und Rundgänge zu einzelnen Themen."),
+        text: t("{taste} öffnet „Über TFTN“: alle Kürzel, das Handbuch und Rundgänge zu einzelnen Themen.", { taste: HILFE_TASTE }),
       },
       {
         vorher: (api) => api.schliessen(),

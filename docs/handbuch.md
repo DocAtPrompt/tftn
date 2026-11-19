@@ -112,7 +112,7 @@ synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeiten.
 - **Kopf:** links das Dokument (der volle Pfad erscheint beim Darüberfahren), rechts „Neu“ (leeres
   Dokument, aus Vorlage, Importieren), „Öffnen“, „Fassungen“, „Export“, das Zahnrad
   (Einstellungen) und „?“ (Über TFTN, F1). In einem schmalen Fenster bleiben nur die Symbole.
-- **Über TFTN** („?“ oder F1) zeigt Version und typst-Version, die Rundgänge (unten), die Links zu
+- **Über TFTN** („?“, F1 oder am Mac ⌘?) zeigt Version und typst-Version, die Rundgänge (unten), die Links zu
   Projektseite, Handbuch und „Fehler melden“, alle geltenden Tastenkürzel zum Nachschlagen („Kürzel ändern …“ führt in die
   Einstellungen) und die Lizenzen samt mitgelieferten Beilagen; „Lizenztexte zeigen“ öffnet ihren
   Ordner. Ein Link öffnet die Seite nur auf Klick im Standardbrowser (Abschnitt 11).
@@ -593,7 +593,7 @@ Programmkürzeln werden für Mac **und** Windows angezeigt.
 | Zitat einfügen | Mod+Umschalt+L |
 | Vervollständigen | Strg+Leertaste, am Mac auch ⌥` |
 | Einstellungen | Mod+, |
-| Über TFTN und Tastenkürzel | F1 |
+| Über TFTN und Tastenkürzel | F1; am Mac ⌘? (F1 dort nur mit fn, außer die Funktionstasten sind als Standardtasten eingestellt) |
 | Suchen und Ersetzen im aktiven Reiter (Editor) | Mod+F |
 | Im ganzen Dokument suchen und ersetzen | Mod+Umschalt+H |
 | Editorschrift größer / kleiner / wie im Skin | Mod++ (auch Mod+=) / Mod+− / Mod+0 |

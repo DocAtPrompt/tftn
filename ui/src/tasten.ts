@@ -57,7 +57,9 @@ export const STANDARD: Record<string, Partial<Record<Plattform, string[]>>> = {
   "helfer/zitat": beide("Mod-Shift-l"),
   "helfer/vervollstaendigen": { mac: ["Ctrl-Space", "Alt-`"], win: ["Ctrl-Space"] },
   "helfer/einstellungen": beide("Mod-,"),
-  "helfer/ueber": beide("F1"),
+  // Am Mac sind F1–F12 ab Werk Helligkeit, Lautstärke usw.; F1 kommt nur mit fn an. ⌘? ist dort
+  // das übliche Hilfekürzel und auf jeder Tastaturbelegung erreichbar.
+  "helfer/ueber": { mac: ["Mod-?", "F1"], win: ["F1"] },
   // Wie „In Dateien ersetzen“ in VS Code; Cmd/Strg+Umschalt+F ist hier die Fußnote.
   "helfer/projektsuche": beide("Mod-Shift-h"),
   // „+“ hat auf deutschen Tastaturen eine eigene Taste, auf US-Tastaturen liegt es auf „=“.
@@ -320,6 +322,14 @@ export function aktionDerTaste(
   e: Parameters<typeof kuerzelAusTaste>[0],
   p: Plattform,
 ): string | null {
+  // Wie CodeMirror: zuerst das erzeugte Zeichen ohne Shift (⌘? auf jeder Belegung), dann die
+  // Grundtaste mit Shift.
+  if (e.shiftKey && [...e.key].length === 1 && e.key !== " " && e.key.toLowerCase() === e.key.toUpperCase()) {
+    const zeichen = kuerzelAusTaste({ ...e, shiftKey: false }, p);
+    const n = zeichen === null ? null : normalisieren(zeichen, p);
+    const id = n === null ? undefined : b.taste.get(n);
+    if (id) return id;
+  }
   const k = kuerzelAusTaste(e, p);
   const n = k === null ? null : normalisieren(k, p);
   return n === null ? null : (b.taste.get(n) ?? null);

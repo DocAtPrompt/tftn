@@ -89,6 +89,7 @@ export const RESERVIERT: Reserviert[] = [
   m("Ctrl-ArrowLeft", t("Schreibtisch links")),
   m("Ctrl-ArrowRight", t("Schreibtisch rechts")),
   m("Mod-Shift-/", t("Hilfe")),
+  m("Mod-?", t("Hilfe"), { entspricht: "helfer/ueber" }),
   m("Ctrl-Space", t("Eingabequelle wechseln"), { bedingt: t("nur bei mehreren Eingabequellen") }),
   m("Ctrl-Alt-Space", t("Nächste Eingabequelle"), { bedingt: t("nur bei mehreren Eingabequellen") }),
   // CodeMirrors Ersatz für Strg+Leertaste am Mac; tippt sonst ein Akzentzeichen.

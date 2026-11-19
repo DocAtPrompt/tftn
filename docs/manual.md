@@ -114,7 +114,7 @@ sync it and keep working on another computer without a network.
 - **Header:** the document on the left (hover for the full path); on the right “New” (blank document,
   from template, import), “Open”, “Versions”, “Export”, the gear (settings) and “?” (About TFTN,
   F1). In a narrow window only the icons remain.
-- **About TFTN** (“?” or F1) shows the version and the typst version, the tours (below), links to
+- **About TFTN** (“?”, F1 or on the Mac ⌘?) shows the version and the typst version, the tours (below), links to
   the project page, the manual and “Report a bug”, all shortcuts currently in effect for reference (“Change shortcuts …”
   leads to the settings) and the licenses including the bundled components; “Show license texts”
   opens their folder. A link opens the page in the default browser only when you click it
@@ -587,7 +587,7 @@ shortcuts are shown for Mac **and** Windows.
 | Insert citation | Mod+Shift+L |
 | Complete | Ctrl+Space, on the Mac also ⌥` |
 | Settings | Mod+, |
-| About TFTN and keyboard shortcuts | F1 |
+| About TFTN and keyboard shortcuts | F1; on the Mac ⌘? (F1 there only with fn, unless the function keys are set as standard keys) |
 | Find and replace in the active tab (editor) | Mod+F |
 | Search and replace in the whole document | Mod+Shift+H |
 | Editor font larger / smaller / as in the skin | Mod++ (also Mod+=) / Mod+− / Mod+0 |

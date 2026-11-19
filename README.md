@@ -74,7 +74,7 @@ with Typst without handing them to a third party.
   normally none – and prints a one-page sheet for your records or data protection officer. Your
   text stays plain Typst; `tftn gegenprobe` prints the `typst compile` command that produces the
   identical PDF without TFTN.
-- **About TFTN** (F1): version, licenses, links and every keyboard shortcut in effect at a glance.
+- **About TFTN** (F1, on the Mac ⌘?): version, licenses, links and every keyboard shortcut in effect at a glance.
 
 Interface and bundled document types in English and German; more interface languages can be added
 as plain files. New documents follow the interface language.
