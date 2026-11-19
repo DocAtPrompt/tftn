@@ -245,6 +245,12 @@ Every visible text is written in German in the code (`tr!("…")` in Rust, `t("�
 `tftn neu`, `check`, `build`, `export`, `serie`, `gegenprobe`, `katalog`, `typ-pruefen` – see the
 [manual](docs/manual.md#12-command-line).
 
+## Support
+
+TFTN is free and stays free. If you'd like to help, [buy me a coffee on Ko-fi](https://ko-fi.com/docatprompt) –
+it goes towards a signed Mac app, a website and a signed Windows installer. Bug reports and ideas in
+the [issues](https://github.com/DocAtPrompt/tftn/issues) are just as welcome.
+
 ## License
 
 TFTN is licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.

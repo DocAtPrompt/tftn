@@ -10,11 +10,8 @@ bibliography entry, the update check) does a request go out, and only to a fixed
 Your text stays plain Typst. Every document can be compiled without TFTN using the typst CLI and
 yields the same PDF.
 
-<!-- Ko-fi: switch on once the name exists (replace <name>, remove the comment markers; also the
-     section “Supporting TFTN” at the end).
 TFTN is free and will stay free. If it makes your work easier, you can support its development on
-[Ko-fi](https://ko-fi.com/<name>) – more at the end.
--->
+[Ko-fi](https://ko-fi.com/docatprompt) – the next goal is a signed Mac app; more at the end.
 
 The interface is available in English and German. The document types that ship with TFTN come in
 both languages too: blank document, letter, invoice, medical report (doctor's letter), report,
@@ -35,6 +32,7 @@ journal article, book, poster and CV.
 11. [Network, updates, privacy](#11-network-updates-privacy)
 12. [Command line](#12-command-line)
 13. [AI assistants (MCP)](#13-ai-assistants-mcp)
+14. [Supporting TFTN](#14-supporting-tftn)
 
 ## 1. Getting started
 
@@ -644,8 +642,8 @@ network access, the links included.
 
 **Links in “About TFTN”** (project page, manual, report a bug on `github.com`) open the page in the
 default browser when clicked. It is the browser that goes online, not TFTN; TFTN only hands it the
-fixed address and transmits nothing. Every click is recorded in the network log. If there is a page
-for supporting TFTN (Ko-fi, `ko-fi.com`), it appears quietly as the last link; a switch in the
+fixed address and transmits nothing. Every click is recorded in the network log. The page for
+supporting TFTN (Ko-fi, `ko-fi.com`) appears quietly as the last link; a switch in the
 settings hides it. With “Fully offline” the links do not open, and the addresses are shown for
 copying. TFTN never installs anything by itself: you download a new version from the release
 page.
@@ -806,13 +804,13 @@ glued to another word without a space is not recognised. TFTN cannot check embed
 (scans, signature); the answer to the page image names them. For sensitive documents, check “What the
 AI sees …” and the source before letting a cloud service work on them.
 
-<!-- Ko-fi: switch on once the name exists.
-## Supporting TFTN
+## 14. Supporting TFTN
 
-TFTN costs nothing: no subscription, no ads, no data. If you use it regularly and want to give something back, you can do so on
-[Ko-fi](https://ko-fi.com/<name>). Bug reports and wishes on the
+TFTN costs nothing: no subscription, no ads, no data. If you use it regularly and want to give
+something back, you can buy me a coffee on [Ko-fi](https://ko-fi.com/docatprompt). It goes towards
+concrete goals: an Apple Developer account for a signed, notarised Mac app (no security warning when
+you first open it), a website for TFTN, and a signed Windows installer. Bug reports and wishes on the
 [project page](https://github.com/DocAtPrompt/tftn/issues) are just as welcome.
 
 The link is also in “About TFTN” (F1); it opens the page in the browser only when clicked, and the
 settings can hide it.
--->

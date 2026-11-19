@@ -10,11 +10,9 @@ Literatureintrag, die Update-Abfrage), geht eine Anfrage an eine feste Adresse h
 Ihr Text bleibt gewöhnliches Typst. Jedes Dokument lässt sich auch ohne TFTN mit der typst-CLI
 übersetzen und ergibt dasselbe PDF.
 
-<!-- Ko-fi: einschalten, sobald es den Namen gibt (<name> ersetzen, Kommentarzeichen entfernen;
-     auch den Abschnitt „TFTN unterstützen“ am Ende).
 TFTN ist frei und bleibt es. Wenn es Ihnen die Arbeit erleichtert, können Sie die Entwicklung auf
-[Ko-fi](https://ko-fi.com/<name>) unterstützen – mehr dazu am Ende.
--->
+[Ko-fi](https://ko-fi.com/docatprompt) unterstützen – das nächste Ziel ist eine signierte Mac-App;
+mehr dazu am Ende.
 
 ## Inhalt
 
@@ -31,6 +29,7 @@ TFTN ist frei und bleibt es. Wenn es Ihnen die Arbeit erleichtert, können Sie d
 11. [Netz, Updates, Datenschutz](#11-netz-updates-datenschutz)
 12. [Kommandozeile](#12-kommandozeile)
 13. [KI-Assistenten (MCP)](#13-ki-assistenten-mcp)
+14. [TFTN unterstützen](#14-tftn-unterstützen)
 
 ## 1. Erste Schritte
 
@@ -650,8 +649,8 @@ sperrt jeden Netzzugriff, auch die Links.
 
 **Links in „Über TFTN“** (Projektseite, Handbuch, Fehler melden auf `github.com`) öffnen die Seite auf
 Klick im Standardbrowser. Ins Netz geht dann der Browser, nicht TFTN; TFTN gibt ihm nur die feste
-Adresse und überträgt nichts. Jeder Klick steht im Netzprotokoll. Gibt es eine Seite zum Unterstützen
-von TFTN (Ko-fi, `ko-fi.com`), steht sie still als letzter Link dabei; ein Schalter in den Einstellungen
+Adresse und überträgt nichts. Jeder Klick steht im Netzprotokoll. Die Seite zum Unterstützen
+von TFTN (Ko-fi, `ko-fi.com`) steht still als letzter Link dabei; ein Schalter in den Einstellungen
 blendet ihn aus. Bei „Ganz offline“ öffnen sich die Links nicht, die Adressen
 stehen zum Abschreiben da. TFTN installiert nie etwas von selbst: Eine neue Version laden Sie von der
 Release-Seite.
@@ -816,13 +815,13 @@ der ohne Zwischenraum an einem anderen Wort klebt, wird nicht erkannt. Eingebund
 bei heiklen Dokumenten unter „Was die KI sieht …“ und im Quelltext nach, bevor Sie einen Cloud-Dienst
 arbeiten lassen.
 
-<!-- Ko-fi: einschalten, sobald es den Namen gibt.
-## TFTN unterstützen
+## 14. TFTN unterstützen
 
-TFTN kostet nichts: kein Abo, keine Werbung, keine Daten. Wer es regelmäßig nutzt und etwas zurückgeben möchte, kann das auf
-[Ko-fi](https://ko-fi.com/<name>) tun. Genauso willkommen sind Fehlermeldungen und Wünsche auf der
-[Projektseite](https://github.com/DocAtPrompt/tftn/issues).
+TFTN kostet nichts: kein Abo, keine Werbung, keine Daten. Wer es regelmäßig nutzt und etwas zurückgeben möchte, kann
+auf [Ko-fi](https://ko-fi.com/docatprompt) einen Kaffee spendieren. Er fließt in konkrete Ziele: ein
+Apple-Entwicklerkonto für eine signierte, notarisierte Mac-App (ohne Sicherheitswarnung beim ersten
+Öffnen), eine eigene Website für TFTN und ein signierter Installer für Windows. Genauso willkommen
+sind Fehlermeldungen und Wünsche auf der [Projektseite](https://github.com/DocAtPrompt/tftn/issues).
 
 Der Link steht auch in „Über TFTN“ (F1); er öffnet die Seite nur auf Klick im Browser, und die
 Einstellungen blenden ihn aus.
--->

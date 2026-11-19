@@ -10,9 +10,9 @@ use tftn_sprachen::tr;
 /// Projektseite auf GitHub.
 pub const PROJEKT: &str = "https://github.com/DocAtPrompt/tftn";
 
-/// Name des Ko-fi-Kontos (Adresse `https://ko-fi.com/<name>`). Leer: Es gibt noch keines, dann
-/// fehlen Link und Einstellung. Beim Eintragen auch `.github/FUNDING.yml` anlegen.
-pub const KOFI_NAME: &str = "";
+/// Name des Ko-fi-Kontos (Adresse `https://ko-fi.com/<name>`). Leer hieße: kein Konto, dann
+/// fehlen Link und Einstellung. Derselbe Name steht in `.github/FUNDING.yml`.
+pub const KOFI_NAME: &str = "docatprompt";
 
 /// Die Rechner, die ein Link überhaupt ansprechen kann (für das Datenschutzblatt).
 pub const GEGENSTELLEN: &[&str] = &["github.com", "ko-fi.com"];
