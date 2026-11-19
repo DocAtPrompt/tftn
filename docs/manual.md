@@ -144,7 +144,8 @@ sync it and keep working on another computer without a network.
   spelling and counting apply to the active tab; page settings, versions, document type and AI
   assistants (MCP) to the main file – changing something there takes you to its tab.
 - **Preview** (right): the finished pages. Clicking in the preview jumps to the matching place in
-  the text; the preview follows the cursor. Right-click opens a menu with “Edit …” and “Show in
+  the text; the preview follows the cursor. A click on an empty spot (the margin, a gap in a table) or
+  into the bibliography does nothing. Right-click opens a menu with “Edit …” and “Show in
   code”.
   On the right of the status bar: “Width” (pages as wide as the column), “Whole page”, − and +, and
   the percentage (click it for actual size). Cmd/Ctrl + mouse wheel or a two-finger pinch zooms around

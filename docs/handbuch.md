@@ -143,7 +143,8 @@ synchronisieren und auf einem anderen Rechner ohne Netz weiterbearbeiten.
   und Zählen gelten für den aktiven Reiter; Seite, Fassungen, Dokumenttyp und KI-Assistenten (MCP)
   für die Hauptdatei – wer dort etwas ändert, landet dafür in ihrem Reiter.
 - **Vorschau** (rechts): die fertigen Seiten. Ein Klick in die Vorschau springt an die Stelle im Text;
-  die Vorschau folgt der Schreibmarke. Rechtsklick öffnet ein Menü mit „Ändern …“ und „Im Code zeigen“.
+  die Vorschau folgt der Schreibmarke. Ein Klick auf eine leere Stelle (Rand, Lücke in einer Tabelle) oder
+  ins Literaturverzeichnis tut nichts. Rechtsklick öffnet ein Menü mit „Ändern …“ und „Im Code zeigen“.
   Rechts in der Statuszeile: „Breite“ (Seiten so breit wie die Spalte), „Ganze Seite“, − und + sowie
   die Prozentzahl (ein Klick darauf zeigt die echte Größe). Cmd/Strg + Mausrad oder zwei Finger auf
   dem Trackpad zoomen um den Mauszeiger; ist die Seite breiter als die Spalte, gibt es eine waagrechte

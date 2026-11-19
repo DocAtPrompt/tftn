@@ -14,6 +14,8 @@ every preview on your own machine – no account, no cloud, no upload – so you
 with Typst without handing them to a third party.
 
 - **Live preview with click-to-source** in both directions.
+- **Guided tours** in “About TFTN”: “TFTN in a few minutes” and eight short tours on single topics,
+  step by step or played with subtitles, on a copy with made-up data.
 - **Blocks and completion** for figures, tables, equations, citations and more – type “/” on an empty
   line.
 - **Your own text blocks:** standard phrases and paragraphs with gaps to fill in, kept in one file in
