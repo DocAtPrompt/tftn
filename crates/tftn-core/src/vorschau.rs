@@ -232,8 +232,11 @@ impl Vorschau {
             Some(Jump::Position(p)) => {
                 Sprung::Position(p.page.get() - 1, p.point.x.to_pt(), p.point.y.to_pt())
             }
-            // Kein Span: typischerweise Text aus Daten (toml) oder vom Paket erzeugt.
-            None => Sprung::Vorlage,
+            // Kein Span: Liegt dort Text oder ein Bild, kommt es typischerweise aus Daten (toml)
+            // oder vom Paket. Sonst war es eine leere Stelle (Rand, Zwischenraum in einer Tabelle):
+            // dann nichts tun, statt das Formular zu öffnen.
+            None if inhalt_an(frame, punkt) => Sprung::Vorlage,
+            None => Sprung::Nichts,
         }
     }
 
@@ -355,6 +358,27 @@ fn ueberschrift_stelle(
             let p = intro.position(u.location()?)?;
             Some((p.page.get() - 1, p.point.x.to_pt(), p.point.y.to_pt()))
         })
+}
+
+/// Liegt am Punkt (relativ zu `frame`) ein Text oder ein Bild? Text zählt in seiner Breite und von
+/// einer Schriftgröße über bis 0,3 Schriftgrößen unter der Grundlinie.
+fn inhalt_an(frame: &Frame, punkt: Point) -> bool {
+    frame.items().any(|(pos, item)| {
+        let p = punkt - *pos;
+        match item {
+            FrameItem::Group(g) => g
+                .transform
+                .invert()
+                .is_some_and(|inv| inhalt_an(&g.frame, p.transform(inv))),
+            FrameItem::Text(t) => {
+                p.x >= Abs::zero() && p.x <= t.width() && p.y >= -t.size && p.y <= t.size * 0.3
+            }
+            FrameItem::Image(_, groesse, _) => {
+                p.x >= Abs::zero() && p.y >= Abs::zero() && p.x <= groesse.x && p.y <= groesse.y
+            }
+            _ => false,
+        }
+    })
 }
 
 /// Kopie eines Frames ohne Link-Flächen (rekursiv).

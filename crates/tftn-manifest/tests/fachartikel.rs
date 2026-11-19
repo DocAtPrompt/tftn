@@ -234,6 +234,20 @@ fn klick_auf_zusammenfassung() {
 }
 
 #[test]
+fn klick_auf_leere_stelle_oeffnet_kein_formular() {
+    let projekt = neues_projekt("ap7-klick-leer");
+    let v = vorschau(&projekt);
+    // Seitenrand oben links und weit unten: dort liegt nichts, also auch kein Formularfeld.
+    assert_eq!(v.klick(0, 5.0, 5.0), Sprung::Nichts);
+    assert_eq!(v.klick(0, 300.0, 820.0), Sprung::Nichts);
+    // Ein Wert aus dem Formular bleibt ein Klick aufs Feld.
+    assert_eq!(
+        klick(&v, "Titel des Artikels"),
+        Sprung::Feld("titel".into())
+    );
+}
+
+#[test]
 fn testartikel_bleibt_vorlage() {
     let projekt = Projekt::oeffnen(&wurzel().join("tests/korpus/testartikel")).unwrap();
     let v = vorschau(&projekt);
